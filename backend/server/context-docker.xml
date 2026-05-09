@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Context>
+    <Parameter name="JDBC.driver"   value="org.postgresql.Driver"/>
+    <Parameter name="JDBC.url"      value="jdbc:postgresql://hmdm-postgres:5432/hmdm"/>
+    <Parameter name="JDBC.username" value="hmdm"/>
+    <Parameter name="JDBC.password" value="topsecret"/>
+
+    <Parameter name="base.directory"              value="/home/launcher"/>
+    <Parameter name="files.directory"             value="/home/launcher/files"/>
+    <Parameter name="plugins.files.directory"     value="/home/launcher/plugins"/>
+    <Parameter name="base.url"                    value="http://localhost:8080"/>
+    <Parameter name="usage.scenario"              value="private"/>
+    <Parameter name="secure.enrollment"           value="0"/>
+    <Parameter name="hash.secret"                 value="changeme-C3z9vi54"/>
+    <Parameter name="role.orgadmin.id"            value="2"/>
+    <Parameter name="initialization.completion.signal.file" value="/home/launcher/initialized.txt"/>
+    <Parameter name="plugin.devicelog.persistence.config.class" value="com.hmdm.plugins.devicelog.persistence.postgres.DeviceLogPostgresPersistenceConfiguration"/>
+    <Parameter name="aapt.command"                value="aapt"/>
+    <Parameter name="log4j.config"                value="file:///home/launcher/log4j-hmdm.xml"/>
+    <Parameter name="mqtt.server.uri"             value="localhost:31000"/>
+    <Parameter name="mqtt.auth"                   value="false"/>
+    <Parameter name="mqtt.message.delay"          value="1000"/>
+    <Parameter name="device.fast.search.chars"    value="5"/>
+    <Parameter name="smtp.host"                   value="localhost"/>
+    <Parameter name="smtp.port"                   value="25"/>
+    <Parameter name="smtp.ssl"                    value="0"/>
+    <Parameter name="smtp.starttls"               value="0"/>
+    <Parameter name="smtp.username"               value=""/>
+    <Parameter name="smtp.password"               value=""/>
+    <Parameter name="smtp.from"                   value="noreply@localhost"/>
+    <Parameter name="plugin.photo.enable.places"  value="0"/>
+    <Parameter name="mqtt.external"               value="0"/>
+    <Parameter name="mqtt.client.tag"             value=""/>
+    <Parameter name="plugin.audit.display.forwarded.ip" value="0"/>
+</Context>
