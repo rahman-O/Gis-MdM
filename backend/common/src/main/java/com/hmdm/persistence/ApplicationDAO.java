@@ -429,8 +429,38 @@ public class ApplicationDAO extends AbstractLinkedDAO<Application, ApplicationCo
         }
     }
 
+    /**
+     * JSON requests often omit {@code showIcon}; {@code configurationApplications.showIcon} is NOT NULL in PostgreSQL.
+     */
+    private void fillMissingShowIconsForAppLinks(Application application, List<ApplicationConfigurationLink> links) {
+        if (application == null || links == null) {
+            return;
+        }
+        final boolean fallback = application.getShowIcon();
+        for (ApplicationConfigurationLink link : links) {
+            if (link != null && link.getShowIcon() == null) {
+                link.setShowIcon(fallback);
+            }
+        }
+    }
+
+    private void fillMissingShowIconsForVersionLinks(Application application, List<ApplicationVersionConfigurationLink> links) {
+        if (application == null || links == null) {
+            return;
+        }
+        final boolean fallback = application.getShowIcon();
+        for (ApplicationVersionConfigurationLink link : links) {
+            if (link != null && link.getShowIcon() == null) {
+                link.setShowIcon(fallback);
+            }
+        }
+    }
+
     @Transactional
     public void updateApplicationConfigurations(LinkConfigurationsToAppRequest request) {
+        final Application defaultsFrom = this.mapper.findById(request.getApplicationId());
+        fillMissingShowIconsForAppLinks(defaultsFrom, request.getConfigurations());
+
         final List<ApplicationConfigurationLink> activeLinks = request.getConfigurations()
                 .stream()
                 .filter(c -> c.getAction() == 1)
@@ -531,6 +561,7 @@ public class ApplicationDAO extends AbstractLinkedDAO<Application, ApplicationCo
             final int userCustomerId = SecurityContext.get().getCurrentUser().get().getCustomerId();
 
             if (application.isCommon() || application.getCustomerId() == userCustomerId) {
+                fillMissingShowIconsForVersionLinks(application, configurations);
                 this.mapper.insertApplicationVersionConfigurations(application.getId(), applicationVersionId, configurations);
             } else {
                 throw SecurityException.onApplicationAccessViolation(application);
@@ -555,7 +586,10 @@ public class ApplicationDAO extends AbstractLinkedDAO<Application, ApplicationCo
             updateLinkedData(
                     applicationId,
                     this::findById,
-                    app -> this.mapper.insertApplicationConfigurations(app.getId(), app.getLatestVersion(), configurations),
+                    app -> {
+                        fillMissingShowIconsForAppLinks(app, configurations);
+                        this.mapper.insertApplicationConfigurations(app.getId(), app.getLatestVersion(), configurations);
+                    },
                     SecurityException::onApplicationAccessViolation
             );
         }

@@ -12,7 +12,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useDebounce } from '@/shared/hooks/useDebounce'
 import * as deviceService from '@/features/devices/deviceService'
 import * as configurationService from '@/features/configurations/configurationService'
+import type { Configuration } from '@/features/configurations/types'
 import { getConfigurationQrEligibility } from '@/features/configurations/configurationQr'
+import { canEnrollDevicesViaQr } from '@/features/auth/permissions'
+import { EnrollmentQrExperience } from '@/features/devices/EnrollmentQrExperience'
 import type { ConfigurationOption, ConfigurationView, DeviceFilters, DeviceSearchRequest, DeviceView, LookupItem } from '@/features/devices/types'
 import { StatusBadge } from '@/features/devices/StatusBadge'
 import { formatLastSeen } from '@/features/devices/deviceFormat'
@@ -21,7 +24,6 @@ import { DeviceDetailPanel } from '@/features/devices/DeviceDetailPanel'
 import { DeviceForm } from '@/features/devices/DeviceForm'
 import { FilterPanel } from '@/features/devices/FilterPanel'
 import { BulkActionBar } from '@/features/devices/BulkActionBar'
-
 const PAGE_SIZE = 20
 const EMPTY_FILTERS: DeviceFilters = {
   groupId: null,
@@ -74,10 +76,11 @@ export function DevicesPage() {
   const [bulkGroupId, setBulkGroupId] = useState<number | null>(null)
   const [bulkError, setBulkError] = useState<string | null>(null)
   const [qrLoadingId, setQrLoadingId] = useState<number | null>(null)
-  const [qrDialogOpen, setQrDialogOpen] = useState(false)
-  const [qrDialogLoading, setQrDialogLoading] = useState(false)
-  const [qrDialogError, setQrDialogError] = useState<string | null>(null)
-  const [qrDisplayUrl, setQrDisplayUrl] = useState<string | null>(null)
+  const [qrEnrollmentContext, setQrEnrollmentContext] = useState<{
+    qrCodeKey: string
+    deviceNumber: string
+    configuration: Configuration | null
+  } | null>(null)
   const [columnVisibility, setColumnVisibility] = useState({
     imei: false,
     phone: false,
@@ -192,80 +195,46 @@ export function DevicesPage() {
   }
 
   const openDeviceQr = async (device: DeviceView) => {
+    if (!canEnrollDevicesViaQr()) {
+      setError('You do not have permission to enroll devices via QR.')
+      return
+    }
+
     const deviceNumber = device.number?.trim()
     if (!deviceNumber) {
       setError('Device number is missing.')
       return
     }
-
-    let qrCodeKey = getQrCodeKey(device)
-    let fullConfiguration: Awaited<ReturnType<typeof configurationService.getConfiguration>> | null = null
-    if (!qrCodeKey && device.configurationId != null) {
-      setQrLoadingId(device.id)
-      try {
-        const fullConfig = await configurationService.getConfiguration(device.configurationId)
-        fullConfiguration = fullConfig
-        const resolvedKey = String(fullConfig.qrCodeKey ?? '').trim()
-        if (resolvedKey) qrCodeKey = resolvedKey
-      } catch {
-        // keep fallback error below
-      } finally {
-        setQrLoadingId(null)
-      }
-    }
-
-    if (!qrCodeKey) {
-      const fallbackEligibility = getConfigurationQrEligibility(fullConfiguration)
-      setError(fallbackEligibility.reason ?? 'QR is not available for this device configuration.')
+    if (device.configurationId == null) {
+      setError('This device has no configuration assigned.')
       return
     }
 
-    const primaryUrl = `/rest/public/qr/${encodeURIComponent(qrCodeKey)}?deviceId=${encodeURIComponent(deviceNumber)}&size=360`
-    const fallbackUrl = `/rest/public/qr/${encodeURIComponent(qrCodeKey)}?size=360`
+    setQrLoadingId(device.id)
+    let qrCodeKey: string | null = getQrCodeKey(device)
+    let fullConfiguration: Configuration | null = null
 
-    setQrDialogOpen(true)
-    setQrDialogLoading(true)
-    setQrDialogError(null)
-    setQrDisplayUrl(null)
-
-    const tryLoad = async (url: string): Promise<string | null> => {
-      try {
-        const response = await fetch(url, { credentials: 'include' })
-        if (!response.ok) return null
-        const blob = await response.blob()
-        if (!blob || blob.size === 0 || !blob.type.startsWith('image/')) return null
-        return URL.createObjectURL(blob)
-      } catch {
-        return null
-      }
+    try {
+      fullConfiguration = await configurationService.getConfiguration(device.configurationId)
+      const resolvedKey = String(fullConfiguration.qrCodeKey ?? '').trim()
+      if (resolvedKey) qrCodeKey = resolvedKey
+    } catch {
+      // ignore load error; qrCodeKey may still come from list map
+    } finally {
+      setQrLoadingId(null)
     }
 
-    const primaryObjectUrl = await tryLoad(primaryUrl)
-    if (primaryObjectUrl) {
-      setQrDisplayUrl(primaryObjectUrl)
-      setQrDialogLoading(false)
+    if (!qrCodeKey?.trim()) {
+      const eligibility = getConfigurationQrEligibility(fullConfiguration)
+      setError(eligibility.reason ?? 'QR is not available for this device configuration.')
       return
     }
 
-    const fallbackObjectUrl = await tryLoad(fallbackUrl)
-    if (fallbackObjectUrl) {
-      setQrDisplayUrl(fallbackObjectUrl)
-      setQrDialogLoading(false)
-      return
-    }
-
-    setQrDialogLoading(false)
-    let reason = 'Unable to render QR image for this configuration.'
-    if (device.configurationId != null) {
-      try {
-        const cfg = fullConfiguration ?? await configurationService.getConfiguration(device.configurationId)
-        const eligibility = getConfigurationQrEligibility(cfg)
-        if (eligibility.reason) reason = eligibility.reason
-      } catch {
-        // keep default reason
-      }
-    }
-    setQrDialogError(reason)
+    setQrEnrollmentContext({
+      qrCodeKey: qrCodeKey.trim(),
+      deviceNumber,
+      configuration: fullConfiguration,
+    })
   }
 
   return (
@@ -385,7 +354,7 @@ export function DevicesPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      disabled={qrLoadingId === device.id}
+                      disabled={!canEnrollDevicesViaQr() || qrLoadingId === device.id}
                       title="Open enrollment QR"
                       onClick={() => void openDeviceQr(device)}
                     >
@@ -434,32 +403,30 @@ export function DevicesPage() {
       {formMode ? <DeviceForm mode={formMode} initialData={deviceToEdit} onSuccess={async () => { await fetchDevices(true) }} onClose={() => setFormMode(null)} /> : null}
 
       <Dialog
-        open={qrDialogOpen}
+        open={qrEnrollmentContext != null}
         onOpenChange={(open) => {
-          setQrDialogOpen(open)
-          if (!open) {
-            if (qrDisplayUrl?.startsWith('blob:')) {
-              URL.revokeObjectURL(qrDisplayUrl)
-            }
-            setQrDisplayUrl(null)
-            setQrDialogLoading(false)
-            setQrDialogError(null)
-          }
+          if (!open) setQrEnrollmentContext(null)
         }}
       >
-        <DialogContent>
+        <DialogContent className="flex max-h-[90vh] max-w-3xl flex-col overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Device QR</DialogTitle>
-            <DialogDescription>Scan this code to enroll the device.</DialogDescription>
+            <DialogTitle>Device enrollment QR</DialogTitle>
+            <DialogDescription>Adjust device id / provisioning options; the QR updates automatically (same as legacy UI).</DialogDescription>
           </DialogHeader>
-          {qrDialogLoading ? <p className="text-sm text-muted-foreground">Loading QR...</p> : null}
-          {qrDialogError ? <p className="text-sm text-destructive">{qrDialogError}</p> : null}
-          {qrDisplayUrl ? <img src={qrDisplayUrl} alt="Device QR code" className="mx-auto max-h-[70vh] rounded border" /> : null}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setQrDialogOpen(false)}>
-              Close
-            </Button>
-          </DialogFooter>
+          {qrEnrollmentContext ? (
+            <EnrollmentQrExperience
+              key={`${qrEnrollmentContext.qrCodeKey}-${qrEnrollmentContext.deviceNumber}`}
+              qrCodeKey={qrEnrollmentContext.qrCodeKey}
+              initialDeviceId={qrEnrollmentContext.deviceNumber}
+              configuration={qrEnrollmentContext.configuration}
+              groups={groups}
+              footer={
+                <Button type="button" variant="outline" onClick={() => setQrEnrollmentContext(null)}>
+                  Close
+                </Button>
+              }
+            />
+          ) : null}
         </DialogContent>
       </Dialog>
 

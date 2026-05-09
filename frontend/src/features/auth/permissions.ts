@@ -1,23 +1,27 @@
-const PERMISSIONS_KEY = 'hmdm_permissions'
+import { readStoredSuperAdmin, getStoredPermissions } from '@/features/auth/session'
 
+export function isSuperAdmin(): boolean {
+  return readStoredSuperAdmin()
+}
+
+/** Same list legacy Angular persisted from `user.userRole.permissions`. */
 export function getPermissions(): string[] {
-  if (typeof window === 'undefined') return []
-  const raw = window.localStorage.getItem(PERMISSIONS_KEY)
-  if (!raw) return []
-  try {
-    const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? parsed.map((item) => String(item)) : []
-  } catch {
-    return []
-  }
+  return getStoredPermissions()
 }
 
 /**
- * Fail-open to preserve existing UX until backend permissions
- * are fully wired into auth/session bootstrap.
+ * Super-admin matches Angular: all UI permissions allowed.
+ * Non-super-admin: explicit permission names when list is populated.
+ * Fail-open when list empty (sessions not warmed) to preserve prior SPA behavior.
  */
 export function hasPermission(permission: string): boolean {
-  const permissions = getPermissions()
+  if (readStoredSuperAdmin()) return true
+  const permissions = getStoredPermissions()
   if (permissions.length === 0) return true
   return permissions.includes(permission)
+}
+
+/** Legacy permission name from Angular ({@code enroll_devices}); super-admin bypasses checks. */
+export function canEnrollDevicesViaQr(): boolean {
+  return hasPermission('enroll_devices')
 }

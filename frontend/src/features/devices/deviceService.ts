@@ -84,16 +84,6 @@ export async function getConfigurations(): Promise<ConfigurationOption[]> {
   return unwrapEnvelope(response, 'Failed to load configurations.')
 }
 
-export async function getDeviceQr(id: number): Promise<string> {
-  const response = await apiClient.get<HmdmEnvelope<DeviceView>>(`/private/devices/${id}`)
-  const device = unwrapEnvelope(response, 'Failed to load device QR data.')
-  const key = device.info?.defaultLauncher
-  if (!key) {
-    throw new Error('QR code is not available for this device.')
-  }
-  return key
-}
-
 export async function deleteBulk(ids: number[]): Promise<void> {
   const payload: BulkDeletePayload = { ids }
   const response = await apiClient.post<HmdmEnvelope<unknown>>('/private/devices/deleteBulk', payload)

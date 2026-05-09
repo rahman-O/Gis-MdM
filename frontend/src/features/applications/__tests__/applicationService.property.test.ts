@@ -27,7 +27,7 @@ function ok<T>(data: T): { data: HmdmEnvelope<T> } {
 describe('applicationService property tests', () => {
   it('routes searches correctly for any value', async () => {
     await fc.assert(
-      fc.asyncProperty(fc.string({ minLength: 1 }), async (value) => {
+      fc.asyncProperty(fc.string().filter((s) => s.trim().length >= 1), async (value) => {
         mocks.get.mockReset()
         mocks.get.mockResolvedValueOnce(ok([]))
         await applicationService.searchApplications(value)

@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Context>
     <Parameter name="JDBC.driver"   value="org.postgresql.Driver"/>
-    <Parameter name="JDBC.url"      value="jdbc:postgresql://hmdm-postgres:5432/hmdm"/>
+    <!-- Docker Compose service name for Postgres is `db` (internal port 5432). -->
+    <Parameter name="JDBC.url"      value="jdbc:postgresql://db:5432/hmdm"/>
     <Parameter name="JDBC.username" value="hmdm"/>
     <Parameter name="JDBC.password" value="topsecret"/>
 

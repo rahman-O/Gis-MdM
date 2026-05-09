@@ -60,7 +60,11 @@ export interface ApplicationVersion {
 }
 
 export interface ApplicationConfigurationLink {
+  /** PK of configurationApplications row; required for updates/deletes. */
+  id?: number | null
   configurationId: number
+  /** Must match parent app id on save (server guard + delete-other-pkg-links). */
+  applicationId?: number | null
   name?: string | null
   action: number
   selected?: boolean

@@ -30,11 +30,14 @@ export function ApplicationConfigurationsDialog({ open, applicationId, onClose }
         const map = new Map(links.map((l) => [l.configurationId, l]))
         const combined = all.map((c) => {
           const current = map.get(c.id)
+          const action = Number(current?.action ?? 0)
           return {
+            id: current?.id != null ? Number(current.id) : null,
+            applicationId,
             configurationId: c.id,
             name: c.name,
-            selected: current != null,
-            action: Number(current?.action ?? 0),
+            selected: action !== 0,
+            action,
             notify: Boolean(current?.notify),
           }
         })
@@ -52,8 +55,10 @@ export function ApplicationConfigurationsDialog({ open, applicationId, onClose }
       await applicationService.updateApplicationConfigurations({
         applicationId,
         configurations: rows.map((r) => ({
+          ...(r.id != null ? { id: r.id } : {}),
+          applicationId,
           configurationId: r.configurationId,
-          action: Number(r.action ?? 0),
+          action: r.selected === false ? 0 : Number(r.action ?? 0),
           notify: Boolean(r.notify),
         })),
       })
@@ -72,7 +77,22 @@ export function ApplicationConfigurationsDialog({ open, applicationId, onClose }
         {rows.map((r, i) => (
           <div key={r.configurationId} className="grid grid-cols-[1fr_auto_auto] items-center gap-3 rounded border p-2">
             <label className="flex items-center gap-2 text-sm">
-              <Checkbox checked={Boolean(r.selected)} onCheckedChange={(v) => setRows((p) => p.map((x, idx) => idx === i ? { ...x, selected: v === true } : x))} />
+              <Checkbox
+                checked={Boolean(r.selected)}
+                onCheckedChange={(v) =>
+                  setRows((p) =>
+                    p.map((x, idx) =>
+                      idx === i
+                        ? {
+                            ...x,
+                            selected: v === true,
+                            action: v === true ? (Number(x.action) === 0 ? 1 : Number(x.action)) : 0,
+                          }
+                        : x
+                    )
+                  )
+                }
+              />
               {r.name ?? `Configuration #${r.configurationId}`}
             </label>
             <Select value={String(r.action ?? 0)} onValueChange={(v) => setRows((p) => p.map((x, idx) => idx === i ? { ...x, action: Number(v) } : x))}>

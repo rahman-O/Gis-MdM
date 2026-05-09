@@ -28,6 +28,27 @@ export async function searchApplications(value: string): Promise<Application[]> 
   return unwrap(response, 'Failed to search applications.')
 }
 
+/** Super-admin: all tenants’ applications (control panel). */
+export async function getAllAdminApplications(): Promise<Application[]> {
+  const response = await apiClient.get<HmdmEnvelope<Application[]>>('/private/applications/admin/search')
+  return unwrap(response, 'Failed to load shared applications catalog.')
+}
+
+export async function searchAdminApplications(value: string): Promise<Application[]> {
+  const normalized = value.trim()
+  if (!normalized) return getAllAdminApplications()
+  const response = await apiClient.get<HmdmEnvelope<Application[]>>(
+    `/private/applications/admin/search/${encodeURIComponent(normalized)}`
+  )
+  return unwrap(response, 'Failed to search shared applications catalog.')
+}
+
+/** Merges duplicates by package into one shared app (server GET, legacy API). */
+export async function turnApplicationIntoCommon(id: number): Promise<void> {
+  const response = await apiClient.get<HmdmEnvelope<unknown>>(`/private/applications/admin/common/${id}`)
+  assertHmdmOk(response.data, 'Failed to turn application into shared application.')
+}
+
 export async function getApplicationsForAutocomplete(filter: string): Promise<Array<{ id: number; name: string }>> {
   const response = await apiClient.post<HmdmEnvelope<Array<{ id: number; name: string }>>>(
     '/private/applications/autocomplete',

@@ -54,7 +54,7 @@
         VALUES
         <foreach item="item" index="index" collection="apps"
                  open="" separator="," close="">
-            (#{id}, #{item.id}, COALESCE(#{item.usedVersionId}, #{item.latestVersion}), #{item.remove}, #{item.showIcon},
+            (#{id}, #{item.id}, COALESCE(#{item.usedVersionId}, #{item.latestVersion}), #{item.remove}, COALESCE((SELECT COALESCE(showIcon, FALSE) FROM applications WHERE applications.id = #{item.id}), FALSE),
             #{item.action}, #{item.screenOrder}, #{item.keyCode}, #{item.bottom}, #{item.longTap})
         </foreach>
     </insert>

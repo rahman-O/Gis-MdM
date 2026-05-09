@@ -19,6 +19,17 @@ export default defineConfig(({ mode }) => {
   const backendContext =
     rawCtx === undefined ? '' : rawCtx.replace(/\/$/, '')
 
+  const restProxy = {
+    '/rest': {
+      target: `http://localhost:${tomcatPort}`,
+      changeOrigin: true,
+      secure: false,
+      cookieDomainRewrite: '',
+      cookiePathRewrite: '/',
+      rewrite: (reqPath: string) => (backendContext ? `${backendContext}${reqPath}` : reqPath),
+    },
+  }
+
   return {
     plugins: [react()],
     resolve: {
@@ -29,16 +40,12 @@ export default defineConfig(({ mode }) => {
     server: {
       // Default Vite may bind only to IPv6 [::1]; Windows users opening http://127.0.0.1:5173 then see ERR_CONNECTION_REFUSED.
       host: true,
-      proxy: {
-        '/rest': {
-          target: `http://localhost:${tomcatPort}`,
-          changeOrigin: true,
-          secure: false,
-          cookieDomainRewrite: '',
-          cookiePathRewrite: '/',
-          rewrite: (reqPath) => (backendContext ? `${backendContext}${reqPath}` : reqPath),
-        },
-      },
+      proxy: restProxy,
+    },
+    // `vite preview` has no proxy unless configured — without this, `/rest/*` hits the static server → 404.
+    preview: {
+      host: true,
+      proxy: restProxy,
     },
     test: {
       globals: true,

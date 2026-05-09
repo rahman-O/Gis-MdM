@@ -502,12 +502,13 @@ public class ApplicationResource {
                 request.getConfigurations().removeIf(c ->
                         user.getConfigurations().stream().filter(uc -> uc.getId() == c.getConfigurationId()).findFirst() == null);
             }
-            // Avoid access to objects of another customer
+            // Avoid access to objects of another customer (use parent request id — per-row ids may be 0/absent).
             request.getConfigurations().removeIf(c -> {
-                // findById will raise a SecurityException if attempting to access an object of another customer
-                // So actually this code is a bit redundant, but it guards access to own objects anyway
-                Application application = applicationDAO.findById(c.getApplicationId());
+                Application application = applicationDAO.findById(request.getApplicationId());
                 Configuration configuration = configurationDAO.getConfigurationById(c.getConfigurationId());
+                if (application == null || configuration == null) {
+                    return true;
+                }
                 return application.getCustomerId() != user.getCustomerId() ||
                        configuration.getCustomerId() != user.getCustomerId();
             });
@@ -570,6 +571,11 @@ public class ApplicationResource {
     @Path("/admin/search")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getAllAdminApplications() {
+        if (!SecurityContext.get().isSuperAdmin()) {
+            logger.error("Unauthorized attempt to admin application list by user {}",
+                    SecurityContext.get().getCurrentUserName());
+            return Response.PERMISSION_DENIED();
+        }
         return Response.OK(this.applicationDAO.getAllAdminApplications());
     }
 
@@ -578,6 +584,11 @@ public class ApplicationResource {
     @Path("/admin/search/{value}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response searchAdminApplications(@PathParam("value") String value) {
+        if (!SecurityContext.get().isSuperAdmin()) {
+            logger.error("Unauthorized attempt to admin application search by user {}",
+                    SecurityContext.get().getCurrentUserName());
+            return Response.PERMISSION_DENIED();
+        }
         return Response.OK(this.applicationDAO.getAllAdminApplicationsByValue(value));
     }
 
@@ -587,6 +598,11 @@ public class ApplicationResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response turnApplicationIntoCommon(@PathParam("id") Integer id) {
+        if (!SecurityContext.get().isSuperAdmin()) {
+            logger.error("Unauthorized attempt to turn application {} into common by user {}",
+                    id, SecurityContext.get().getCurrentUserName());
+            return Response.PERMISSION_DENIED();
+        }
         try {
             logger.info("Turn application into common: " + id);
             this.applicationDAO.turnApplicationIntoCommon(id);

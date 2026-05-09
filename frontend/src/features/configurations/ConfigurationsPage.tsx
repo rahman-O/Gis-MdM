@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { AlertCircle, MoreHorizontal } from 'lucide-react'
+import { AlertCircle, MoreHorizontal, QrCode } from 'lucide-react'
 import { Button } from '@/shared/ui/button'
 import { Skeleton } from '@/shared/ui/skeleton'
 import {
@@ -18,7 +18,8 @@ import {
   DropdownMenuTrigger,
 } from '@/shared/ui/dropdown-menu'
 import * as configurationService from '@/features/configurations/configurationService'
-import { hasPermission } from '@/features/auth/permissions'
+import { canEnrollDevicesViaQr, hasPermission } from '@/features/auth/permissions'
+import { getConfigurationQrEligibility } from '@/features/configurations/configurationQr'
 import type { Configuration } from '@/features/configurations/types'
 import { ConfigurationForm } from '@/features/configurations/ConfigurationForm'
 import { ConfigurationDeleteDialog } from '@/features/configurations/ConfigurationDeleteDialog'
@@ -71,6 +72,9 @@ export function ConfigurationsPage() {
     if (c.id == null) return
     navigate(`/configurations/${c.id}/edit`)
   }
+
+  const qrEligible = (c: Configuration) =>
+    Boolean(c.qrCodeKey?.trim()) && getConfigurationQrEligibility(c).eligible && canEnrollDevicesViaQr()
 
   return (
     <div className="space-y-6">
@@ -145,6 +149,17 @@ export function ConfigurationsPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onSelect={() => openEdit(c)}>Edit</DropdownMenuItem>
+                        <DropdownMenuItem
+                          disabled={!qrEligible(c)}
+                          className="flex items-center gap-2"
+                          onSelect={() => {
+                            const raw = String(c.qrCodeKey ?? '').trim()
+                            if (!raw) return
+                            navigate(`/qr/${encodeURIComponent(raw)}`)
+                          }}
+                        >
+                          <QrCode className="h-4 w-4 shrink-0" /> Enrollment QR
+                        </DropdownMenuItem>
                         <DropdownMenuItem
                           disabled={!canCopyDelete || c.id == null}
                           onSelect={async () => {

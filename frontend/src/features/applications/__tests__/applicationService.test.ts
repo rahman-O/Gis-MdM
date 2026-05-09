@@ -51,4 +51,22 @@ describe('applicationService', () => {
     })
     expect(mocks.post).toHaveBeenCalledWith('/private/applications/configurations', expect.any(Object))
   })
+
+  it('loads admin applications (super-admin catalog)', async () => {
+    mocks.get.mockResolvedValueOnce(ok([{ id: 9, name: 'AdminApp' }]))
+    await expect(applicationService.getAllAdminApplications()).resolves.toHaveLength(1)
+    expect(mocks.get).toHaveBeenCalledWith('/private/applications/admin/search')
+  })
+
+  it('searches admin applications with path param', async () => {
+    mocks.get.mockResolvedValueOnce(ok([]))
+    await applicationService.searchAdminApplications('com.example')
+    expect(mocks.get).toHaveBeenCalledWith('/private/applications/admin/search/com.example')
+  })
+
+  it('delegates turn-into-common via GET', async () => {
+    mocks.get.mockResolvedValueOnce({ data: { status: 'OK' } })
+    await applicationService.turnApplicationIntoCommon(42)
+    expect(mocks.get).toHaveBeenCalledWith('/private/applications/admin/common/42')
+  })
 })

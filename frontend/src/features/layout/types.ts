@@ -5,4 +5,6 @@ export interface NavItem {
   path: string
   icon: React.ComponentType<{ className?: string }>
   permission?: string
+  /** Hidden unless `isSuperAdmin()` (Angular control-panel parity). */
+  requiresSuperAdmin?: boolean
 }

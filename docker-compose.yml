@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
 
   db:
@@ -10,7 +8,8 @@ services:
       POSTGRES_USER: hmdm
       POSTGRES_PASSWORD: topsecret
     ports:
-      - "5432:5432"
+      # Avoid conflict when host already runs PostgreSQL (or another stack on 5432).
+      - "5433:5432"
     volumes:
       - hmdm_db:/var/lib/postgresql/data
     healthcheck:

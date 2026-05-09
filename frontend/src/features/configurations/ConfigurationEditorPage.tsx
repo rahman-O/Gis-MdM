@@ -16,16 +16,22 @@ import { ConfigurationApplicationsTab } from '@/features/configurations/Configur
 import { ConfigurationAppSettingsTab } from '@/features/configurations/ConfigurationAppSettingsTab'
 import { ConfigurationFilesTab } from '@/features/configurations/ConfigurationFilesTab'
 import { hasPermission } from '@/features/auth/permissions'
+import {
+  configurationApplicationsForSaveFromApi,
+  ensureLinkedRowsForChosenVersions,
+} from '@/features/configurations/configurationNormalize'
 import type { Configuration } from '@/features/configurations/types'
 
 interface AppOption {
   id: number
   name: string
+  /** Backend `applications.latestVersion` (id of newest `applicationVersions` row). */
+  latestVersionId?: number | null
 }
 interface MdmAppOption {
-  id: number
-  appId: number
-  usedVersionId: number
+  applicationId: number
+  /** `applicationVersions.id` — same meaning as stored `configuration.mainAppId` / `contentAppId`. */
+  versionId: number
   action: number
   name: string
 }
@@ -70,43 +76,46 @@ export function ConfigurationEditorPage() {
       configurationService.getConfigurationApplications(configId),
     ])
       .then(([cfg, allApps, cfgApps]) => {
-        setConfiguration(cfg)
+        setConfiguration({
+          ...cfg,
+          applications: configurationApplicationsForSaveFromApi(cfgApps),
+        })
         const allAppsRaw = Array.isArray(allApps) ? allApps.length : 0
         const cfgAppsRaw = Array.isArray(cfgApps) ? cfgApps.length : 0
         setApplications(
           (Array.isArray(allApps) ? allApps : [])
-            .map((item) => ({
-              id: Number((item as { id?: unknown }).id ?? 0),
-              name: String((item as { name?: unknown }).name ?? '').trim(),
-            }))
+            .map((item) => {
+              const rec = item as Record<string, unknown>
+              const lv = rec.latestVersion
+              return {
+                id: Number(rec.id ?? 0),
+                name: String(rec.name ?? '').trim(),
+                latestVersionId: (() => {
+                  const n = Number(lv ?? 0)
+                  return n > 0 ? n : null
+                })(),
+              }
+            })
             .filter((item) => item.id > 0)
         )
         const mapped = (Array.isArray(cfgApps) ? cfgApps : [])
           .map((item) => {
             const rec = item as Record<string, unknown>
-            const appId = Number(
-              rec.applicationId ??
-                rec.appId ??
-                rec.id ??
-                0
-            )
-            const usedVersionId = Number(
-              rec.usedVersionId ??
-                rec.applicationVersionId ??
-                rec.versionId ??
-                rec.latestVersion ??
-                0
-            )
-            const action = Number(rec.action ?? 0)
+            const applicationId = Number(rec.applicationId ?? rec.appId ?? rec.id ?? 0)
+            const linkedVersionId = Number(rec.usedVersionId ?? rec.applicationVersionId ?? 0)
+            const latestVersionId = Number(rec.latestVersion ?? 0)
+            const versionId =
+              linkedVersionId > 0 ? linkedVersionId : latestVersionId > 0 ? latestVersionId : 0
+            const rawAct = rec.action
+            const action = rawAct === undefined || rawAct === null ? 1 : Number(rawAct)
             return {
-              id: usedVersionId > 0 ? usedVersionId : appId,
-              appId,
-              usedVersionId,
+              applicationId,
+              versionId,
               action,
               name: String(rec.name ?? rec.applicationName ?? rec.pkg ?? '').trim(),
             }
           })
-          .filter((item) => item.id > 0)
+          .filter((item) => item.applicationId > 0 && item.versionId > 0)
         setMdmApplications(mapped)
         setDiagnosticCounts({
           allAppsRaw,
@@ -125,37 +134,55 @@ export function ConfigurationEditorPage() {
 
   const selectableMdmApps = useMemo(() => {
     if (mdmApplications.length === 0) {
-      const mapped = applications.map((app) => ({
-        id: app.id,
-        appId: app.id,
-        usedVersionId: app.id,
-        action: 1,
-        name: app.name,
-      }))
-      if (mapped.length === 0 && configuration?.mainAppId && configuration.mainAppId > 0) {
-        mapped.push({
-          id: configuration.mainAppId,
-          appId: configuration.mainAppId,
-          usedVersionId: configuration.mainAppId,
+      const mapped: MdmAppOption[] = applications
+        .filter((app) => Number(app.latestVersionId ?? 0) > 0)
+        .map((app) => ({
+          applicationId: app.id,
+          versionId: Number(app.latestVersionId),
           action: 1,
-          name: `Current Main App (Version #${configuration.mainAppId})`,
+          name: app.name,
+        }))
+      const addSynthetic = (vid: number | null | undefined, kind: 'main' | 'content') => {
+        if (!vid || vid <= 0) return
+        if (mapped.some((x) => x.versionId === vid)) return
+        mapped.push({
+          applicationId: 0,
+          versionId: vid,
+          action: 1,
+          name:
+            kind === 'main'
+              ? `Current main app (version #${vid})`
+              : `Current content app (version #${vid})`,
         })
       }
-      if (mapped.length === 0 && configuration?.contentAppId && configuration.contentAppId > 0) {
-        mapped.push({
-          id: configuration.contentAppId,
-          appId: configuration.contentAppId,
-          usedVersionId: configuration.contentAppId,
-          action: 1,
-          name: `Current Content App (Version #${configuration.contentAppId})`,
-        })
-      }
+      addSynthetic(configuration?.mainAppId, 'main')
+      addSynthetic(configuration?.contentAppId, 'content')
       return mapped
     }
     const installable = mdmApplications.filter((app) => app.action === 1)
     if (installable.length > 0) return installable
     return mdmApplications
   }, [mdmApplications, applications, configuration?.mainAppId, configuration?.contentAppId])
+
+  /** Catalog rows with real `applicationId` for injecting `configurationApplications` on save */
+  const versionCatalogForSave = useMemo(() => {
+    const out: { applicationId: number; versionId: number; name: string; action: number }[] = []
+    const seen = new Set<number>()
+    const add = (m: MdmAppOption) => {
+      if (m.applicationId <= 0 || m.versionId <= 0) return
+      if (seen.has(m.versionId)) return
+      seen.add(m.versionId)
+      out.push({
+        applicationId: m.applicationId,
+        versionId: m.versionId,
+        name: m.name,
+        action: m.action,
+      })
+    }
+    mdmApplications.forEach(add)
+    selectableMdmApps.forEach(add)
+    return out
+  }, [mdmApplications, selectableMdmApps])
 
   const qrEligibility = useMemo(
     () => getConfigurationQrEligibility(configuration),
@@ -183,7 +210,41 @@ export function ConfigurationEditorPage() {
     setSaveError(null)
     setSaveSuccess(null)
     try {
-      await configurationService.saveConfiguration(configuration)
+      const applicationsPayload = ensureLinkedRowsForChosenVersions(
+        configuration.applications,
+        configuration.mainAppId,
+        configuration.contentAppId,
+        versionCatalogForSave
+      )
+      const versionIdsInPayload = new Set(
+        applicationsPayload
+          .map((a) => Number((a as Record<string, unknown>).usedVersionId ?? 0))
+          .filter((v) => v > 0)
+      )
+      const mainV = Number(configuration.mainAppId ?? 0)
+      const contentV = Number(configuration.contentAppId ?? 0)
+      if (mainV > 0 && !versionIdsInPayload.has(mainV)) {
+        setSaveError(
+          'Cannot persist main app: no application catalogue entry for this version id. Reload the editor and pick main app again from the list.'
+        )
+        return
+      }
+      if (contentV > 0 && !versionIdsInPayload.has(contentV)) {
+        setSaveError(
+          'Cannot persist content app: no application catalogue entry for this version id. Reload and pick content app again from the list.'
+        )
+        return
+      }
+
+      const savedCfg = await configurationService.saveConfiguration({
+        ...configuration,
+        applications: applicationsPayload,
+      })
+      const freshCfgApps = await configurationService.getConfigurationApplications(configId)
+      setConfiguration({
+        ...savedCfg,
+        applications: configurationApplicationsForSaveFromApi(freshCfgApps),
+      })
       setSaveSuccess('Configuration saved successfully.')
     } catch (reason: unknown) {
       setSaveError(reason instanceof Error ? reason.message : 'Failed to save configuration.')
@@ -201,7 +262,11 @@ export function ConfigurationEditorPage() {
         configurationId: configuration.id,
         applicationId,
       })
-      setConfiguration(next)
+      const cfgApps = await configurationService.getConfigurationApplications(configuration.id)
+      setConfiguration({
+        ...next,
+        applications: configurationApplicationsForSaveFromApi(cfgApps),
+      })
     } catch (reason: unknown) {
       setSaveError(reason instanceof Error ? reason.message : 'Failed to upgrade application.')
     } finally {
@@ -312,7 +377,11 @@ export function ConfigurationEditorPage() {
                 <div className="space-y-2">
                   <Label>Main app</Label>
                   <Select
-                    value={configuration.mainAppId != null && configuration.mainAppId > 0 ? String(configuration.mainAppId) : 'none'}
+                    value={
+                      configuration.mainAppId != null && configuration.mainAppId > 0
+                        ? String(configuration.mainAppId)
+                        : 'none'
+                    }
                     onValueChange={(value) =>
                       setConfiguration((current) =>
                         current ? { ...current, mainAppId: value === 'none' ? null : Number(value) } : current
@@ -323,8 +392,8 @@ export function ConfigurationEditorPage() {
                     <SelectContent>
                       <SelectItem value="none">None</SelectItem>
                       {selectableMdmApps.map((app) => (
-                        <SelectItem key={app.id} value={String(app.id)}>
-                          {app.name || `Application #${app.id}`}
+                        <SelectItem key={`m-${app.applicationId}-${app.versionId}`} value={String(app.versionId)}>
+                          {app.name || `Application #${app.applicationId}`}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -334,9 +403,9 @@ export function ConfigurationEditorPage() {
                       No applications were returned by backend for this customer/session.
                     </p>
                   ) : null}
-                  {selectableMdmApps.length > 0 && selectableMdmApps.every((app) => app.usedVersionId === app.appId) ? (
+                  {selectableMdmApps.some((app) => app.applicationId <= 0) ? (
                     <p className="text-xs text-muted-foreground">
-                      Version mapping is missing in backend response; using application ids as fallback.
+                      Some entries only have a version id (no catalog match). Pick an app again if save does not persist.
                     </p>
                   ) : null}
                 </div>
@@ -354,8 +423,8 @@ export function ConfigurationEditorPage() {
                     <SelectContent>
                       <SelectItem value="none">None</SelectItem>
                       {selectableMdmApps.map((app) => (
-                        <SelectItem key={app.id} value={String(app.id)}>
-                          {app.name || `Application #${app.id}`}
+                        <SelectItem key={`c-${app.applicationId}-${app.versionId}`} value={String(app.versionId)}>
+                          {app.name || `Application #${app.applicationId}`}
                         </SelectItem>
                       ))}
                     </SelectContent>

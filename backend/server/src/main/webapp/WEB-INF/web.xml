@@ -36,4 +36,9 @@
     <session-config>
         <session-timeout>1440</session-timeout>
     </session-config>
+
+    <!-- Serve legacy Angular shell at context root when deployment succeeds -->
+    <welcome-file-list>
+        <welcome-file>index.html</welcome-file>
+    </welcome-file-list>
 </web-app>

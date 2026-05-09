@@ -209,6 +209,18 @@ export function ApplicationFormDialog({ open, initialData, onClose, onSaved }: P
     if ((values.type === 'app' || values.type === 'web') && !values.url.trim() && !values.filePath.trim() && !values.split) {
       return 'URL or APK upload is required.'
     }
+    const hasUploadedApk = Boolean(values.filePath.trim())
+    const hasDownloadUrl =
+      Boolean(values.url.trim()) || Boolean(values.urlArmeabi.trim()) || Boolean(values.urlArm64.trim())
+    // DB: applicationVersions.version is NOT NULL. APK upload fills version server-side from the APK.
+    if (
+      values.type === 'app' &&
+      hasDownloadUrl &&
+      !hasUploadedApk &&
+      !values.version.trim()
+    ) {
+      return 'Version name is required when you use download URL(s) without uploading an APK.'
+    }
     if (values.showIcon && values.iconText.trim().length > 256) return 'Icon text exceeds 256 chars.'
     return null
   }
