@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
+import { Toaster } from '@/shared/ui/toaster'
 import { Sidebar } from './Sidebar'
 import { Header } from './Header'
 
@@ -18,6 +19,7 @@ export function AppLayout() {
           </div>
         </main>
       </div>
+      <Toaster />
     </div>
   )
 }
