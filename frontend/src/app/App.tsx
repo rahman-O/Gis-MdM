@@ -4,6 +4,7 @@ import { DashboardPage } from '@/features/dashboard/DashboardPage'
 import { DevicesPage } from '@/features/devices/DevicesPage'
 import { GroupsPage } from '@/features/groups/GroupsPage'
 import { UsersPage } from '@/features/users/UsersPage'
+import { RolesPage } from '@/features/roles/RolesPage'
 import { SettingsPage } from '@/features/settings/SettingsPage'
 import { ConfigurationsPage } from '@/features/configurations/ConfigurationsPage'
 import { ConfigurationEditorPage } from '@/features/configurations/ConfigurationEditorPage'
@@ -36,6 +37,7 @@ export function App() {
         <Route path="/qr/:qrCodeKey/:deviceId" element={<EnrollmentQrPage />} />
         <Route path="/qr/:qrCodeKey" element={<EnrollmentQrPage />} />
         <Route path="/users" element={<UsersPage />} />
+        <Route path="/roles" element={<RolesPage />} />
         <Route path="/settings" element={<SettingsPage />} />
       </Route>
       <Route path="/" element={<Navigate to="/dashboard" replace />} />

@@ -150,7 +150,9 @@ describe('ConfigurationForm property tests', () => {
   // Property 8 (Req 5.3): optional description can be empty and still submit.
   it('Property 8: optional description allows submission', async () => {
     await fc.assert(
-      fc.asyncProperty(fc.string({ minLength: 1, maxLength: 20 }), async (name) => {
+      fc.asyncProperty(
+        fc.string({ minLength: 1, maxLength: 20 }).filter((s) => s.trim().length > 0),
+        async (name) => {
         cleanup()
         mocks.createConfiguration.mockReset().mockResolvedValue({ id: 1 })
         const user = userEvent.setup()

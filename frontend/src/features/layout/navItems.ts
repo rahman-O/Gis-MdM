@@ -1,4 +1,4 @@
-import { FolderOpen, LayoutDashboard, LayoutList, Smartphone, Users, Settings, AppWindow, Share2 } from 'lucide-react'
+import { FolderOpen, LayoutDashboard, LayoutList, Smartphone, Users, Settings, AppWindow, Share2, Shield } from 'lucide-react'
 import type { NavItem } from './types'
 
 export const NAV_ITEMS: NavItem[] = [
@@ -14,6 +14,7 @@ export const NAV_ITEMS: NavItem[] = [
   },
   { label: 'Groups', path: '/groups', icon: FolderOpen },
   { label: 'Configurations', path: '/configurations', icon: LayoutList, permission: 'configurations' },
-  { label: 'Users',           path: '/users',           icon: Users },
+  { label: 'Users', path: '/users', icon: Users },
+  { label: 'Roles', path: '/roles', icon: Shield },
   { label: 'Settings',  path: '/settings',  icon: Settings },
 ]
