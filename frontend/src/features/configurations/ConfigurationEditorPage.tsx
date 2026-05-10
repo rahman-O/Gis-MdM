@@ -540,6 +540,162 @@ export function ConfigurationEditorPage() {
                   <Label>Encrypt device</Label>
                 </div>
               </div>
+              <div className="flex flex-wrap items-center gap-6">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={Boolean(configuration.permissive)}
+                    disabled={Boolean(configuration.kioskMode)}
+                    onCheckedChange={(checked) =>
+                      setConfiguration((current) =>
+                        current ? { ...current, permissive: checked === true } : current
+                      )
+                    }
+                  />
+                  <Label>Permissive mode</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={Boolean(configuration.lockSafeSettings)}
+                    disabled={Boolean(configuration.permissive)}
+                    onCheckedChange={(checked) =>
+                      setConfiguration((current) =>
+                        current ? { ...current, lockSafeSettings: checked === true } : current
+                      )
+                    }
+                  />
+                  <Label>Lock safe settings</Label>
+                </div>
+                {Boolean(configuration.kioskMode) ? (
+                  <>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={Boolean(configuration.kioskHome)}
+                    onCheckedChange={(checked) =>
+                      setConfiguration((current) =>
+                        current ? { ...current, kioskHome: checked === true } : current
+                      )
+                    }
+                  />
+                  <Label>Kiosk: Home</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={Boolean(configuration.kioskRecents)}
+                    onCheckedChange={(checked) =>
+                      setConfiguration((current) =>
+                        current ? { ...current, kioskRecents: checked === true } : current
+                      )
+                    }
+                  />
+                  <Label>Kiosk: Recents</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={Boolean(configuration.kioskNotifications)}
+                    onCheckedChange={(checked) =>
+                      setConfiguration((current) =>
+                        current ? { ...current, kioskNotifications: checked === true } : current
+                      )
+                    }
+                  />
+                  <Label>Kiosk: Notifications</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={Boolean(configuration.kioskSystemInfo)}
+                    onCheckedChange={(checked) =>
+                      setConfiguration((current) =>
+                        current ? { ...current, kioskSystemInfo: checked === true } : current
+                      )
+                    }
+                  />
+                  <Label>Kiosk: System info</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={Boolean(configuration.kioskKeyguard)}
+                    onCheckedChange={(checked) =>
+                      setConfiguration((current) =>
+                        current ? { ...current, kioskKeyguard: checked === true } : current
+                      )
+                    }
+                  />
+                  <Label>Kiosk: Keyguard</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={Boolean(configuration.kioskLockButtons)}
+                    onCheckedChange={(checked) =>
+                      setConfiguration((current) =>
+                        current ? { ...current, kioskLockButtons: checked === true } : current
+                      )
+                    }
+                  />
+                  <Label>Kiosk: Lock buttons</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={Boolean(configuration.kioskScreenOn)}
+                    onCheckedChange={(checked) =>
+                      setConfiguration((current) =>
+                        current ? { ...current, kioskScreenOn: checked === true } : current
+                      )
+                    }
+                  />
+                  <Label>Kiosk: Keep screen on</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={Boolean(configuration.kioskExit)}
+                    onCheckedChange={(checked) =>
+                      setConfiguration((current) =>
+                        current ? { ...current, kioskExit: checked === true } : current
+                      )
+                    }
+                  />
+                  <Label>Kiosk: Allow exit</Label>
+                </div>
+                  </>
+                ) : null}
+              </div>
+              <div className="space-y-2">
+                <Label>Allowed classes</Label>
+                <Textarea
+                  rows={3}
+                  value={toText(configuration.allowedClasses)}
+                  disabled={Boolean(configuration.permissive)}
+                  onChange={(event) =>
+                    setConfiguration((current) =>
+                      current ? { ...current, allowedClasses: event.target.value } : current
+                    )
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Restrictions (UserManager keys)</Label>
+                <Textarea
+                  rows={3}
+                  value={toText(configuration.restrictions)}
+                  disabled={Boolean(configuration.permissive)}
+                  onChange={(event) =>
+                    setConfiguration((current) =>
+                      current ? { ...current, restrictions: event.target.value } : current
+                    )
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>New server URL</Label>
+                <Input
+                  placeholder="http://server:8080"
+                  value={toText(configuration.newServerUrl)}
+                  onChange={(event) =>
+                    setConfiguration((current) =>
+                      current ? { ...current, newServerUrl: event.target.value } : current
+                    )
+                  }
+                />
+              </div>
             </>
           ) : null}
 

@@ -238,10 +238,10 @@ export function DevicesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Devices</h1>
+          <h1 className="text-xl font-semibold tracking-tight">Devices</h1>
           <p className="text-muted-foreground text-sm">Manage enrolled devices.</p>
         </div>
         <div className="flex items-center gap-2">
@@ -286,7 +286,7 @@ export function DevicesPage() {
       ) : null}
 
       {error ? (
-        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm" role="alert">
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm" role="alert">
           <AlertCircle className="h-4 w-4 shrink-0 text-destructive" />
           <span className="flex-1">{error}</span>
           <Button type="button" variant="outline" size="sm" onClick={() => void fetchDevices(true)}>Retry</Button>

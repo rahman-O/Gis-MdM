@@ -77,10 +77,10 @@ export function ConfigurationsPage() {
     Boolean(c.qrCodeKey?.trim()) && getConfigurationQrEligibility(c).eligible && canEnrollDevicesViaQr()
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Configurations</h1>
+          <h1 className="text-xl font-semibold tracking-tight">Configurations</h1>
           <p className="text-muted-foreground text-sm">MDM configurations for your devices.</p>
         </div>
         <Button type="button" onClick={openCreate} disabled={!canAdd}>
@@ -90,7 +90,7 @@ export function ConfigurationsPage() {
 
       {error ?
         <div
-          className="flex flex-wrap items-center gap-3 rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm"
+          className="flex flex-wrap items-center gap-2 rounded-lg border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm"
           role="alert"
         >
           <AlertCircle className="h-4 w-4 shrink-0 text-destructive" />

@@ -11,7 +11,7 @@ interface SidebarProps {
 
 function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   return (
-    <nav aria-label="Main navigation" className="flex flex-col gap-1 p-3">
+    <nav aria-label="Main navigation" className="flex flex-col gap-1 p-2.5">
       {NAV_ITEMS.filter(
         (item) =>
           (!item.requiresSuperAdmin || isSuperAdmin()) &&
@@ -23,7 +23,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
           onClick={onNavigate}
           className={({ isActive }) =>
             cn(
-              'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+              'flex min-h-[36px] items-center gap-2 rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors',
               isActive
                 ? 'bg-primary text-primary-foreground'
                 : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
@@ -33,7 +33,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
         >
           {({ isActive }) => (
             <>
-              <item.icon className="h-4 w-4 shrink-0" />
+              <item.icon className="h-3.5 w-3.5 shrink-0" />
               <span>{item.label}</span>
               {isActive && <span className="sr-only">(current page)</span>}
             </>
@@ -48,8 +48,8 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex md:w-60 md:flex-col md:border-r md:bg-background">
-        <div className="flex h-14 items-center border-b px-4">
+      <aside className="hidden md:flex md:w-56 md:flex-col md:border-r md:bg-background">
+        <div className="flex h-12 items-center border-b px-3">
           <span className="font-bold text-sm">Headwind MDM</span>
         </div>
         <SidebarNav />
@@ -57,8 +57,8 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
 
       {/* Mobile drawer */}
       <Sheet open={mobileOpen} onOpenChange={(open) => !open && onMobileClose()}>
-        <SheetContent side="left" className="w-60 p-0">
-          <SheetHeader className="border-b px-4 py-3">
+        <SheetContent side="left" className="w-56 p-0">
+          <SheetHeader className="border-b px-3 py-2.5">
             <SheetTitle className="text-sm font-bold">Headwind MDM</SheetTitle>
           </SheetHeader>
           <SidebarNav onNavigate={onMobileClose} />

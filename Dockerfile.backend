@@ -1,20 +1,23 @@
-# Use Tomcat 9 with JDK 17 — compatible with the built WAR
+# Build the WAR inside the image so mapper/XML changes are always included.
+# (Previously copying host-only launcher.war caused stale MyBatis XML at runtime.)
+FROM maven:3.9.9-eclipse-temurin-17 AS builder
+WORKDIR /build
+COPY backend /build/backend
+WORKDIR /build/backend
+RUN mvn -B package -DskipTests
+
 FROM tomcat:9.0-jdk17-temurin
 
-# Remove default webapps
 RUN rm -rf /usr/local/tomcat/webapps/*
 
-# Copy the pre-built WAR as ROOT
-COPY backend/server/target/launcher.war /usr/local/tomcat/webapps/ROOT.war
+COPY --from=builder /build/backend/server/target/launcher.war /usr/local/tomcat/webapps/ROOT.war
 
-# Copy the Docker-specific context.xml (points to db container, not localhost)
 COPY backend/server/context-docker.xml /usr/local/tomcat/conf/context.xml
 
-# Copy log4j config
 COPY backend/server/log4j-hmdm.xml /home/launcher/log4j-hmdm.xml
 
-# Create required directories
 RUN mkdir -p /home/launcher/files /home/launcher/plugins
 
 EXPOSE 8080
+
 CMD ["catalina.sh", "run"]

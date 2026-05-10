@@ -80,8 +80,8 @@ export function ConfigurationDesignTab({ configuration, onChange }: Props) {
       <div className="space-y-2 md:col-span-2">
         <Label>Header template</Label>
         <Input
-          value={String(configuration.desktopHeaderText ?? '')}
-          onChange={(e) => onChange({ ...configuration, desktopHeaderText: e.target.value })}
+          value={String(configuration.desktopHeaderTemplate ?? configuration.desktopHeaderText ?? '')}
+          onChange={(e) => onChange({ ...configuration, desktopHeaderTemplate: e.target.value })}
         />
       </div>
       <div className="space-y-2">

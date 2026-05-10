@@ -1,0 +1,6 @@
+# Fresh Maven build inside Docker; avoid shipping stale compiled artifacts from the host.
+**/target/
+frontend/node_modules
+**/node_modules/
+.git
+.idea

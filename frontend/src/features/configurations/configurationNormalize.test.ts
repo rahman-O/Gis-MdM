@@ -116,4 +116,37 @@ describe('configurationNormalize', () => {
       })
     )
   })
+
+  it('mergeConfigurationForUpdate preserves advanced configuration fields', () => {
+    const merged = mergeConfigurationForUpdate(
+      {
+        id: 9,
+        name: 'Old',
+        type: 0,
+        description: null,
+        timeZoneMode: 'manual',
+        timeZone: 'Europe/Moscow',
+        systemUpdateType: 2,
+        systemUpdateFrom: '01:00',
+        systemUpdateTo: '02:00',
+        kioskHome: true,
+        permissive: false,
+      },
+      9,
+      { name: 'New', type: 'WORK', description: null }
+    )
+    expect(merged).toEqual(
+      expect.objectContaining({
+        id: 9,
+        name: 'New',
+        timeZoneMode: 'manual',
+        timeZone: 'Europe/Moscow',
+        systemUpdateType: 2,
+        systemUpdateFrom: '01:00',
+        systemUpdateTo: '02:00',
+        kioskHome: true,
+        permissive: false,
+      })
+    )
+  })
 })

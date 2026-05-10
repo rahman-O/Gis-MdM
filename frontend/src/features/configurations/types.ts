@@ -79,16 +79,18 @@ export interface Configuration {
   pushOptions?: string | null
   requestUpdates?: string | null
   appPermissions?: string | null
+  downloadUpdates?: string | null
+  passwordMode?: string | null
   iconSize?: string | null
   desktopHeader?: string | null
   desktopHeaderText?: string | null
+  desktopHeaderTemplate?: string | null
   orientation?: string | null
   useDefaultDesignSettings?: boolean | null
   backgroundColor?: string | null
   textColor?: string | null
   backgroundImageUrl?: string | null
   displayStatus?: boolean | null
-  downloadUpdates?: string | null
   defaultFilePath?: string | null
   qrCodeKey?: string | null
   baseUrl?: string | null
@@ -104,6 +106,44 @@ export interface Configuration {
   mobileEnrollment?: boolean | null
   encryptDevice?: boolean | null
   kioskMode?: boolean | null
+  gps?: boolean | null
+  bluetooth?: boolean | null
+  wifi?: boolean | null
+  mobileData?: boolean | null
+  usbStorage?: boolean | null
+  autoBrightness?: boolean | null
+  brightness?: number | null
+  manageTimeout?: boolean | null
+  timeout?: number | null
+  lockVolume?: boolean | null
+  manageVolume?: boolean | null
+  volume?: number | null
+  keepaliveTime?: number | null
+  timeZone?: string | null
+  timeZoneMode?: string | null
+  systemUpdateType?: number | null
+  scheduleAppUpdate?: boolean | null
+  runDefaultLauncher?: boolean | null
+  showWifi?: boolean | null
+  disableScreenshots?: boolean | null
+  autostartForeground?: boolean | null
+  systemUpdateFrom?: string | null
+  systemUpdateTo?: string | null
+  appUpdateFrom?: string | null
+  appUpdateTo?: string | null
+  kioskHome?: boolean | null
+  kioskRecents?: boolean | null
+  kioskNotifications?: boolean | null
+  kioskSystemInfo?: boolean | null
+  kioskKeyguard?: boolean | null
+  kioskLockButtons?: boolean | null
+  kioskScreenOn?: boolean | null
+  kioskExit?: boolean | null
+  permissive?: boolean | null
+  lockSafeSettings?: boolean | null
+  allowedClasses?: string | null
+  restrictions?: string | null
+  newServerUrl?: string | null
   applications?: ConfigurationApplication[]
   applicationSettings?: ConfigurationApplicationSetting[]
   files?: ConfigurationFile[]

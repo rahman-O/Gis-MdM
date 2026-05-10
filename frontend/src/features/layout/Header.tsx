@@ -10,7 +10,7 @@ export function Header({ onMenuClick }: HeaderProps) {
   const { username, logout } = useAuth()
 
   return (
-    <header className="flex h-14 items-center justify-between border-b bg-background px-4">
+    <header className="flex h-12 items-center justify-between border-b bg-background px-3">
       <div className="flex items-center gap-3">
         <Button
           variant="ghost"
@@ -19,12 +19,12 @@ export function Header({ onMenuClick }: HeaderProps) {
           onClick={onMenuClick}
           aria-label="Open navigation menu"
         >
-          <Menu className="h-5 w-5" />
+          <Menu className="h-4 w-4" />
         </Button>
         <span className="font-semibold text-sm hidden md:block">Headwind MDM</span>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         {username && (
           <span className="text-sm text-muted-foreground">{username}</span>
         )}

@@ -9,7 +9,8 @@
     <Parameter name="base.directory"              value="/home/launcher"/>
     <Parameter name="files.directory"             value="/home/launcher/files"/>
     <Parameter name="plugins.files.directory"     value="/home/launcher/plugins"/>
-    <Parameter name="base.url"                    value="http://localhost:8080"/>
+    <!-- LAN URL reachable by enrolling phones (not localhost). Override if your PC IP changes. -->
+    <Parameter name="base.url"                    value="http://192.168.100.76:8080"/>
     <Parameter name="usage.scenario"              value="private"/>
     <Parameter name="secure.enrollment"           value="0"/>
     <Parameter name="hash.secret"                 value="changeme-C3z9vi54"/>

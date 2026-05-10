@@ -49,6 +49,15 @@ const config: Config = {
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
       },
+      fontSize: {
+        'compact-xs': ['0.75rem', { lineHeight: '1rem' }],
+        'compact-sm': ['0.8125rem', { lineHeight: '1.15rem' }],
+      },
+      spacing: {
+        'density-1': '0.375rem',
+        'density-2': '0.5rem',
+        'density-3': '0.75rem',
+      },
     },
   },
   plugins: [animate],

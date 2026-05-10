@@ -6,9 +6,9 @@ import { getDeviceSummary } from '@/features/dashboard/summaryService'
 
 function statCard(label: string, value: string) {
   return (
-    <div className="rounded-lg border bg-card p-4 shadow-sm">
+    <div className="rounded-lg border bg-card p-3 shadow-sm">
       <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">{label}</p>
-      <p className="mt-2 text-3xl font-semibold tabular-nums">{value}</p>
+      <p className="mt-1.5 text-2xl font-semibold tabular-nums">{value}</p>
     </div>
   )
 }
@@ -42,9 +42,9 @@ export function DashboardPage() {
   const lastMonth = summary?.devicesEnrolledLastMonth
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
+        <h1 className="text-xl font-semibold tracking-tight">Dashboard</h1>
         <p className="text-muted-foreground text-sm mt-1">
           Welcome to Headwind MDM — quick enrollment stats from <code className="rounded bg-muted px-1">GET /private/summary/devices</code>.
         </p>
@@ -54,7 +54,7 @@ export function DashboardPage() {
 
       {error ? (
         <div
-          className="flex flex-wrap items-center gap-3 rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm"
+          className="flex flex-wrap items-center gap-2 rounded-lg border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm"
           role="alert"
         >
           <AlertCircle className="h-4 w-4 shrink-0 text-destructive" />

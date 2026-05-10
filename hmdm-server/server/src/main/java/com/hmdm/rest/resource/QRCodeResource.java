@@ -55,6 +55,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.StreamingOutput;
 import java.io.*;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.security.MessageDigest;
@@ -192,7 +193,7 @@ public class QRCodeResource {
                     if (appVersion != null && !StringUtil.isEmpty(appVersion.getUrl())) {
                         // URL can be overridden to simplify enrollment in closed networks
                         String url = !StringUtil.isEmpty(configuration.getLauncherUrl()) ? configuration.getLauncherUrl() : appVersion.getUrl();
-                        final String apkUrl = url.replace(" ", "%20");
+                        final String apkUrl = rewriteLoopbackDownloadUrlForQr(url.replace(" ", "%20"));
                         final String sha256;
                         if (appVersion.getApkHash() == null) {
                             // Here we keep the original URL to be able to access the file locally
@@ -243,8 +244,9 @@ public class QRCodeResource {
                             }
                         }
 
+                        final String deviceAdminReceiverClass = resolveEventReceivingComponent(configuration);
                         StringBuffer sb = new StringBuffer("{\n" +
-                                "\"android.app.extra.PROVISIONING_DEVICE_ADMIN_COMPONENT_NAME\":\"" + appMain.getPkg() +"/" + configuration.getEventReceivingComponent() + "\",\n" +
+                                "\"android.app.extra.PROVISIONING_DEVICE_ADMIN_COMPONENT_NAME\":\"" + appMain.getPkg() + "/" + deviceAdminReceiverClass + "\",\n" +
                                 "\"android.app.extra.PROVISIONING_DEVICE_ADMIN_PACKAGE_DOWNLOAD_LOCATION\":" + JSONObject.quote(apkUrl) + ",\n" +
                                 "\"android.app.extra.PROVISIONING_DEVICE_ADMIN_PACKAGE_CHECKSUM\":\"" + sha256 + "\",\n" +
                                 wifiSsidEntry + wifiPasswordEntry + mobileEnrollmentEntry +
@@ -296,6 +298,54 @@ public class QRCodeResource {
             logger.error("Unexpected error while generating the QR-code image", e);
             return javax.ws.rs.core.Response.serverError().build();
         }
+    }
+
+    /**
+     * Device provisioning QR must point at a host reachable from the phone. URLs stored as
+     * {@code http://localhost:8080/...} are rewritten using {@link #baseUrlForQrCode} from {@code base.url}.
+     */
+    private String rewriteLoopbackDownloadUrlForQr(String apkUrlEncoded) {
+        if (apkUrlEncoded == null || apkUrlEncoded.isEmpty()) {
+            return apkUrlEncoded;
+        }
+        try {
+            URI apkUri = URI.create(apkUrlEncoded);
+            String host = apkUri.getHost();
+            if (host == null || !isLoopbackHost(host)) {
+                return apkUrlEncoded;
+            }
+            URI baseUri = URI.create(baseUrlForQrCode);
+            URI rebuilt = new URI(
+                    baseUri.getScheme(),
+                    null,
+                    baseUri.getHost(),
+                    baseUri.getPort(),
+                    apkUri.getPath(),
+                    apkUri.getQuery(),
+                    apkUri.getFragment());
+            return rebuilt.toASCIIString();
+        } catch (Exception e) {
+            logger.warn("Could not rewrite loopback APK URL for QR: {}", apkUrlEncoded, e);
+            return apkUrlEncoded;
+        }
+    }
+
+    private static boolean isLoopbackHost(String host) {
+        return "localhost".equalsIgnoreCase(host)
+                || "127.0.0.1".equals(host)
+                || "::1".equals(host);
+    }
+
+    /** Matches default in {@code hmdm_init.*.sql}; provisioning breaks if this is missing (QR shows {@code .../null}). */
+    private static String resolveEventReceivingComponent(Configuration configuration) {
+        String erc = configuration.getEventReceivingComponent();
+        if (erc != null) {
+            erc = erc.trim();
+            if (!erc.isEmpty()) {
+                return erc;
+            }
+        }
+        return "com.hmdm.launcher.AdminReceiver";
     }
 
     private String calculateApkHash(String apkUrl) throws NoSuchAlgorithmException, IOException {

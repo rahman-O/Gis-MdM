@@ -8,6 +8,7 @@ import type { Configuration, ConfigurationApplication } from '@/features/configu
 interface AppOption {
   id: number
   name: string
+  latestVersionId?: number | null
 }
 
 interface Props {
@@ -48,11 +49,21 @@ export function ConfigurationApplicationsTab({
     if (newAppId == null) return
     const option = applications.find((item) => item.id === newAppId)
     if (!option) return
+    const latestVersionId = Number(option.latestVersionId ?? 0)
     onChange({
       ...configuration,
       applications: [
         ...linked,
-        { id: option.id, name: option.name, action: 1, version: null },
+        {
+          id: option.id,
+          name: option.name,
+          action: 1,
+          version: null,
+          // Persist as a linked row; otherwise backend may store NULL version id and UI drops it on reload.
+          ...(latestVersionId > 0
+            ? { usedVersionId: latestVersionId, latestVersion: latestVersionId }
+            : {}),
+        },
       ],
     })
     setNewAppId(null)

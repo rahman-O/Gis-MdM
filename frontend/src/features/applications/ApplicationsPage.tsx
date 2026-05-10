@@ -136,10 +136,10 @@ export function ApplicationsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Applications</h1>
+          <h1 className="text-xl font-semibold tracking-tight">Applications</h1>
           <p className="text-sm text-muted-foreground">Manage application catalog and deployment behavior.</p>
         </div>
         <Button onClick={() => { setSelected(null); setFormOpen(true) }} disabled={!canEditApps}>
