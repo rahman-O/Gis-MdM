@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { AuthProvider } from '@/app/providers'
 import { App } from '@/app/App'
+import '@/i18n/config'
 import './index.css'
 
 const densityKey = 'ui-density'

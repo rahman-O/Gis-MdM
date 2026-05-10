@@ -1,4 +1,4 @@
-import { readStoredSuperAdmin, getStoredPermissions } from '@/features/auth/session'
+import { readStoredSuperAdmin, readStoredSingleCustomer, getStoredPermissions } from '@/features/auth/session'
 
 export function isSuperAdmin(): boolean {
   return readStoredSuperAdmin()
@@ -24,4 +24,9 @@ export function hasPermission(permission: string): boolean {
 /** Legacy permission name from Angular ({@code enroll_devices}); super-admin bypasses checks. */
 export function canEnrollDevicesViaQr(): boolean {
   return hasPermission('enroll_devices')
+}
+
+/** Mirrors Angular `TabController.canManageRoles` (single-customer deployment or super-admin). */
+export function canManageRoles(): boolean {
+  return readStoredSingleCustomer() || isSuperAdmin()
 }

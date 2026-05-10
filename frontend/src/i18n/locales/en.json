@@ -1,0 +1,11 @@
+{
+  "brand": {
+    "title": "Headwind MDM"
+  },
+  "login": {
+    "title": "Sign In",
+    "subtitle": "Enter your credentials to access Headwind MDM",
+    "recover": "Forgot password?",
+    "signup": "Create tenant"
+  }
+}

@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/shared/ui/sheet'
 import { cn } from '@/shared/utils/cn'
-import { hasPermission, isSuperAdmin } from '@/features/auth/permissions'
+import { canManageRoles, hasPermission, isSuperAdmin } from '@/features/auth/permissions'
 import { NAV_ITEMS } from './navItems'
 
 interface SidebarProps {
@@ -12,11 +12,14 @@ interface SidebarProps {
 function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <nav aria-label="Main navigation" className="flex flex-col gap-1 p-2.5">
-      {NAV_ITEMS.filter(
-        (item) =>
-          (!item.requiresSuperAdmin || isSuperAdmin()) &&
-          (!item.permission || hasPermission(item.permission))
-      ).map((item) => (
+      {NAV_ITEMS.filter((item) => {
+        if (item.requiresSuperAdmin && !isSuperAdmin()) return false
+        if (item.requiresCanManageRoles && !canManageRoles()) return false
+        if (item.anyPermission?.length) {
+          if (!item.anyPermission.some((p) => hasPermission(p))) return false
+        } else if (item.permission && !hasPermission(item.permission)) return false
+        return true
+      }).map((item) => (
         <NavLink
           key={item.path}
           to={item.path}

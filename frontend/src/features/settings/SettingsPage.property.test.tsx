@@ -34,6 +34,11 @@ vi.mock('@/features/settings/settingsService', async (importOriginal) => {
     ...actual,
     getSettings: vi.fn(),
     updateSettings: vi.fn(),
+    fetchRawSettings: vi.fn().mockResolvedValue({}),
+    saveDefaultDesign: vi.fn().mockResolvedValue(undefined),
+    listAssignableUserRoles: vi.fn().mockResolvedValue([]),
+    getUserRoleColumns: vi.fn().mockResolvedValue({}),
+    saveUserRolesCommon: vi.fn().mockResolvedValue(undefined),
   }
 })
 
@@ -71,7 +76,10 @@ describe('SettingsPage property tests', () => {
   it('Property 2: configurations populate select options', async () => {
     await fc.assert(
       fc.asyncProperty(
-        fc.array(arbitraryConfigurationOption(), { minLength: 1, maxLength: 6 }),
+        fc.array(arbitraryConfigurationOption(), { minLength: 1, maxLength: 6 }).filter((configs) => {
+          const ids = new Set(configs.map((c) => c.id))
+          return ids.size === configs.length
+        }),
         async (configs) => {
           cleanup()
           vi.mocked(settingsService.getSettings).mockReset().mockResolvedValue({
@@ -85,6 +93,7 @@ describe('SettingsPage property tests', () => {
             sendDeviceInfoExpiryDays: 7,
             unsecureEnrollment: false,
             deviceFastSearch: false,
+            idleLogout: null,
           })
           vi.mocked(apiClient.get).mockReset().mockImplementation((url: string) => {
             if (url === '/private/configurations/search') {
@@ -146,6 +155,7 @@ describe('SettingsPage property tests', () => {
           sendDeviceInfoExpiryDays: 1,
           unsecureEnrollment: false,
           deviceFastSearch: false,
+          idleLogout: null,
         })
         vi.mocked(settingsService.updateSettings).mockReset().mockResolvedValue({
           id: 1,
@@ -183,9 +193,24 @@ describe('SettingsPage property tests', () => {
           sendDeviceInfoExpiryDays: 7,
           unsecureEnrollment: false,
           deviceFastSearch: false,
+          idleLogout: null,
         })
         vi.mocked(settingsService.updateSettings).mockReset().mockImplementation(() =>
-          shouldFail ? Promise.reject(new Error('x')) : Promise.resolve({ id: 1, customerName: 'Acme', createNewDevices: false, newDeviceConfigurationId: null, language: 'en', passwordLength: 8, passwordStrength: 0, sendDeviceInfoExpiryDays: 7, unsecureEnrollment: false, deviceFastSearch: false })
+          shouldFail
+            ? Promise.reject(new Error('x'))
+            : Promise.resolve({
+                id: 1,
+                customerName: 'Acme',
+                createNewDevices: false,
+                newDeviceConfigurationId: null,
+                language: 'en',
+                passwordLength: 8,
+                passwordStrength: 0,
+                sendDeviceInfoExpiryDays: 7,
+                unsecureEnrollment: false,
+                deviceFastSearch: false,
+                idleLogout: null,
+              })
         )
         vi.mocked(apiClient.get).mockReset().mockResolvedValue(ok([]))
 
@@ -219,6 +244,7 @@ describe('SettingsPage property tests', () => {
             sendDeviceInfoExpiryDays: 7,
             unsecureEnrollment: false,
             deviceFastSearch: false,
+            idleLogout: null,
           })
           vi.mocked(settingsService.updateSettings).mockReset()
           vi.mocked(apiClient.get).mockReset().mockResolvedValue(ok([]))
@@ -270,6 +296,11 @@ async function applySettingsPayload(user: ReturnType<typeof userEvent.setup>, p:
 
   await user.clear(screen.getByLabelText(/send device info expiry/i))
   await user.type(screen.getByLabelText(/send device info expiry/i), String(p.sendDeviceInfoExpiryDays))
+
+  await user.clear(screen.getByLabelText(/idle logout/i))
+  if (p.idleLogout != null) {
+    await user.type(screen.getByLabelText(/idle logout/i), String(p.idleLogout))
+  }
 
   if (p.language !== 'en') {
     await user.click(screen.getAllByRole('combobox')[1])

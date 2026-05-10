@@ -9,6 +9,9 @@ import { Input } from '@/shared/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select'
 import { Skeleton } from '@/shared/ui/skeleton'
 import { Switch } from '@/shared/ui/switch'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs'
+import { SettingsDesignTab } from '@/features/settings/SettingsDesignTab'
+import { SettingsRoleColumnsTab } from '@/features/settings/SettingsRoleColumnsTab'
 import { useToast } from '@/shared/hooks/use-toast'
 import apiClient from '@/services/apiClient'
 import type { HmdmEnvelope } from '@/services/hmdmEnvelope'
@@ -38,6 +41,10 @@ const settingsSchema = z
     sendDeviceInfoExpiryDays: z.coerce.number().int().min(1, 'Must be at least 1'),
     unsecureEnrollment: z.boolean(),
     deviceFastSearch: z.boolean(),
+    idleLogout: z.preprocess(
+      (v) => (v === '' || v === undefined ? null : Number(v)),
+      z.union([z.null(), z.number().int().min(0)])
+    ),
   })
   .refine((v) => !v.createNewDevices || v.newDeviceConfigurationId != null, {
     message:
@@ -59,6 +66,7 @@ function toFormValues(s: Settings): FormValues {
     sendDeviceInfoExpiryDays: s.sendDeviceInfoExpiryDays ?? 0,
     unsecureEnrollment: s.unsecureEnrollment ?? false,
     deviceFastSearch: s.deviceFastSearch ?? false,
+    idleLogout: s.idleLogout == null || Number(s.idleLogout) === 0 ? null : Number(s.idleLogout),
   }
 }
 
@@ -73,6 +81,7 @@ function toPayload(v: FormValues): SettingsPayload {
     sendDeviceInfoExpiryDays: v.sendDeviceInfoExpiryDays,
     unsecureEnrollment: v.unsecureEnrollment,
     deviceFastSearch: v.deviceFastSearch,
+    idleLogout: v.idleLogout === 0 || v.idleLogout == null ? null : v.idleLogout,
   }
 }
 
@@ -104,6 +113,7 @@ export function SettingsPage() {
       sendDeviceInfoExpiryDays: 1,
       unsecureEnrollment: false,
       deviceFastSearch: false,
+      idleLogout: null,
     },
   })
 
@@ -211,183 +221,221 @@ export function SettingsPage() {
         <p className="text-sm text-muted-foreground">Instance-wide preferences and security defaults.</p>
       </div>
 
-      <Form {...form}>
-        <form onSubmit={(e) => void handleSave(e)} className="max-w-2xl space-y-5">
-          <FormField
-            control={form.control}
-            name="customerName"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Customer name</FormLabel>
-                <FormControl>
-                  <Input autoComplete="organization" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+      <Tabs defaultValue="general">
+        <TabsList className="flex h-auto flex-wrap gap-1">
+          <TabsTrigger value="general">General</TabsTrigger>
+          <TabsTrigger value="design">Design</TabsTrigger>
+          <TabsTrigger value="columns">Device columns</TabsTrigger>
+        </TabsList>
 
-          <FormField
-            control={form.control}
-            name="createNewDevices"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded border p-3">
-                <div>
-                  <FormLabel>Create new devices on first access</FormLabel>
-                </div>
-                <FormControl>
-                  <Switch checked={field.value} onCheckedChange={field.onChange} />
-                </FormControl>
-              </FormItem>
-            )}
-          />
+        <TabsContent value="general">
+          <Form {...form}>
+            <form onSubmit={(e) => void handleSave(e)} className="max-w-2xl space-y-5">
+              <FormField
+                control={form.control}
+                name="customerName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Customer name</FormLabel>
+                    <FormControl>
+                      <Input autoComplete="organization" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <FormField
-            control={form.control}
-            name="newDeviceConfigurationId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Default configuration for new devices</FormLabel>
-                <Select
-                  value={field.value == null ? NONE_CONFIG_VALUE : String(field.value)}
-                  onValueChange={(v) => field.onChange(v === NONE_CONFIG_VALUE ? null : Number(v))}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select configuration" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value={NONE_CONFIG_VALUE}>None</SelectItem>
-                    {configurations.map((c) => (
-                      <SelectItem key={c.id} value={String(c.id)}>
-                        {c.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+              <FormField
+                control={form.control}
+                name="createNewDevices"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded border p-3">
+                    <div>
+                      <FormLabel>Create new devices on first access</FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
 
-          <FormField
-            control={form.control}
-            name="language"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Language</FormLabel>
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Language" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {LANGUAGE_OPTIONS.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+              <FormField
+                control={form.control}
+                name="newDeviceConfigurationId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Default configuration for new devices</FormLabel>
+                    <Select
+                      value={field.value == null ? NONE_CONFIG_VALUE : String(field.value)}
+                      onValueChange={(v) => field.onChange(v === NONE_CONFIG_VALUE ? null : Number(v))}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select configuration" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value={NONE_CONFIG_VALUE}>None</SelectItem>
+                        {configurations.map((c) => (
+                          <SelectItem key={c.id} value={String(c.id)}>
+                            {c.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <FormField
-            control={form.control}
-            name="passwordLength"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Minimum password length</FormLabel>
-                <FormControl>
-                  <Input type="number" min={1} {...field} value={field.value ?? ''} onChange={field.onChange} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+              <FormField
+                control={form.control}
+                name="language"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Language</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Language" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {LANGUAGE_OPTIONS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <FormField
-            control={form.control}
-            name="passwordStrength"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Password strength</FormLabel>
-                <Select
-                  value={String(field.value)}
-                  onValueChange={(v) => field.onChange(Number(v))}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {PASSWORD_STRENGTH_OPTIONS.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+              <FormField
+                control={form.control}
+                name="passwordLength"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Minimum password length</FormLabel>
+                    <FormControl>
+                      <Input type="number" min={1} {...field} value={field.value ?? ''} onChange={field.onChange} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <FormField
-            control={form.control}
-            name="sendDeviceInfoExpiryDays"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Send device info expiry (days)</FormLabel>
-                <FormControl>
-                  <Input type="number" min={1} {...field} value={field.value ?? ''} onChange={field.onChange} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+              <FormField
+                control={form.control}
+                name="passwordStrength"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password strength</FormLabel>
+                    <Select value={String(field.value)} onValueChange={(v) => field.onChange(Number(v))}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {PASSWORD_STRENGTH_OPTIONS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <FormField
-            control={form.control}
-            name="unsecureEnrollment"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded border p-3">
-                <div>
-                  <FormLabel>Unsecure enrollment</FormLabel>
-                </div>
-                <FormControl>
-                  <Switch checked={field.value} onCheckedChange={field.onChange} />
-                </FormControl>
-              </FormItem>
-            )}
-          />
+              <FormField
+                control={form.control}
+                name="sendDeviceInfoExpiryDays"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Send device info expiry (days)</FormLabel>
+                    <FormControl>
+                      <Input type="number" min={1} {...field} value={field.value ?? ''} onChange={field.onChange} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <FormField
-            control={form.control}
-            name="deviceFastSearch"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded border p-3">
-                <div>
-                  <FormLabel>Device fast search</FormLabel>
-                </div>
-                <FormControl>
-                  <Switch checked={field.value} onCheckedChange={field.onChange} />
-                </FormControl>
-              </FormItem>
-            )}
-          />
+              <FormField
+                control={form.control}
+                name="idleLogout"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Idle logout timeout (seconds)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={0}
+                        value={field.value === null || field.value === undefined ? '' : field.value}
+                        onChange={(e) => {
+                          const v = e.target.value
+                          field.onChange(v === '' ? null : Number(v))
+                        }}
+                      />
+                    </FormControl>
+                    <p className="text-muted-foreground text-xs">Leave blank or zero to disable (matches Angular idle handling).</p>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <Button type="submit" disabled={submitting}>
-            {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            Save Settings
-          </Button>
-        </form>
-      </Form>
+              <FormField
+                control={form.control}
+                name="unsecureEnrollment"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded border p-3">
+                    <div>
+                      <FormLabel>Unsecure enrollment</FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="deviceFastSearch"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded border p-3">
+                    <div>
+                      <FormLabel>Device fast search</FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <Button type="submit" disabled={submitting}>
+                {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Save settings
+              </Button>
+            </form>
+          </Form>
+        </TabsContent>
+
+        <TabsContent value="design">
+          <SettingsDesignTab />
+        </TabsContent>
+
+        <TabsContent value="columns">
+          <SettingsRoleColumnsTab />
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

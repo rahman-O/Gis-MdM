@@ -34,12 +34,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(
     async (credentials: LoginRequest) => {
-      const response = await authService.login(credentials)
-      setToken(response.authToken)
-      setTokenState(response.authToken)
+      const outcome = await authService.login(credentials)
+      setToken(outcome.authToken)
+      setTokenState(outcome.authToken)
       setUsername(credentials.login)
       localStorage.setItem('hmdm_username', credentials.login)
-      navigate('/dashboard')
+      navigate(outcome.redirectPath)
     },
     [navigate]
   )

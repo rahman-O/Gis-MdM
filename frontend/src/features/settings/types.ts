@@ -10,6 +10,8 @@ export interface Settings {
   sendDeviceInfoExpiryDays: number
   unsecureEnrollment: boolean
   deviceFastSearch: boolean
+  /** Seconds before idle logout (`Settings.idleLogout`; `null`/0 disables in UI). */
+  idleLogout: number | null
 }
 
 /** PUT-style payload (no id) — all fields required for submit. */
@@ -23,6 +25,7 @@ export interface SettingsPayload {
   sendDeviceInfoExpiryDays: number
   unsecureEnrollment: boolean
   deviceFastSearch: boolean
+  idleLogout: number | null
 }
 
 export interface ConfigurationOption {

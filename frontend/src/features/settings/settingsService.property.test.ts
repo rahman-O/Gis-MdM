@@ -32,6 +32,7 @@ const sampleBase: Record<string, unknown> = {
   passwordLength: 8,
   passwordStrength: 0,
   useDefaultLanguage: true,
+  idleLogout: null,
 }
 
 const minimalPayload: SettingsPayload = {
@@ -44,6 +45,7 @@ const minimalPayload: SettingsPayload = {
   sendDeviceInfoExpiryDays: 7,
   unsecureEnrollment: false,
   deviceFastSearch: false,
+  idleLogout: null,
 }
 
 async function didReject(promise: Promise<unknown>): Promise<boolean> {

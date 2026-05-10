@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { clearToken } from '@/shared/utils/tokenStorage'
+import { clearToken, getToken } from '@/shared/utils/tokenStorage'
 
 const apiClient = axios.create({
   baseURL: '/rest',
@@ -27,7 +27,12 @@ apiClient.interceptors.response.use(
     const status = error.response?.status
     const url: string = error.config?.url ?? ''
     const isPrivate = typeof url === 'string' && url.includes('/private/')
-    if (status === 401 || (status === 403 && isPrivate)) {
+    const tokenPresent = !!getToken()
+    if (status === 401 && (isPrivate || tokenPresent)) {
+      clearToken()
+      window.location.href = '/login'
+    }
+    if (status === 403 && isPrivate) {
       clearToken()
       window.location.href = '/login'
     }

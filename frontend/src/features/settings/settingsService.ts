@@ -35,6 +35,10 @@ export function normalizeSettings(raw: Record<string, unknown>): Settings {
         : Number(raw.sendDeviceInfoExpiryDays),
     unsecureEnrollment: Boolean(raw.unsecureEnrollment ?? false),
     deviceFastSearch: Boolean(raw.deviceFastSearch ?? false),
+    idleLogout:
+      raw.idleLogout === null || raw.idleLogout === undefined
+        ? null
+        : Math.max(0, Math.trunc(Number(raw.idleLogout))),
   }
 }
 
@@ -69,6 +73,7 @@ export async function updateSettings(data: SettingsPayload): Promise<Settings> {
     sendDeviceInfoExpiryDays: data.sendDeviceInfoExpiryDays,
     unsecureEnrollment: data.unsecureEnrollment,
     deviceFastSearch: data.deviceFastSearch,
+    idleLogout: data.idleLogout == null || data.idleLogout === 0 ? null : data.idleLogout,
   }
   const miscRes = await apiClient.post<HmdmEnvelope<unknown>>('/private/settings/misc', miscBody)
   assertHmdmOk(miscRes.data, 'Failed to save settings.')
@@ -86,4 +91,39 @@ export async function updateSettings(data: SettingsPayload): Promise<Settings> {
   assertHmdmOk(langRes.data, 'Failed to save language settings.')
 
   return getSettings()
+}
+
+export async function fetchRawSettings(): Promise<Record<string, unknown>> {
+  const response = await apiClient.get<HmdmEnvelope<Record<string, unknown>>>('/private/settings')
+  const data = unwrap(response, 'Failed to load settings.')
+  return data && typeof data === 'object' ? data : {}
+}
+
+export async function saveDefaultDesign(body: Record<string, unknown>): Promise<void> {
+  const response = await apiClient.post<HmdmEnvelope<unknown>>('/private/settings/design', body)
+  assertHmdmOk(response.data, 'Failed to save design settings.')
+}
+
+export interface UserRoleListRow {
+  id: number
+  name?: string | null
+}
+
+export async function listAssignableUserRoles(): Promise<UserRoleListRow[]> {
+  const response = await apiClient.get<HmdmEnvelope<UserRoleListRow[]>>('/private/users/roles')
+  const data = unwrap(response, 'Failed to load user roles.')
+  return Array.isArray(data) ? data.filter((r) => r?.id != null) : []
+}
+
+export async function getUserRoleColumns(roleId: number): Promise<Record<string, unknown>> {
+  const response = await apiClient.get<HmdmEnvelope<Record<string, unknown>>>(
+    `/private/settings/userRole/${roleId}`
+  )
+  const data = unwrap(response, 'Failed to load role preferences.')
+  return data && typeof data === 'object' ? data : {}
+}
+
+export async function saveUserRolesCommon(rows: Record<string, unknown>[]): Promise<void> {
+  const response = await apiClient.post<HmdmEnvelope<unknown>>('/private/settings/userRoles/common', rows)
+  assertHmdmOk(response.data, 'Failed to save role column settings.')
 }

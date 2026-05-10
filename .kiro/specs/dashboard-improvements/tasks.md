@@ -14,13 +14,13 @@ Replace the placeholder `DashboardPage` with a functional overview page showing 
 
 - [ ] 2. Implement dashboardService
   - Create `src/features/dashboard/dashboardService.ts`
-  - `getSummary(): Promise<SummaryStats>` — GET `/rest/private/summary`, unwrap via `unwrapHmdmData`
-  - `getRecentDevices(): Promise<RecentDeviceRow[]>` — POST `/rest/private/devices/search` with `{ pageNum: 1, pageSize: 5 }`, map items to `RecentDeviceRow[]`
+  - `getSummaryDevices(): Promise<DeviceSummaryPayload>` — GET `/rest/private/summary/devices` (not `/private/summary`; device stats live on the devices-specific endpoint), unwrap via `unwrapHmdmData`
+  - `getRecentDevices(): Promise<DeviceView[]>` — reuse `deviceService.getDevices()` with `{ pageNum: 1, pageSize: 5, sortBy: LAST_UPDATE, sortDir: desc }`
   - Re-throw on non-OK envelope status or network error
   - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
 
 - [ ]* 2.1 Write unit tests for dashboardService
-  - Mock `apiClient`; assert `getSummary` sends GET to `/rest/private/summary`
+  - Mock `apiClient`; assert `getSummaryDevices` sends GET to `/private/summary/devices` (via `dashboardService.test.ts`)
   - Assert `getRecentDevices` sends POST to `/rest/private/devices/search` with `pageSize: 5`
   - Assert both functions throw when envelope `status !== "OK"`
   - _Requirements: 5.1, 5.2, 5.4_

@@ -1,7 +1,11 @@
 import JSEncrypt from 'jsencrypt'
 import md5 from 'js-md5'
 
-const md5Hash = md5 as unknown as (value: string) => string
+export const md5Hash = md5 as unknown as (value: string) => string
+
+export function md5UpperHex(value: string): string {
+  return md5Hash(value).toUpperCase()
+}
 
 function pkixBase64ToPem(base64: string): string {
   const lines = base64.match(/.{1,64}/g) ?? [base64]
@@ -26,5 +30,5 @@ export function encodeLoginPassword(
     }
     return encrypted
   }
-  return md5Hash(rawPassword).toUpperCase()
+  return md5UpperHex(rawPassword)
 }

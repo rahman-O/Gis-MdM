@@ -26,6 +26,7 @@ export const arbitrarySettings = (): fc.Arbitrary<Settings> =>
     sendDeviceInfoExpiryDays: fc.integer({ min: 1, max: 3650 }),
     unsecureEnrollment: fc.boolean(),
     deviceFastSearch: fc.boolean(),
+    idleLogout: fc.oneof(fc.constant(null), fc.integer({ min: 1, max: 86400 })),
   })
 
 export const arbitrarySettingsPayload = (): fc.Arbitrary<SettingsPayload> =>
@@ -39,6 +40,7 @@ export const arbitrarySettingsPayload = (): fc.Arbitrary<SettingsPayload> =>
     sendDeviceInfoExpiryDays: fc.integer({ min: 1, max: 3650 }),
     unsecureEnrollment: fc.boolean(),
     deviceFastSearch: fc.boolean(),
+    idleLogout: fc.oneof(fc.constant(null), fc.integer({ min: 1, max: 86400 })),
   })
 
 /** Raw-like settings with nulls coerced by `normalizeSettings` (simulates API). */
@@ -54,6 +56,7 @@ export const arbitrarySettingsWithNulls = (): fc.Arbitrary<Record<string, unknow
     sendDeviceInfoExpiryDays: fc.constant(null),
     unsecureEnrollment: fc.constant(null),
     deviceFastSearch: fc.constant(null),
+    idleLogout: fc.constant(null),
   })
 
 export const arbitraryInvalidCustomerName = (): fc.Arbitrary<string> =>

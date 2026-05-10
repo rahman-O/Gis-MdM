@@ -1,12 +1,16 @@
 import { Menu } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/shared/ui/button'
 import { useAuth } from '@/shared/hooks/useAuth'
+import { setUiLanguage } from '@/i18n/config'
 
 interface HeaderProps {
   onMenuClick: () => void
 }
 
 export function Header({ onMenuClick }: HeaderProps) {
+  const { t } = useTranslation()
   const { username, logout } = useAuth()
 
   return (
@@ -21,13 +25,22 @@ export function Header({ onMenuClick }: HeaderProps) {
         >
           <Menu className="h-4 w-4" />
         </Button>
-        <span className="font-semibold text-sm hidden md:block">Headwind MDM</span>
+        <span className="hidden text-sm font-semibold md:block">{t('brand.title')}</span>
       </div>
 
       <div className="flex items-center gap-2">
-        {username && (
-          <span className="text-sm text-muted-foreground">{username}</span>
-        )}
+        <div className="hidden items-center gap-1 md:flex">
+          <Button variant="ghost" size="sm" type="button" onClick={() => setUiLanguage('en')}>
+            EN
+          </Button>
+          <Button variant="ghost" size="sm" type="button" onClick={() => setUiLanguage('ar')}>
+            AR
+          </Button>
+        </div>
+        <Button variant="link" size="sm" className="text-muted-foreground h-auto px-2 py-0" asChild>
+          <Link to="/profile">Profile</Link>
+        </Button>
+        {username && <span className="text-muted-foreground hidden text-sm sm:inline">{username}</span>}
         <Button variant="outline" size="sm" onClick={logout} aria-label="Sign out">
           Sign Out
         </Button>

@@ -1,14 +1,12 @@
 import { encodeLoginPassword } from '@/features/auth/loginPasswordEncode'
-import type { LoginRequest, LoginResponse, LoginUserPayload } from '@/features/auth/types'
+import type { AuthLandingOptions, LoginOutcome, LoginRequest, LoginUserPayload } from '@/features/auth/types'
 import { applySessionFromUserPayload, type SessionUserPayload } from '@/features/auth/session'
 import type { HmdmEnvelope } from '@/services/hmdmEnvelope'
 import { unwrapHmdmData } from '@/services/hmdmEnvelope'
 import axios from 'axios'
 import apiClient from './apiClient'
 
-interface AuthOptionsPayload {
-  publicKey?: string | null
-}
+interface AuthOptionsPayload extends AuthLandingOptions {}
 
 /**
  * Legacy Angular calls GET `/rest/public/auth/options`. Some proxies or older WARs may return 404;
@@ -20,15 +18,25 @@ async function fetchAuthOptions(): Promise<AuthOptionsPayload> {
     return unwrapHmdmData(response.data, 'Failed to load login options.')
   } catch (err: unknown) {
     if (axios.isAxiosError(err) && err.response?.status === 404) {
-      return { publicKey: null }
+      return { publicKey: null, signup: false, recover: false }
     }
     throw err
+  }
+}
+
+export async function getAuthLandingOptions(): Promise<AuthLandingOptions> {
+  const o = await fetchAuthOptions()
+  return {
+    signup: Boolean(o.signup),
+    recover: Boolean(o.recover),
+    publicKey: o.publicKey,
   }
 }
 
 function toSessionPayload(login: LoginUserPayload): SessionUserPayload {
   return {
     superAdmin: login.superAdmin,
+    singleCustomer: login.singleCustomer,
     userRole: login.userRole ?? undefined,
   }
 }
@@ -37,11 +45,22 @@ function toSessionPayload(login: LoginUserPayload): SessionUserPayload {
 function toSessionPayloadFromCurrentUser(body: LoginUserPayload): SessionUserPayload {
   return {
     superAdmin: body.superAdmin,
+    singleCustomer: body.singleCustomer,
     userRole: body.userRole ?? undefined,
   }
 }
 
-export async function login(credentials: LoginRequest): Promise<LoginResponse> {
+function redirectAfterLogin(user: LoginUserPayload): string {
+  if (user.passwordReset && user.passwordResetToken) {
+    return `/password-reset/${encodeURIComponent(user.passwordResetToken)}`
+  }
+  if (user.twoFactor === true && user.twoFactorAccepted !== true) {
+    return '/twofactor'
+  }
+  return '/dashboard'
+}
+
+export async function login(credentials: LoginRequest): Promise<LoginOutcome> {
   const options = await fetchAuthOptions()
   const encodedPassword = encodeLoginPassword(credentials.password, options.publicKey)
   const response = await apiClient.post<HmdmEnvelope<LoginUserPayload>>('/public/auth/login', {
@@ -54,7 +73,7 @@ export async function login(credentials: LoginRequest): Promise<LoginResponse> {
     throw new Error('Login failed.')
   }
   applySessionFromUserPayload(toSessionPayload(data), token)
-  return { authToken: token }
+  return { authToken: token, redirectPath: redirectAfterLogin(data) }
 }
 
 /**
