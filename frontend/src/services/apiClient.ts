@@ -17,6 +17,18 @@ apiClient.interceptors.request.use((config) => {
   } else if (config.headers && !('Content-Type' in config.headers) && !('content-type' in config.headers)) {
     ;(config.headers as Record<string, unknown>)['Content-Type'] = 'application/json'
   }
+  // Attach Authorization header when token is present
+  try {
+    const token = getToken()
+    if (token && config.headers) {
+      // Do not overwrite existing Authorization header if set explicitly
+      if (!('Authorization' in config.headers) && !('authorization' in config.headers)) {
+        ;(config.headers as Record<string, unknown>)['Authorization'] = `Bearer ${token}`
+      }
+    }
+  } catch {
+    // ignore storage errors
+  }
   return config
 })
 

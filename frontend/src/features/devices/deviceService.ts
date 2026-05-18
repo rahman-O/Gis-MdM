@@ -80,7 +80,7 @@ export async function getGroups(): Promise<LookupItem[]> {
 }
 
 export async function getConfigurations(): Promise<ConfigurationOption[]> {
-  const response = await apiClient.get<HmdmEnvelope<ConfigurationOption[]>>('/private/configurations/search')
+  const response = await apiClient.get<HmdmEnvelope<ConfigurationOption[]>>('/private/configurations/list')
   return unwrapEnvelope(response, 'Failed to load configurations.')
 }
 

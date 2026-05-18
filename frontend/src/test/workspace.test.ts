@@ -36,7 +36,7 @@ describe('Workspace structure', () => {
 })
 
 describe('API client configuration', () => {
-  it('apiClient baseURL is /rest (proxied to http://localhost:8080/rest via Vite)', async () => {
+  it('apiClient baseURL is /rest (proxied via Vite to backend-go by default)', async () => {
     const { default: apiClient } = await import('../services/apiClient')
     expect(apiClient.defaults.baseURL).toBe('/rest')
   })

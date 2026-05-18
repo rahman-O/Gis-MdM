@@ -125,10 +125,15 @@ export function DevicesPage() {
   }
 
   useEffect(() => {
-    void Promise.all([deviceService.getGroups(), deviceService.getConfigurations()]).then(([g, c]) => {
-      setGroups(g)
-      setConfigurations(c)
+    let cancelled = false
+    void Promise.allSettled([deviceService.getGroups(), deviceService.getConfigurations()]).then(([groupsResult, configurationsResult]) => {
+      if (cancelled) return
+      if (groupsResult.status === 'fulfilled') setGroups(groupsResult.value)
+      if (configurationsResult.status === 'fulfilled') setConfigurations(configurationsResult.value)
     })
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   useEffect(() => {

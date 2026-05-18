@@ -6,22 +6,23 @@ import path from 'path'
 /**
  * Headwind MDM API proxy
  * ----------------------
+ * - backend-go (Docker/local) → `http://localhost:8081/rest/...` (default)
  * - ROOT deployment → `http://localhost:8080/rest/...` — set `VITE_BACKEND_CONTEXT=` (empty) in `.env.development`.
  * - `launcher.war` only → `/launcher/rest/...` — set `VITE_BACKEND_CONTEXT=/launcher`.
  * - `mvn tomcat7:run` in `backend/server` → often port **9090**, ROOT — set `TOMCAT_PORT=9090` and `VITE_BACKEND_CONTEXT=`.
  *
- * Env: `TOMCAT_PORT`, `VITE_BACKEND_CONTEXT` (empty = no URL prefix before `/rest`).
+ * Env: `VITE_BACKEND_ORIGIN`, `TOMCAT_PORT`, `VITE_BACKEND_CONTEXT`.
  */
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
-  const tomcatPort = env.TOMCAT_PORT || '8080'
+  const backendOrigin = env.VITE_BACKEND_ORIGIN || (env.TOMCAT_PORT ? `http://localhost:${env.TOMCAT_PORT}` : 'http://localhost:8081')
   const rawCtx = env.VITE_BACKEND_CONTEXT
   const backendContext =
     rawCtx === undefined ? '' : rawCtx.replace(/\/$/, '')
 
   const restProxy = {
     '/rest': {
-      target: `http://localhost:${tomcatPort}`,
+      target: backendOrigin,
       changeOrigin: true,
       secure: false,
       cookieDomainRewrite: '',
