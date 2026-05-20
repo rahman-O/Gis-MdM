@@ -1,0 +1,101 @@
+basePath: /rest
+definitions:
+  github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope:
+    properties:
+      data: {}
+      message:
+        type: string
+      status:
+        type: string
+    type: object
+  internal_modules_auth_adapter_http.JWTResultDTO:
+    properties:
+      id_token:
+        type: string
+    type: object
+  internal_modules_auth_adapter_http.LoginRequest:
+    properties:
+      login:
+        example: admin
+        type: string
+      password:
+        example: admin
+        type: string
+    type: object
+info:
+  contact: {}
+  description: Gradual Go migration of Headwind MDM REST API.
+  title: Headwind MDM API (Go)
+  version: "1.0"
+paths:
+  /public/auth/login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 'Credentials (password: raw or MD5 uppercase hex)'
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_auth_adapter_http.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      summary: Session login
+      tags:
+      - Authentication
+  /public/auth/logout:
+    post:
+      responses:
+        "204":
+          description: No Content
+      summary: Logout
+      tags:
+      - Authentication
+  /public/auth/options:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      summary: Login options
+      tags:
+      - Authentication
+  /public/jwt/login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 'Credentials (password: raw or MD5 uppercase hex)'
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_auth_adapter_http.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          headers:
+            Authorization:
+              description: Bearer token
+              type: string
+          schema:
+            $ref: '#/definitions/internal_modules_auth_adapter_http.JWTResultDTO'
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+      summary: JWT login
+      tags:
+      - Authentication
+swagger: "2.0"

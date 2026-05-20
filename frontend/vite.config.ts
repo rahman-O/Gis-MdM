@@ -15,7 +15,7 @@ import path from 'path'
  */
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
-  const backendOrigin = env.VITE_BACKEND_ORIGIN || (env.TOMCAT_PORT ? `http://localhost:${env.TOMCAT_PORT}` : 'http://localhost:8081')
+  const backendOrigin = env.VITE_BACKEND_ORIGIN || (env.TOMCAT_PORT ? `http://localhost:${env.TOMCAT_PORT}` : 'http://localhost:8080')
   const rawCtx = env.VITE_BACKEND_CONTEXT
   const backendContext =
     rawCtx === undefined ? '' : rawCtx.replace(/\/$/, '')

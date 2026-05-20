@@ -1,0 +1,11 @@
+DROP TABLE IF EXISTS userconfigurationaccess;
+DROP TABLE IF EXISTS userdevicegroupsaccess;
+DROP TABLE IF EXISTS settings;
+DROP TABLE IF EXISTS configurations;
+DROP TABLE IF EXISTS groups;
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS userrolepermissions;
+DROP TABLE IF EXISTS userroles;
+DROP TABLE IF EXISTS permissions;
+DROP TABLE IF EXISTS customers;
+DROP TABLE IF EXISTS schema_migrations;
