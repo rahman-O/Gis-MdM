@@ -19,8 +19,9 @@ type RouteGroups struct {
 	Engine     *gin.Engine
 	Public     *gin.RouterGroup
 	Private    *gin.RouterGroup
-	Plugins    *gin.RouterGroup
-	PluginMain *gin.RouterGroup
+	Plugins           *gin.RouterGroup
+	PluginMain        *gin.RouterGroup
+	PluginMainPrivate *gin.RouterGroup
 }
 
 // Dependencies shared across modules during registration.

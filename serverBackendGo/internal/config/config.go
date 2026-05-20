@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"strconv"
+	"strings"
 )
 
 // Config holds environment-driven settings.
@@ -56,6 +57,14 @@ type Config struct {
 	RebrandingMobileName string
 
 	UpdateManifestURL string
+
+	EnabledPlugins              []string
+	ModulePluginsEnabled        bool
+	ModulePluginsPlatformEnabled bool
+	ModulePluginsAuditEnabled   bool
+	ModulePluginsMessagingEnabled bool
+	ModulePluginsDeviceinfoEnabled bool
+	ModulePluginsDevicelogEnabled bool
 }
 
 // Load reads configuration from environment variables.
@@ -109,7 +118,38 @@ func Load() Config {
 		RebrandingMobileName: getenv("REBRANDING_MOBILE_NAME", ""),
 
 		UpdateManifestURL: getenv("UPDATE_MANIFEST_URL", "https://h-mdm.com/files/hmdm_update_manifest.txt"),
+
+		EnabledPlugins:               parseEnabledPlugins(getenv("ENABLED_PLUGINS", "audit,push,messaging,deviceinfo,devicelog")),
+		ModulePluginsEnabled:         getenvBool("MODULE_PLUGINS_ENABLED", true),
+		ModulePluginsPlatformEnabled: getenvBool("MODULE_PLUGINS_PLATFORM_ENABLED", true),
+		ModulePluginsAuditEnabled:    getenvBool("MODULE_PLUGINS_AUDIT_ENABLED", true),
+		ModulePluginsMessagingEnabled: getenvBool("MODULE_PLUGINS_MESSAGING_ENABLED", true),
+		ModulePluginsDeviceinfoEnabled: getenvBool("MODULE_PLUGINS_DEVICEINFO_ENABLED", true),
+		ModulePluginsDevicelogEnabled:  getenvBool("MODULE_PLUGINS_DEVICELOG_ENABLED", true),
 	}
+}
+
+func parseEnabledPlugins(raw string) []string {
+	parts := strings.Split(raw, ",")
+	out := make([]string, 0, len(parts))
+	for _, p := range parts {
+		p = strings.TrimSpace(strings.ToLower(p))
+		if p != "" {
+			out = append(out, p)
+		}
+	}
+	return out
+}
+
+// IsPluginEnabled returns true if identifier is in ENABLED_PLUGINS list.
+func (c Config) IsPluginEnabled(identifier string) bool {
+	id := strings.ToLower(strings.TrimSpace(identifier))
+	for _, e := range c.EnabledPlugins {
+		if e == id {
+			return true
+		}
+	}
+	return false
 }
 
 func getenv(key, fallback string) string {

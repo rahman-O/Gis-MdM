@@ -11,6 +11,7 @@ func toModuleGroups(g httpx.RouteGroups) module.RouteGroups {
 		Public:     g.Public,
 		Private:    g.Private,
 		Plugins:    g.Plugins,
-		PluginMain: g.PluginMain,
+		PluginMain:        g.PluginMain,
+		PluginMainPrivate: g.PluginMainPrivate,
 	}
 }

@@ -26,6 +26,18 @@ func TestPrincipal_IsOrgAdmin(t *testing.T) {
 	}
 }
 
+func TestPrincipal_Phase8PluginPermissions(t *testing.T) {
+	p := &Principal{Permissions: []string{
+		PermPluginsCustomerAccess, PermPluginAuditAccess, PermPluginMessagingSend,
+	}}
+	if !p.CanManagePluginsCustomer() || !p.CanPluginAuditAccess() || !p.CanPluginMessagingSend() {
+		t.Fatal("expected phase 8 plugin permissions")
+	}
+	if p.CanPluginDevicelogAccess() {
+		t.Fatal("devicelog not granted")
+	}
+}
+
 func TestPrincipal_CanEditDevices(t *testing.T) {
 	if !(&Principal{SuperAdmin: true}).CanEditDevices() {
 		t.Fatal("super admin can edit devices")

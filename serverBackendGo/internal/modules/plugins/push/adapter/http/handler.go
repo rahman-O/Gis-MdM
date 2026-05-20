@@ -24,6 +24,9 @@ func (h *Handler) Register(g *gin.RouterGroup) {
 	g.POST("/private/send", h.Send)
 	g.DELETE("/private/:id", h.Delete)
 	g.GET("/private/purge/:days", h.Purge)
+	g.POST("/private/searchTasks", h.SearchTasks)
+	g.PUT("/private/task", h.SaveTask)
+	g.DELETE("/private/task/:id", h.DeleteTask)
 }
 
 func (h *Handler) Search(c *gin.Context) {
@@ -99,4 +102,60 @@ func (h *Handler) Purge(c *gin.Context) {
 		return
 	}
 	response.OK(c, n)
+}
+
+func (h *Handler) SearchTasks(c *gin.Context) {
+	p, ok := platformauth.PrincipalFromContext(c)
+	if !ok {
+		response.PermissionDenied(c)
+		return
+	}
+	var f domain.PushScheduleFilter
+	_ = c.ShouldBindJSON(&f)
+	out, err := h.svc.SearchTasks(c.Request.Context(), p, f)
+	if err != nil {
+		response.ErrorEnvelope(c, "error.internal.server")
+		return
+	}
+	response.OK(c, out)
+}
+
+func (h *Handler) SaveTask(c *gin.Context) {
+	p, ok := platformauth.PrincipalFromContext(c)
+	if !ok {
+		response.PermissionDenied(c)
+		return
+	}
+	var task domain.PluginPushSchedule
+	if err := c.ShouldBindJSON(&task); err != nil {
+		response.ErrorEnvelope(c, "error.params.missing")
+		return
+	}
+	if err := h.svc.SaveTask(c.Request.Context(), p, task); err != nil {
+		if errors.Is(err, pluginapp.ErrPermissionDenied) {
+			response.PermissionDenied(c)
+			return
+		}
+		response.ErrorEnvelope(c, "error.internal.server")
+		return
+	}
+	response.OK(c, nil)
+}
+
+func (h *Handler) DeleteTask(c *gin.Context) {
+	p, ok := platformauth.PrincipalFromContext(c)
+	if !ok {
+		response.PermissionDenied(c)
+		return
+	}
+	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err := h.svc.DeleteTask(c.Request.Context(), p, id); err != nil {
+		if errors.Is(err, pluginapp.ErrPermissionDenied) {
+			response.PermissionDenied(c)
+			return
+		}
+		response.ErrorEnvelope(c, "error.internal.server")
+		return
+	}
+	response.OK(c, nil)
 }

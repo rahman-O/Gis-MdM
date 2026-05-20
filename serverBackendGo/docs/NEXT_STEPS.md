@@ -98,11 +98,18 @@ Migration: `000009_agent_push_notifications`.
 
 ---
 
-## Phase 8 (لاحقاً)
+## Phase 8 — plugins (منجز)
 
-| Phase | وحدات |
-|-------|--------|
-| **8** | `plugins/*` (generic platform) |
+| الوحدة | REST | parity |
+|--------|------|--------|
+| `plugins/platform` | `/rest/plugin/main` | [`parity/plugins-platform.md`](parity/plugins-platform.md) |
+| `plugins/audit` | `/rest/plugins/audit` | [`parity/plugins-audit.md`](parity/plugins-audit.md) |
+| `plugins/messaging` | `/rest/plugins/messaging` | [`parity/plugins-messaging.md`](parity/plugins-messaging.md) |
+| `plugins/deviceinfo` | `/rest/plugins/deviceinfo` | [`parity/plugins-deviceinfo.md`](parity/plugins-deviceinfo.md) |
+| `plugins/devicelog` | `/rest/plugins/devicelog` | [`parity/plugins-devicelog.md`](parity/plugins-devicelog.md) |
+| `plugins/push` (schedule) | `/rest/plugins/push/private/task*` | [`parity/push.md`](parity/push.md) |
+
+Migration: `000010_plugins_core`.
 
 ---
 

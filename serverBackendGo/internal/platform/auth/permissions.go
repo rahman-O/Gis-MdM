@@ -17,6 +17,12 @@ const (
 	PermPushAPI            = "push_api"
 	PermPluginPushSend     = "plugin_push_send"
 	PermPluginPushDelete   = "plugin_push_delete"
+	PermPluginsCustomerAccess = "plugins_customer_access_management"
+	PermPluginAuditAccess     = "plugin_audit_access"
+	PermPluginMessagingSend   = "plugin_messaging_send"
+	PermPluginMessagingDelete = "plugin_messaging_delete"
+	PermPluginDeviceinfoAccess = "plugin_deviceinfo_access"
+	PermPluginDevicelogAccess  = "plugin_devicelog_access"
 )
 
 // HasPermission returns true if principal is super admin or has the named permission.
@@ -112,4 +118,28 @@ func (p *Principal) CanPluginPushSend() bool {
 // CanPluginPushDelete matches PushResource delete/purge.
 func (p *Principal) CanPluginPushDelete() bool {
 	return p.HasPermission(PermPluginPushDelete)
+}
+
+func (p *Principal) CanManagePluginsCustomer() bool {
+	return p.HasPermission(PermPluginsCustomerAccess)
+}
+
+func (p *Principal) CanPluginAuditAccess() bool {
+	return p.HasPermission(PermPluginAuditAccess)
+}
+
+func (p *Principal) CanPluginMessagingSend() bool {
+	return p.HasPermission(PermPluginMessagingSend)
+}
+
+func (p *Principal) CanPluginMessagingDelete() bool {
+	return p.HasPermission(PermPluginMessagingDelete)
+}
+
+func (p *Principal) CanPluginDeviceinfoAccess() bool {
+	return p.HasPermission(PermPluginDeviceinfoAccess)
+}
+
+func (p *Principal) CanPluginDevicelogAccess() bool {
+	return p.HasPermission(PermPluginDevicelogAccess)
 }

@@ -26,9 +26,9 @@ Gradual migration from [`backend/`](../../backend/) (Java/JAX-RS) to [`serverBac
 | **5** — applications, configurations, configfiles | **done** |
 | **6** — files, icons, publicapi | **done** |
 | **7** — sync, push, notifications, updates, qrcode | **done** |
-| **8** | **pending** |
+| **8** — plugins platform, audit, messaging, deviceinfo, devicelog | **done** |
 
-**Next:** Phase 8 — `plugins/*` ([`NEXT_STEPS.md`](NEXT_STEPS.md))
+**Next:** Post-migration hardening and frontend plugin UIs beyond settings ([`NEXT_STEPS.md`](NEXT_STEPS.md))
 
 ---
 
@@ -44,7 +44,7 @@ Gradual migration from [`backend/`](../../backend/) (Java/JAX-RS) to [`serverBac
 | **5** | **done** | `applications`, `configurations`, `configfiles` | `ApplicationResource`, `ConfigurationResource`, `ConfigurationFileResource` | [applications](parity/applications.md), [configurations](parity/configurations.md), [configfiles](parity/configfiles.md) |
 | **6** | **done** | `files`, `icons`, `publicapi` | `FilesResource`, `IconResource`, `PublicResource` | [files](parity/files.md), [icons](parity/icons.md), [publicapi](parity/publicapi.md) |
 | **7** | **done** | `sync`, `push`, `notifications`, `updates`, `qrcode` | agent/sync/push | [sync](parity/sync.md), [notifications](parity/notifications.md), [push](parity/push.md), [updates](parity/updates.md), [qrcode](parity/qrcode.md) |
-| **8** | pending | `plugins/*` | `backend/plugins/*` | `/rest/plugins`, `/rest/plugin/main` |
+| **8** | **done** | `plugins/*` | `backend/plugins/*` | `/rest/plugins`, `/rest/plugin/main` — [plugins-platform](parity/plugins-platform.md), [plugins-audit](parity/plugins-audit.md), [plugins-messaging](parity/plugins-messaging.md), [plugins-deviceinfo](parity/plugins-deviceinfo.md), [plugins-devicelog](parity/plugins-devicelog.md), [push](parity/push.md) |
 
 ### Phase 1–1b detail (done)
 

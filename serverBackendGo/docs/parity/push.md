@@ -1,7 +1,7 @@
 # Parity: Push messaging
 
 **Java**: `PushApiResource`, `com.hmdm.plugins.push.rest.PushResource`  
-**Status**: Phase 7 — **Done** (API); **Partial**: plugin schedule cron
+**Status**: Phase 7–8 — **Done** (messages + schedule CRUD); **Partial**: schedule cron runner
 
 ## Private API (`/rest/private/push`)
 
@@ -19,6 +19,6 @@
 | POST | `/private/send` | Done |
 | DELETE | `/private/{id}` | Done |
 | GET | `/private/purge/{days}` | Done |
-| POST | `/private/searchTasks` | Partial — not implemented |
-| PUT | `/private/task` | Partial — not implemented |
-| DELETE | `/private/task/{id}` | Partial — not implemented |
+| POST | `/private/searchTasks` | Done (Phase 8) |
+| PUT | `/private/task` | Done — permission `plugin_push_delete` per Java |
+| DELETE | `/private/task/{id}` | Done |

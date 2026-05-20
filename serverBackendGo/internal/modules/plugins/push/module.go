@@ -21,8 +21,9 @@ func (m *Module) Register(groups module.RouteGroups, deps module.Dependencies) e
 		return fmt.Errorf("plugins/push module requires DATABASE_URL")
 	}
 	repo := pluginpostgres.NewMessageRepository(deps.DB)
+	sched := pluginpostgres.NewScheduleRepository(deps.DB)
 	queue := notifpostgres.NewQueueRepository(deps.DB)
-	svc := pluginapp.NewService(repo, queue)
+	svc := pluginapp.NewService(repo, sched, queue)
 	pluginhttp.NewHandler(svc).Register(groups.Plugins.Group("/push"))
 	deps.Log.Info("module registered", "module", m.Name())
 	return nil

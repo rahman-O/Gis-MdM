@@ -13,8 +13,9 @@ type RouteGroups struct {
 	Engine     *gin.Engine
 	Public     *gin.RouterGroup
 	Private    *gin.RouterGroup
-	Plugins    *gin.RouterGroup
-	PluginMain *gin.RouterGroup
+	Plugins           *gin.RouterGroup
+	PluginMain        *gin.RouterGroup
+	PluginMainPrivate *gin.RouterGroup
 }
 
 // AuthWiring holds JWT and user lookup for protected routes.
@@ -43,12 +44,17 @@ func BuildRouteGroups(engine *gin.Engine, cfg config.Config, wiring AuthWiring) 
 	plugins.Use(middleware.EnrichPrincipal(wiring.Enrich))
 
 	pluginMain := engine.Group("/rest/plugin/main")
+	pluginMainPrivate := pluginMain.Group("/private")
+	pluginMainPrivate.Use(jwtMW)
+	pluginMainPrivate.Use(middleware.RequireAuth())
+	pluginMainPrivate.Use(middleware.EnrichPrincipal(wiring.Enrich))
 
 	return RouteGroups{
-		Engine:     engine,
-		Public:     public,
-		Private:    private,
-		Plugins:    plugins,
-		PluginMain: pluginMain,
+		Engine:            engine,
+		Public:            public,
+		Private:           private,
+		Plugins:           plugins,
+		PluginMain:        pluginMain,
+		PluginMainPrivate: pluginMainPrivate,
 	}
 }
