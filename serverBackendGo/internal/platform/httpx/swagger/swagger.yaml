@@ -28,6 +28,397 @@ info:
   title: Headwind MDM API (Go)
   version: "1.0"
 paths:
+  /private/configurations/list:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      security:
+      - BearerAuth: []
+      summary: List configurations for tenant
+      tags:
+      - Configurations
+  /private/customers:
+    put:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      security:
+      - BearerAuth: []
+      summary: Create or update customer
+      tags:
+      - Customers
+  /private/customers/{id}:
+    delete:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      security:
+      - BearerAuth: []
+      summary: Delete customer
+      tags:
+      - Customers
+  /private/customers/{id}/edit:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      security:
+      - BearerAuth: []
+      summary: Get customer for edit
+      tags:
+      - Customers
+  /private/customers/impersonate/{id}:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      security:
+      - BearerAuth: []
+      summary: Impersonate customer org admin
+      tags:
+      - Customers
+  /private/customers/prefix/{prefix}/used:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      security:
+      - BearerAuth: []
+      summary: Check if device prefix is used
+      tags:
+      - Customers
+  /private/customers/search:
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      security:
+      - BearerAuth: []
+      summary: Search customers
+      tags:
+      - Customers
+  /private/devices:
+    put:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      security:
+      - BearerAuth: []
+      summary: Create or update device
+      tags:
+      - Devices
+  /private/devices/{id}:
+    delete:
+      parameters:
+      - description: Device ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      security:
+      - BearerAuth: []
+      summary: Delete device
+      tags:
+      - Devices
+  /private/devices/{id}/applicationSettings:
+    get:
+      parameters:
+      - description: Device ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      security:
+      - BearerAuth: []
+      summary: Get device application settings
+      tags:
+      - Devices
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Device ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      security:
+      - BearerAuth: []
+      summary: Save device application settings
+      tags:
+      - Devices
+  /private/devices/{id}/applicationSettings/notify:
+    post:
+      parameters:
+      - description: Device ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      security:
+      - BearerAuth: []
+      summary: Notify device of application settings change
+      tags:
+      - Devices
+  /private/devices/{id}/description:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Device ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      security:
+      - BearerAuth: []
+      summary: Update device description
+      tags:
+      - Devices
+  /private/devices/autocomplete:
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      security:
+      - BearerAuth: []
+      summary: Device number autocomplete
+      tags:
+      - Devices
+  /private/devices/deleteBulk:
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      security:
+      - BearerAuth: []
+      summary: Bulk delete devices
+      tags:
+      - Devices
+  /private/devices/groupBulk:
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      security:
+      - BearerAuth: []
+      summary: Bulk update device groups
+      tags:
+      - Devices
+  /private/devices/number/{number}:
+    get:
+      parameters:
+      - description: Device number
+        in: path
+        name: number
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      security:
+      - BearerAuth: []
+      summary: Get device by number
+      tags:
+      - Devices
+  /private/devices/search:
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      security:
+      - BearerAuth: []
+      summary: Search devices
+      tags:
+      - Devices
+  /private/groups:
+    put:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      security:
+      - BearerAuth: []
+      summary: Create or update device group
+      tags:
+      - Groups
+  /private/groups/{id}:
+    delete:
+      parameters:
+      - description: Group ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      security:
+      - BearerAuth: []
+      summary: Delete device group
+      tags:
+      - Groups
+  /private/groups/autocomplete:
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      security:
+      - BearerAuth: []
+      summary: Group autocomplete
+      tags:
+      - Groups
+  /private/groups/search:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      security:
+      - BearerAuth: []
+      summary: List device groups
+      tags:
+      - Groups
+  /private/groups/search/{value}:
+    get:
+      parameters:
+      - description: Filter
+        in: path
+        name: value
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      security:
+      - BearerAuth: []
+      summary: Search device groups by name
+      tags:
+      - Groups
   /private/hints/disable:
     post:
       produces:
@@ -147,6 +538,98 @@ paths:
       summary: List permissions
       tags:
       - Roles
+  /private/settings:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      security:
+      - BearerAuth: []
+      summary: Get tenant settings
+      tags:
+      - Settings
+  /private/settings/design:
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      security:
+      - BearerAuth: []
+      summary: Update design settings
+      tags:
+      - Settings
+  /private/settings/lang:
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      security:
+      - BearerAuth: []
+      summary: Update language settings
+      tags:
+      - Settings
+  /private/settings/misc:
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      security:
+      - BearerAuth: []
+      summary: Update misc settings
+      tags:
+      - Settings
+  /private/settings/userRole/{roleId}:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      security:
+      - BearerAuth: []
+      summary: Get user role settings
+      tags:
+      - Settings
+  /private/settings/userRoles/common:
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      security:
+      - BearerAuth: []
+      summary: Update common user role settings
+      tags:
+      - Settings
   /private/summary/devices:
     get:
       produces:
@@ -161,6 +644,62 @@ paths:
       summary: Device dashboard statistics
       tags:
       - Summary
+  /private/twofactor/qr/{userId}:
+    get:
+      produces:
+      - image/png
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+      security:
+      - BearerAuth: []
+      summary: Two-factor — QR code PNG
+      tags:
+      - TwoFactor
+  /private/twofactor/reset:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      security:
+      - BearerAuth: []
+      summary: Two-factor — reset secret
+      tags:
+      - TwoFactor
+  /private/twofactor/set:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      security:
+      - BearerAuth: []
+      summary: Two-factor — mark accepted
+      tags:
+      - TwoFactor
+  /private/twofactor/verify/{userId}/{code}:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      security:
+      - BearerAuth: []
+      summary: Two-factor — verify TOTP code
+      tags:
+      - TwoFactor
   /private/users:
     put:
       consumes:
@@ -338,6 +877,108 @@ paths:
       summary: JWT login
       tags:
       - Authentication
+  /public/passwordReset/canRecover:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      summary: Password reset — can recover (deprecated)
+      tags:
+      - PasswordReset
+  /public/passwordReset/recover/{username}:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      summary: Password reset — send recovery email
+      tags:
+      - PasswordReset
+  /public/passwordReset/reset:
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      summary: Password reset — set new password
+      tags:
+      - PasswordReset
+  /public/passwordReset/settings/{token}:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      summary: Password reset — settings for token
+      tags:
+      - PasswordReset
+  /public/signup/canSignup:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      summary: Signup — check if signup enabled (deprecated)
+      tags:
+      - Signup
+  /public/signup/complete:
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      summary: Signup — complete registration
+      tags:
+      - Signup
+  /public/signup/verifyEmail:
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      summary: Signup — send verification email
+      tags:
+      - Signup
+  /public/signup/verifyToken/{token}:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      summary: Signup — verify email token
+      tags:
+      - Signup
 securityDefinitions:
   BearerAuth:
     description: JWT from POST /public/jwt/login response header (e.g. Bearer eyJhbGciOiJIUzI1NiIs...)

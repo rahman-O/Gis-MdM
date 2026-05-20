@@ -7,7 +7,9 @@ import (
 const (
 	// OrgAdminRoleID matches role.orgadmin.id from Java context (default 2).
 	OrgAdminRoleID = 2
-	PermSettings   = "settings"
+	PermSettings       = "settings"
+	PermEditDevices    = "edit_devices"
+	PermEditDeviceDesc = "edit_device_desc"
 )
 
 // HasPermission returns true if principal is super admin or has the named permission.
@@ -58,4 +60,14 @@ func (p *Principal) CanManageRoles(singleCustomer bool) bool {
 		return p.SuperAdmin || p.IsOrgAdmin()
 	}
 	return p.SuperAdmin
+}
+
+// CanEditDevices matches DeviceResource mutation permission.
+func (p *Principal) CanEditDevices() bool {
+	return p.HasPermission(PermEditDevices)
+}
+
+// CanEditDeviceDescription matches description update permission.
+func (p *Principal) CanEditDeviceDescription() bool {
+	return p.HasPermission(PermEditDeviceDesc)
 }

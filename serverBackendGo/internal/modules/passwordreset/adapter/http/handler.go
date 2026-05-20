@@ -26,6 +26,12 @@ func Register(g *gin.RouterGroup, h *Handler) {
 	g.GET("/canRecover", h.CanRecover)
 }
 
+// GetSettings godoc
+// @Summary Password reset — settings for token
+// @Tags PasswordReset
+// @Produce json
+// @Success 200 {object} response.Envelope
+// @Router /public/passwordReset/settings/{token} [get]
 func (h *Handler) GetSettings(c *gin.Context) {
 	token := c.Param("token")
 	settings, err := h.svc.ResetSettingsByToken(c.Request.Context(), token)
@@ -40,6 +46,13 @@ func (h *Handler) GetSettings(c *gin.Context) {
 	response.OK(c, settings)
 }
 
+// Reset godoc
+// @Summary Password reset — set new password
+// @Tags PasswordReset
+// @Accept json
+// @Produce json
+// @Success 200 {object} response.Envelope
+// @Router /public/passwordReset/reset [post]
 func (h *Handler) Reset(c *gin.Context) {
 	var body struct {
 		PasswordResetToken string `json:"passwordResetToken"`
@@ -61,6 +74,12 @@ func (h *Handler) Reset(c *gin.Context) {
 	response.OK(c, view)
 }
 
+// Recover godoc
+// @Summary Password reset — send recovery email
+// @Tags PasswordReset
+// @Produce json
+// @Success 200 {object} response.Envelope
+// @Router /public/passwordReset/recover/{username} [get]
 func (h *Handler) Recover(c *gin.Context) {
 	username := c.Param("username")
 	if err := h.svc.Recover(c.Request.Context(), username); err != nil {
@@ -70,6 +89,12 @@ func (h *Handler) Recover(c *gin.Context) {
 	response.OK(c, nil)
 }
 
+// CanRecover godoc
+// @Summary Password reset — can recover (deprecated)
+// @Tags PasswordReset
+// @Produce json
+// @Success 200 {object} response.Envelope
+// @Router /public/passwordReset/canRecover [get]
 func (h *Handler) CanRecover(c *gin.Context) {
 	response.OK(c, nil)
 }

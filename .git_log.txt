@@ -1,3 +1,0 @@
-﻿b23ba82 feat(frontend): close SPA parity gaps ΓÇö routes, settings tabs, auth flows, i18n
-47f39ed feat(frontend): settings management, docs gap analysis
-d90bfd3 feat(frontend): users and roles parity with legacy admin (forms, routes, tests)

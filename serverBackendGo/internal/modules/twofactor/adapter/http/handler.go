@@ -30,6 +30,13 @@ func Register(g *gin.RouterGroup, h *Handler) {
 	g.GET("/reset", h.Reset)
 }
 
+// QR godoc
+// @Summary Two-factor — QR code PNG
+// @Tags TwoFactor
+// @Produce png
+// @Security BearerAuth
+// @Success 200 {file} binary
+// @Router /private/twofactor/qr/{userId} [get]
 func (h *Handler) QR(c *gin.Context) {
 	principal, ok := platformauth.PrincipalFromContext(c)
 	if !ok {
@@ -49,6 +56,13 @@ func (h *Handler) QR(c *gin.Context) {
 	c.Data(http.StatusOK, "image/png", png)
 }
 
+// Verify godoc
+// @Summary Two-factor — verify TOTP code
+// @Tags TwoFactor
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} response.Envelope
+// @Router /private/twofactor/verify/{userId}/{code} [get]
 func (h *Handler) Verify(c *gin.Context) {
 	principal, ok := platformauth.PrincipalFromContext(c)
 	if !ok {
@@ -73,6 +87,13 @@ func (h *Handler) Verify(c *gin.Context) {
 	response.OK(c, nil)
 }
 
+// Set godoc
+// @Summary Two-factor — mark accepted
+// @Tags TwoFactor
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} response.Envelope
+// @Router /private/twofactor/set [get]
 func (h *Handler) Set(c *gin.Context) {
 	principal, ok := platformauth.PrincipalFromContext(c)
 	if !ok {
@@ -86,6 +107,13 @@ func (h *Handler) Set(c *gin.Context) {
 	response.OK(c, nil)
 }
 
+// Reset godoc
+// @Summary Two-factor — reset secret
+// @Tags TwoFactor
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} response.Envelope
+// @Router /private/twofactor/reset [get]
 func (h *Handler) Reset(c *gin.Context) {
 	principal, ok := platformauth.PrincipalFromContext(c)
 	if !ok {

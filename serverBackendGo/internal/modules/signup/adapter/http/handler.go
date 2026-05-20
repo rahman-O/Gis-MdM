@@ -27,6 +27,13 @@ func Register(g *gin.RouterGroup, h *Handler) {
 	g.GET("/canSignup", h.CanSignup)
 }
 
+// VerifyEmail godoc
+// @Summary Signup — send verification email
+// @Tags Signup
+// @Accept json
+// @Produce json
+// @Success 200 {object} response.Envelope
+// @Router /public/signup/verifyEmail [post]
 func (h *Handler) VerifyEmail(c *gin.Context) {
 	var body struct {
 		Email    string `json:"email"`
@@ -47,6 +54,12 @@ func (h *Handler) VerifyEmail(c *gin.Context) {
 	response.OK(c, nil)
 }
 
+// VerifyToken godoc
+// @Summary Signup — verify email token
+// @Tags Signup
+// @Produce json
+// @Success 200 {object} response.Envelope
+// @Router /public/signup/verifyToken/{token} [get]
 func (h *Handler) VerifyToken(c *gin.Context) {
 	p, err := h.svc.VerifyToken(c.Request.Context(), c.Param("token"))
 	if err != nil {
@@ -60,6 +73,13 @@ func (h *Handler) VerifyToken(c *gin.Context) {
 	response.OK(c, p)
 }
 
+// Complete godoc
+// @Summary Signup — complete registration
+// @Tags Signup
+// @Accept json
+// @Produce json
+// @Success 200 {object} response.Envelope
+// @Router /public/signup/complete [post]
 func (h *Handler) Complete(c *gin.Context) {
 	var body struct {
 		Token       string `json:"token"`
@@ -93,6 +113,12 @@ func (h *Handler) Complete(c *gin.Context) {
 	response.OK(c, nil)
 }
 
+// CanSignup godoc
+// @Summary Signup — check if signup enabled (deprecated)
+// @Tags Signup
+// @Produce json
+// @Success 200 {object} response.Envelope
+// @Router /public/signup/canSignup [get]
 func (h *Handler) CanSignup(c *gin.Context) {
 	if h.svc.Enabled() {
 		response.OK(c, nil)

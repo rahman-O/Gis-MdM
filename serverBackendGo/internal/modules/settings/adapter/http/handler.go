@@ -28,6 +28,13 @@ func Register(g *gin.RouterGroup, h *Handler) {
 	g.POST("/userRoles/common", h.SaveUserRolesCommon)
 }
 
+// Get godoc
+// @Summary Get tenant settings
+// @Tags Settings
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} response.Envelope
+// @Router /private/settings [get]
 func (h *Handler) Get(c *gin.Context) {
 	principal, ok := platformauth.PrincipalFromContext(c)
 	if !ok {
@@ -42,18 +49,42 @@ func (h *Handler) Get(c *gin.Context) {
 	response.OK(c, settings)
 }
 
+// SaveMisc godoc
+// @Summary Update misc settings
+// @Tags Settings
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} response.Envelope
+// @Router /private/settings/misc [post]
 func (h *Handler) SaveMisc(c *gin.Context) {
 	h.saveBody(c, func(ctx *gin.Context, cid int, body map[string]interface{}) error {
 		return h.svc.MergeAndSaveMisc(ctx, cid, body)
 	})
 }
 
+// SaveLang godoc
+// @Summary Update language settings
+// @Tags Settings
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} response.Envelope
+// @Router /private/settings/lang [post]
 func (h *Handler) SaveLang(c *gin.Context) {
 	h.saveBody(c, func(ctx *gin.Context, cid int, body map[string]interface{}) error {
 		return h.svc.MergeAndSaveLang(ctx, cid, body)
 	})
 }
 
+// SaveDesign godoc
+// @Summary Update design settings
+// @Tags Settings
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} response.Envelope
+// @Router /private/settings/design [post]
 func (h *Handler) SaveDesign(c *gin.Context) {
 	h.saveBody(c, func(ctx *gin.Context, cid int, body map[string]interface{}) error {
 		return h.svc.MergeAndSaveDesign(ctx, cid, body)
@@ -78,11 +109,26 @@ func (h *Handler) saveBody(c *gin.Context, fn func(*gin.Context, int, map[string
 	response.OK(c, nil)
 }
 
+// GetUserRole godoc
+// @Summary Get user role settings
+// @Tags Settings
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} response.Envelope
+// @Router /private/settings/userRole/{roleId} [get]
 func (h *Handler) GetUserRole(c *gin.Context) {
 	roleID, _ := strconv.Atoi(c.Param("roleId"))
 	response.OK(c, domain.UserRoleSettings{RoleID: roleID})
 }
 
+// SaveUserRolesCommon godoc
+// @Summary Update common user role settings
+// @Tags Settings
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} response.Envelope
+// @Router /private/settings/userRoles/common [post]
 func (h *Handler) SaveUserRolesCommon(c *gin.Context) {
 	response.OK(c, nil)
 }

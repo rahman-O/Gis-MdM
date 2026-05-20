@@ -26,6 +26,18 @@ func TestPrincipal_IsOrgAdmin(t *testing.T) {
 	}
 }
 
+func TestPrincipal_CanEditDevices(t *testing.T) {
+	if !(&Principal{SuperAdmin: true}).CanEditDevices() {
+		t.Fatal("super admin can edit devices")
+	}
+	if !(&Principal{Permissions: []string{PermEditDevices}}).CanEditDevices() {
+		t.Fatal("named permission")
+	}
+	if (&Principal{Permissions: []string{"settings"}}).CanEditDevices() {
+		t.Fatal("settings alone is not edit_devices")
+	}
+}
+
 func TestPrincipal_CanManageUsers(t *testing.T) {
 	if !(&Principal{SuperAdmin: true}).CanManageUsers() {
 		t.Fatal("super admin can manage users")

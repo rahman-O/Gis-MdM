@@ -37,25 +37,26 @@
 
 ---
 
-## Phase 3 — عملاء وإعدادات (موسّع)
+## Phase 3 — عملاء وإعدادات (منجز)
 
-| الوحدة | REST |
-|--------|------|
-| `customers` | `/rest/private/customers` |
-| `settings` | (مكتمل في الأولوية #2 أعلاه) |
-| `hints` | (مكتمل في الأولوية #3) |
-| `summary` | (مكتمل في الأولوية #1) |
+| الوحدة | REST | parity |
+|--------|------|--------|
+| `customers` | `/rest/private/customers` | [`parity/customers.md`](parity/customers.md) — **منجز** |
+| `settings` | `/rest/private/settings/*` | منجز |
+| `hints` | `/rest/private/hints/*` | [`parity/hints.md`](parity/hints.md) |
+| `summary` | `/rest/private/summary/devices` | منجز |
 
 ---
 
-## Phase 4 — أجهزة ومجموعات (أكبر حجم)
+## Phase 4 — أجهزة ومجموعات (منجز)
 
-| الوحدة | REST | ملاحظة |
+| الوحدة | REST | parity |
 |--------|------|--------|
-| `devices` | `/rest/private/devices` | قلب MDM + `summary` كامل مع بيانات حقيقية |
-| `groups` | `/rest/private/groups` | |
+| `devices` | `/rest/private/devices` | [`parity/devices.md`](parity/devices.md) |
+| `groups` | `/rest/private/groups` | [`parity/groups.md`](parity/groups.md) |
+| `configurations` | `GET /rest/private/configurations/list` | قائمة للواجهة (CRUD كامل في Phase 5) |
 
-يحتاج migration `devices` / `applications` كاملة من Liquibase Java.
+Migration: `000006_devices_groups_core`. تشغيل: `make dev` ثم `make swagger`.
 
 ---
 
