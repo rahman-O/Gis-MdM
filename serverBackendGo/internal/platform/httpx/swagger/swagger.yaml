@@ -28,6 +28,63 @@ info:
   title: Headwind MDM API (Go)
   version: "1.0"
 paths:
+  /private/hints/disable:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      security:
+      - BearerAuth: []
+      summary: Disable hints (mark all catalog keys shown)
+      tags:
+      - Hints
+  /private/hints/enable:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      security:
+      - BearerAuth: []
+      summary: Enable hints (clear history)
+      tags:
+      - Hints
+  /private/hints/history:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      security:
+      - BearerAuth: []
+      summary: Get shown hint keys
+      tags:
+      - Hints
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      security:
+      - BearerAuth: []
+      summary: Mark hint as shown
+      tags:
+      - Hints
   /private/roles:
     put:
       consumes:

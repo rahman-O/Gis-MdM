@@ -15,6 +15,103 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/private/hints/disable": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Hints"
+                ],
+                "summary": "Disable hints (mark all catalog keys shown)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/hints/enable": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Hints"
+                ],
+                "summary": "Enable hints (clear history)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/hints/history": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Hints"
+                ],
+                "summary": "Get shown hint keys",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Hints"
+                ],
+                "summary": "Mark hint as shown",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
         "/private/roles": {
             "put": {
                 "security": [

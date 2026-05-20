@@ -22,7 +22,7 @@
 | **1** | `summary` | `GET /rest/private/summary/devices` | Dashboard بعد login | **منجز** |
 | **2** | `settings` | `GET/POST /rest/private/settings/*` | تبويب الإعدادات + 2FA toggle | **منجز** |
 | **2b** | `users/roles` | `GET /rest/private/users/roles` | أدوار في Settings | **منجز** |
-| **3** | `hints` | `GET /rest/private/hints/*` | تلميحات الواجهة | **التالي** |
+| **3** | `hints` | `GET /rest/private/hints/*` | تلميحات الواجهة | **منجز** |
 | **4** | `users` (إكمال) | `PUT /current`, `/details`, `GET /all` | الملف الشخصي + إدارة مستخدمين | **منجز** |
 | **5** | `roles` | `/rest/private/roles/*` | إدارة الأدوار + صلاحيات | **منجز** |
 

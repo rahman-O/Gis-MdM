@@ -13,7 +13,7 @@ Gradual migration from [`backend/`](../../backend/) (Java/JAX-RS) to [`serverBac
 | **1** | `auth` | `AuthResource`, `JWTAuthResource` | `/rest/public/auth`, `/rest/public/jwt` |
 | **1b** | `signup`, `passwordreset` | `SignupResource`, `PasswordResetResource` | `/rest/public/signup`, `/rest/public/passwordReset` |
 | **2** | `users`, `roles` | `UserResource`, `UserRoleResource` | `/rest/private/users`, `/rest/private/roles` — **done** ([users](parity/users.md), [roles](parity/roles.md)) |
-| **3** | `customers`, `settings`, `hints`, `summary` | matching `*Resource.java` | `/rest/private/...` |
+| **3** | `customers`, `settings`, `hints`, `summary` | matching `*Resource.java` | `/rest/private/...` — **hints** done ([parity/hints.md](parity/hints.md)); summary/settings partial |
 | **4** | `devices`, `groups` | `DeviceResource`, `GroupResource` | `/rest/private/devices`, `groups` |
 | **5** | `applications`, `configurations`, `configfiles` | app/config resources | `/rest/private/...` |
 | **6** | `files`, `icons`, `publicapi` | `FilesResource`, `PublicResource`, … | private + `/rest/public` |
@@ -39,7 +39,7 @@ See [parity/auth.md](parity/auth.md) and [AUTH_COMPLETE.md](AUTH_COMPLETE.md).
 
 ## Post-auth sequence (high priority)
 
-See [NEXT_STEPS.md](NEXT_STEPS.md). Current: **hints** (Phase 3 partial done for summary/settings).
+See [NEXT_STEPS.md](NEXT_STEPS.md). Current: **customers** / **devices** (Phase 4+).
 
 ## References
 
