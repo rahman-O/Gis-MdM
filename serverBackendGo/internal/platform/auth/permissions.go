@@ -14,6 +14,9 @@ const (
 	PermConfigurations     = "configurations"
 	PermFiles              = "files"
 	PermEditFiles          = "edit_files"
+	PermPushAPI            = "push_api"
+	PermPluginPushSend     = "plugin_push_send"
+	PermPluginPushDelete   = "plugin_push_delete"
 )
 
 // HasPermission returns true if principal is super admin or has the named permission.
@@ -94,4 +97,19 @@ func (p *Principal) CanBrowseFiles() bool {
 // CanEditFiles matches FilesResource upload/remove/update.
 func (p *Principal) CanEditFiles() bool {
 	return p.HasPermission(PermEditFiles)
+}
+
+// CanUsePushAPI matches PushApiResource.
+func (p *Principal) CanUsePushAPI() bool {
+	return p.HasPermission(PermPushAPI)
+}
+
+// CanPluginPushSend matches PushResource send.
+func (p *Principal) CanPluginPushSend() bool {
+	return p.HasPermission(PermPluginPushSend)
+}
+
+// CanPluginPushDelete matches PushResource delete/purge.
+func (p *Principal) CanPluginPushDelete() bool {
+	return p.HasPermission(PermPluginPushDelete)
 }

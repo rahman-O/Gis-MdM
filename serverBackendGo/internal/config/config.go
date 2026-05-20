@@ -34,16 +34,28 @@ type Config struct {
 	ModuleFilesEnabled         bool
 	ModuleIconsEnabled         bool
 	ModulePublicAPIEnabled     bool
+	ModuleSyncEnabled          bool
+	ModulePushEnabled          bool
+	ModuleNotificationsEnabled bool
+	ModuleUpdatesEnabled       bool
+	ModuleQRCodeEnabled        bool
 
 	FilesDirectory string
 	HashSecret     string
 
-	RebrandingName      string
-	RebrandingLogo      string
-	RebrandingVendor    string
-	RebrandingVendorURL string
-	RebrandingSignupURL string
-	RebrandingTermsURL  string
+	SecureEnrollment           bool
+	PreventDuplicateEnrollment bool
+	PollingTimeoutMs           int
+
+	RebrandingName       string
+	RebrandingLogo       string
+	RebrandingVendor     string
+	RebrandingVendorURL  string
+	RebrandingSignupURL  string
+	RebrandingTermsURL   string
+	RebrandingMobileName string
+
+	UpdateManifestURL string
 }
 
 // Load reads configuration from environment variables.
@@ -75,16 +87,28 @@ func Load() Config {
 		ModuleFilesEnabled:         getenvBool("MODULE_FILES_ENABLED", true),
 		ModuleIconsEnabled:         getenvBool("MODULE_ICONS_ENABLED", true),
 		ModulePublicAPIEnabled:     getenvBool("MODULE_PUBLICAPI_ENABLED", true),
+		ModuleSyncEnabled:          getenvBool("MODULE_SYNC_ENABLED", true),
+		ModulePushEnabled:          getenvBool("MODULE_PUSH_ENABLED", true),
+		ModuleNotificationsEnabled: getenvBool("MODULE_NOTIFICATIONS_ENABLED", true),
+		ModuleUpdatesEnabled:       getenvBool("MODULE_UPDATES_ENABLED", true),
+		ModuleQRCodeEnabled:        getenvBool("MODULE_QRCODE_ENABLED", true),
 
 		FilesDirectory: getenv("FILES_DIRECTORY", "/var/lib/hmdm/files"),
 		HashSecret:     getenv("HASH_SECRET", "changeme-C3z9vi54"),
 
-		RebrandingName:      getenv("REBRANDING_NAME", "Headwind MDM"),
-		RebrandingLogo:      getenv("REBRANDING_LOGO", ""),
-		RebrandingVendor:    getenv("REBRANDING_VENDOR_NAME", ""),
-		RebrandingVendorURL: getenv("REBRANDING_VENDOR_LINK", ""),
-		RebrandingSignupURL: getenv("REBRANDING_SIGNUP_LINK", ""),
-		RebrandingTermsURL:  getenv("REBRANDING_TERMS_LINK", ""),
+		SecureEnrollment:           getenvBool("SECURE_ENROLLMENT", false),
+		PreventDuplicateEnrollment: getenvBool("PREVENT_DUPLICATE_ENROLLMENT", false),
+		PollingTimeoutMs:           getenvInt("POLLING_TIMEOUT_MS", 60000),
+
+		RebrandingName:       getenv("REBRANDING_NAME", "Headwind MDM"),
+		RebrandingLogo:       getenv("REBRANDING_LOGO", ""),
+		RebrandingVendor:     getenv("REBRANDING_VENDOR_NAME", ""),
+		RebrandingVendorURL:  getenv("REBRANDING_VENDOR_LINK", ""),
+		RebrandingSignupURL:  getenv("REBRANDING_SIGNUP_LINK", ""),
+		RebrandingTermsURL:   getenv("REBRANDING_TERMS_LINK", ""),
+		RebrandingMobileName: getenv("REBRANDING_MOBILE_NAME", ""),
+
+		UpdateManifestURL: getenv("UPDATE_MANIFEST_URL", "https://h-mdm.com/files/hmdm_update_manifest.txt"),
 	}
 }
 

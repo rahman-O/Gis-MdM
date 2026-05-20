@@ -74,6 +74,24 @@ func TestPrincipal_CanBrowseAndEditFiles(t *testing.T) {
 	}
 }
 
+func TestPrincipal_CanUsePushAPI(t *testing.T) {
+	if !(&Principal{SuperAdmin: true}).CanUsePushAPI() {
+		t.Fatal("super admin")
+	}
+	if !(&Principal{Permissions: []string{PermPushAPI}}).CanUsePushAPI() {
+		t.Fatal("push_api permission")
+	}
+}
+
+func TestPrincipal_CanPluginPush(t *testing.T) {
+	if !(&Principal{Permissions: []string{PermPluginPushSend}}).CanPluginPushSend() {
+		t.Fatal("plugin_push_send")
+	}
+	if !(&Principal{Permissions: []string{PermPluginPushDelete}}).CanPluginPushDelete() {
+		t.Fatal("plugin_push_delete")
+	}
+}
+
 func TestPrincipal_CanManageUsers(t *testing.T) {
 	if !(&Principal{SuperAdmin: true}).CanManageUsers() {
 		t.Fatal("super admin can manage users")

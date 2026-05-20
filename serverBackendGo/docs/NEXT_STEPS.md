@@ -84,12 +84,25 @@ Migration: `000008_files_icons_core`. صلاحيات: `files`, `edit_files`.
 
 ---
 
-## Phase 7–8 (لاحقاً)
+## Phase 7 — وكيل وتزامن (منجز)
+
+| الوحدة | REST | parity |
+|--------|------|--------|
+| `sync` | `/rest/public/sync` | [`parity/sync.md`](parity/sync.md) |
+| `notifications` | `/rest/notifications`, `/rest/notification/polling` | [`parity/notifications.md`](parity/notifications.md) |
+| `push` | `/rest/private/push`, `/rest/plugins/push` | [`parity/push.md`](parity/push.md) |
+| `updates` | `/rest/private/update` | [`parity/updates.md`](parity/updates.md) |
+| `qrcode` | `/rest/public/qr` | [`parity/qrcode.md`](parity/qrcode.md) |
+
+Migration: `000009_agent_push_notifications`.
+
+---
+
+## Phase 8 (لاحقاً)
 
 | Phase | وحدات |
 |-------|--------|
-| **7** | `sync`, `push`, `notifications`, `updates`, `qrcode` |
-| **8** | `plugins/*` |
+| **8** | `plugins/*` (generic platform) |
 
 ---
 

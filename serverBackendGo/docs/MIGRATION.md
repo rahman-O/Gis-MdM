@@ -25,9 +25,10 @@ Gradual migration from [`backend/`](../../backend/) (Java/JAX-RS) to [`serverBac
 | **4** — devices, groups, configurations list | **done** |
 | **5** — applications, configurations, configfiles | **done** |
 | **6** — files, icons, publicapi | **done** |
-| **7–8** | **pending** |
+| **7** — sync, push, notifications, updates, qrcode | **done** |
+| **8** | **pending** |
 
-**Next:** Phase 7 — `sync`, `push`, `notifications`, `updates`, `qrcode` ([`NEXT_STEPS.md`](NEXT_STEPS.md))
+**Next:** Phase 8 — `plugins/*` ([`NEXT_STEPS.md`](NEXT_STEPS.md))
 
 ---
 
@@ -42,7 +43,7 @@ Gradual migration from [`backend/`](../../backend/) (Java/JAX-RS) to [`serverBac
 | **4** | **done** | `devices`, `groups`, `configurations` (list) | `DeviceResource`, `GroupResource`, `ConfigurationResource` (list) | [devices](parity/devices.md), [groups](parity/groups.md) — `GET /configurations/list` |
 | **5** | **done** | `applications`, `configurations`, `configfiles` | `ApplicationResource`, `ConfigurationResource`, `ConfigurationFileResource` | [applications](parity/applications.md), [configurations](parity/configurations.md), [configfiles](parity/configfiles.md) |
 | **6** | **done** | `files`, `icons`, `publicapi` | `FilesResource`, `IconResource`, `PublicResource` | [files](parity/files.md), [icons](parity/icons.md), [publicapi](parity/publicapi.md) |
-| **7** | pending | `sync`, `push`, `notifications`, `updates`, `qrcode` | agent/sync/push | public + private |
+| **7** | **done** | `sync`, `push`, `notifications`, `updates`, `qrcode` | agent/sync/push | [sync](parity/sync.md), [notifications](parity/notifications.md), [push](parity/push.md), [updates](parity/updates.md), [qrcode](parity/qrcode.md) |
 | **8** | pending | `plugins/*` | `backend/plugins/*` | `/rest/plugins`, `/rest/plugin/main` |
 
 ### Phase 1–1b detail (done)
