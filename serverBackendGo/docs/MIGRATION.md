@@ -23,9 +23,11 @@ Gradual migration from [`backend/`](../../backend/) (Java/JAX-RS) to [`serverBac
 | **2** — users, roles | **done** |
 | **3** — customers, settings, hints, summary | **done** |
 | **4** — devices, groups, configurations list | **done** |
-| **5–8** | **pending** |
+| **5** — applications, configurations, configfiles | **done** |
+| **6** — files, icons, publicapi | **done** |
+| **7–8** | **pending** |
 
-**Next:** Phase 5 — `applications`, full `configurations` ([`NEXT_STEPS.md`](NEXT_STEPS.md))
+**Next:** Phase 7 — `sync`, `push`, `notifications`, `updates`, `qrcode` ([`NEXT_STEPS.md`](NEXT_STEPS.md))
 
 ---
 
@@ -38,8 +40,8 @@ Gradual migration from [`backend/`](../../backend/) (Java/JAX-RS) to [`serverBac
 | **2** | **done** | `users`, `roles` | `UserResource`, `UserRoleResource` | `/rest/private/users`, `/rest/private/roles` — [users](parity/users.md), [roles](parity/roles.md) |
 | **3** | **done** | `customers`, `settings`, `hints`, `summary` | `CustomerResource`, `SettingsResource`, `HintResource`, `SummaryResource` | `/rest/private/...` — [customers](parity/customers.md), [hints](parity/hints.md), [settings](parity/settings.md), [summary](parity/summary.md) |
 | **4** | **done** | `devices`, `groups`, `configurations` (list) | `DeviceResource`, `GroupResource`, `ConfigurationResource` (list) | [devices](parity/devices.md), [groups](parity/groups.md) — `GET /configurations/list` |
-| **5** | pending | `applications`, `configurations`, `configfiles` | app/config resources | `/rest/private/...` |
-| **6** | pending | `files`, `icons`, `publicapi` | `FilesResource`, `PublicResource`, … | private + `/rest/public` |
+| **5** | **done** | `applications`, `configurations`, `configfiles` | `ApplicationResource`, `ConfigurationResource`, `ConfigurationFileResource` | [applications](parity/applications.md), [configurations](parity/configurations.md), [configfiles](parity/configfiles.md) |
+| **6** | **done** | `files`, `icons`, `publicapi` | `FilesResource`, `IconResource`, `PublicResource` | [files](parity/files.md), [icons](parity/icons.md), [publicapi](parity/publicapi.md) |
 | **7** | pending | `sync`, `push`, `notifications`, `updates`, `qrcode` | agent/sync/push | public + private |
 | **8** | pending | `plugins/*` | `backend/plugins/*` | `/rest/plugins`, `/rest/plugin/main` |
 

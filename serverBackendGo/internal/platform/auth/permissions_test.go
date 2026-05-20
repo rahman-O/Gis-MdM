@@ -38,6 +38,42 @@ func TestPrincipal_CanEditDevices(t *testing.T) {
 	}
 }
 
+func TestPrincipal_CanManageApplications(t *testing.T) {
+	if !(&Principal{SuperAdmin: true}).CanManageApplications() {
+		t.Fatal("super admin")
+	}
+	if !(&Principal{Permissions: []string{PermApplications}}).CanManageApplications() {
+		t.Fatal("named permission")
+	}
+	if (&Principal{Permissions: []string{"settings"}}).CanManageApplications() {
+		t.Fatal("settings alone is not applications")
+	}
+}
+
+func TestPrincipal_CanManageConfigurations(t *testing.T) {
+	if !(&Principal{SuperAdmin: true}).CanManageConfigurations() {
+		t.Fatal("super admin")
+	}
+	if !(&Principal{Permissions: []string{PermConfigurations}}).CanManageConfigurations() {
+		t.Fatal("named permission")
+	}
+}
+
+func TestPrincipal_CanBrowseAndEditFiles(t *testing.T) {
+	if !(&Principal{SuperAdmin: true}).CanBrowseFiles() || !(&Principal{SuperAdmin: true}).CanEditFiles() {
+		t.Fatal("super admin")
+	}
+	if !(&Principal{Permissions: []string{PermFiles}}).CanBrowseFiles() {
+		t.Fatal("files permission")
+	}
+	if !(&Principal{Permissions: []string{PermEditFiles}}).CanEditFiles() {
+		t.Fatal("edit_files permission")
+	}
+	if (&Principal{Permissions: []string{PermFiles}}).CanEditFiles() {
+		t.Fatal("files alone cannot edit")
+	}
+}
+
 func TestPrincipal_CanManageUsers(t *testing.T) {
 	if !(&Principal{SuperAdmin: true}).CanManageUsers() {
 		t.Fatal("super admin can manage users")

@@ -60,12 +60,34 @@ Migration: `000006_devices_groups_core`. تشغيل: `make dev` ثم `make swagg
 
 ---
 
-## Phase 5–8 (لاحقاً)
+## Phase 5 — تطبيقات وإعدادات (منجز)
+
+| الوحدة | REST | parity |
+|--------|------|--------|
+| `applications` | `/rest/private/applications` | [`parity/applications.md`](parity/applications.md) |
+| `configurations` | `/rest/private/configurations` | [`parity/configurations.md`](parity/configurations.md) — يشمل `GET /list` (Phase 4) |
+| `configfiles` | `POST /rest/private/config-files` | [`parity/configfiles.md`](parity/configfiles.md) |
+
+Migration: `000007_applications_configurations_core`. صلاحيات: `applications`, `configurations`.
+
+---
+
+## Phase 6 — ملفات وأيقونات وواجهة عامة (منجز)
+
+| الوحدة | REST | parity |
+|--------|------|--------|
+| `files` | `/rest/private/web-ui-files` | [`parity/files.md`](parity/files.md) |
+| `icons` | `/rest/private/icons` | [`parity/icons.md`](parity/icons.md) |
+| `publicapi` | `/rest/public` | [`parity/publicapi.md`](parity/publicapi.md) |
+
+Migration: `000008_files_icons_core`. صلاحيات: `files`, `edit_files`.
+
+---
+
+## Phase 7–8 (لاحقاً)
 
 | Phase | وحدات |
 |-------|--------|
-| **5** | `applications`, `configurations`, `configfiles` |
-| **6** | `files`, `icons`, `publicapi` |
 | **7** | `sync`, `push`, `notifications`, `updates`, `qrcode` |
 | **8** | `plugins/*` |
 

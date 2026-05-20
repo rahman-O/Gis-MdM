@@ -15,6 +15,739 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/private/applications/admin/common/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Applications"
+                ],
+                "summary": "Mark application as shared catalog entry",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Application ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/applications/admin/search": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Applications"
+                ],
+                "summary": "List shared applications (super-admin)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/applications/admin/search/{value}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Applications"
+                ],
+                "summary": "Search shared applications (super-admin)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter",
+                        "name": "value",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/applications/android": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Applications"
+                ],
+                "summary": "Create or update Android application",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/applications/autocomplete": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Applications"
+                ],
+                "summary": "Application autocomplete",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/applications/configurations": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Applications"
+                ],
+                "summary": "Update configuration links for application",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/applications/configurations/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Applications"
+                ],
+                "summary": "Configurations linked to application",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Application ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/applications/search": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Applications"
+                ],
+                "summary": "List applications",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/applications/search/{value}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Applications"
+                ],
+                "summary": "Search applications by name or package",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter",
+                        "name": "value",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/applications/validatePkg": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Applications"
+                ],
+                "summary": "Validate package id uniqueness",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/applications/version/configurations": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Applications"
+                ],
+                "summary": "Update configuration links for application version",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/applications/version/{versionId}/configurations": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Applications"
+                ],
+                "summary": "Configurations linked to application version",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Version ID",
+                        "name": "versionId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/applications/versions": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Applications"
+                ],
+                "summary": "Create or update application version",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/applications/versions/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Applications"
+                ],
+                "summary": "Delete application version",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Version ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/applications/web": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Applications"
+                ],
+                "summary": "Create or update web application",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/applications/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Applications"
+                ],
+                "summary": "Get application",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Application ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Applications"
+                ],
+                "summary": "Delete application",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Application ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/applications/{id}/versions": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Applications"
+                ],
+                "summary": "List application versions",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Application ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/config-files": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ConfigFiles"
+                ],
+                "summary": "Upload configuration file asset",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "File",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/configurations": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Configurations"
+                ],
+                "summary": "Create or update configuration",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/configurations/application/upgrade": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Configurations"
+                ],
+                "summary": "Upgrade application on configuration to latest version",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/configurations/applications": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Configurations"
+                ],
+                "summary": "Applications available for configuration editor",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/configurations/applications/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Configurations"
+                ],
+                "summary": "Applications linked to configuration",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Configuration ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/configurations/autocomplete": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Configurations"
+                ],
+                "summary": "Configuration autocomplete",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/configurations/copy": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Configurations"
+                ],
+                "summary": "Copy configuration",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
         "/private/configurations/list": {
             "get": {
                 "security": [
@@ -28,7 +761,128 @@ const docTemplate = `{
                 "tags": [
                     "Configurations"
                 ],
-                "summary": "List configurations for tenant",
+                "summary": "List configuration names for dropdowns",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/configurations/search": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Configurations"
+                ],
+                "summary": "List configurations",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/configurations/search/{value}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Configurations"
+                ],
+                "summary": "Search configurations by name",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter",
+                        "name": "value",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/configurations/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Configurations"
+                ],
+                "summary": "Get configuration for editor",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Configuration ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Configurations"
+                ],
+                "summary": "Delete configuration",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Configuration ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -767,6 +1621,123 @@ const docTemplate = `{
                 }
             }
         },
+        "/private/icons": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Icons"
+                ],
+                "summary": "Create or update icon",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/icons/search": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Icons"
+                ],
+                "summary": "List icons",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/icons/search/{value}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Icons"
+                ],
+                "summary": "Search icons by name",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "filter",
+                        "name": "value",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/icons/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Icons"
+                ],
+                "summary": "Delete icon",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "icon id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
         "/private/roles": {
             "put": {
                 "security": [
@@ -1329,6 +2300,343 @@ const docTemplate = `{
                 }
             }
         },
+        "/private/web-ui-files": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Files"
+                ],
+                "summary": "Upload file with optional APK parse",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "file",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/web-ui-files/apps/{url}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Files"
+                ],
+                "summary": "Applications using file URL",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "file URL",
+                        "name": "url",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/web-ui-files/configurations": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Files"
+                ],
+                "summary": "Update file-configuration links",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/web-ui-files/configurations/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Files"
+                ],
+                "summary": "Configurations linked to file",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "file id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/web-ui-files/limit": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Files"
+                ],
+                "summary": "Storage limit for tenant",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/web-ui-files/raw": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Files"
+                ],
+                "summary": "Upload raw file without APK parse",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "file",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/web-ui-files/remove": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Files"
+                ],
+                "summary": "Remove uploaded file",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/web-ui-files/search": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Files"
+                ],
+                "summary": "List uploaded files",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/web-ui-files/search/{value}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Files"
+                ],
+                "summary": "Search uploaded files",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "filter",
+                        "name": "value",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/web-ui-files/update": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Files"
+                ],
+                "summary": "Create or update uploaded file metadata",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/public/applications/upload": {
+            "post": {
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "PublicAPI"
+                ],
+                "summary": "AppList application upload",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "APK file",
+                        "name": "file",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "UploadAppRequest JSON",
+                        "name": "app",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
         "/public/auth/login": {
             "post": {
                 "consumes": [
@@ -1435,6 +2743,44 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized"
+                    }
+                }
+            }
+        },
+        "/public/logo": {
+            "get": {
+                "produces": [
+                    "image/png"
+                ],
+                "tags": [
+                    "PublicAPI"
+                ],
+                "summary": "Rebranding logo",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    }
+                }
+            }
+        },
+        "/public/name": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "PublicAPI"
+                ],
+                "summary": "Rebranding metadata",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
                     }
                 }
             }

@@ -7,9 +7,13 @@ import (
 const (
 	// OrgAdminRoleID matches role.orgadmin.id from Java context (default 2).
 	OrgAdminRoleID = 2
-	PermSettings       = "settings"
-	PermEditDevices    = "edit_devices"
-	PermEditDeviceDesc = "edit_device_desc"
+	PermSettings         = "settings"
+	PermEditDevices        = "edit_devices"
+	PermEditDeviceDesc     = "edit_device_desc"
+	PermApplications       = "applications"
+	PermConfigurations     = "configurations"
+	PermFiles              = "files"
+	PermEditFiles          = "edit_files"
 )
 
 // HasPermission returns true if principal is super admin or has the named permission.
@@ -70,4 +74,24 @@ func (p *Principal) CanEditDevices() bool {
 // CanEditDeviceDescription matches description update permission.
 func (p *Principal) CanEditDeviceDescription() bool {
 	return p.HasPermission(PermEditDeviceDesc)
+}
+
+// CanManageApplications matches ApplicationResource mutations.
+func (p *Principal) CanManageApplications() bool {
+	return p.HasPermission(PermApplications)
+}
+
+// CanManageConfigurations matches ConfigurationResource mutations and browse.
+func (p *Principal) CanManageConfigurations() bool {
+	return p.HasPermission(PermConfigurations)
+}
+
+// CanBrowseFiles matches FilesResource list/search.
+func (p *Principal) CanBrowseFiles() bool {
+	return p.HasPermission(PermFiles)
+}
+
+// CanEditFiles matches FilesResource upload/remove/update.
+func (p *Principal) CanEditFiles() bool {
+	return p.HasPermission(PermEditFiles)
 }

@@ -31,8 +31,19 @@ type Config struct {
 	ModuleAuthEnabled          bool
 	ModuleSignupEnabled        bool
 	ModulePasswordResetEnabled bool
+	ModuleFilesEnabled         bool
+	ModuleIconsEnabled         bool
+	ModulePublicAPIEnabled     bool
 
 	FilesDirectory string
+	HashSecret     string
+
+	RebrandingName      string
+	RebrandingLogo      string
+	RebrandingVendor    string
+	RebrandingVendorURL string
+	RebrandingSignupURL string
+	RebrandingTermsURL  string
 }
 
 // Load reads configuration from environment variables.
@@ -61,8 +72,19 @@ func Load() Config {
 		ModuleAuthEnabled:          getenvBool("MODULE_AUTH_ENABLED", true),
 		ModuleSignupEnabled:        getenvBool("MODULE_SIGNUP_ENABLED", false),
 		ModulePasswordResetEnabled: getenvBool("MODULE_PASSWORDRESET_ENABLED", false),
+		ModuleFilesEnabled:         getenvBool("MODULE_FILES_ENABLED", true),
+		ModuleIconsEnabled:         getenvBool("MODULE_ICONS_ENABLED", true),
+		ModulePublicAPIEnabled:     getenvBool("MODULE_PUBLICAPI_ENABLED", true),
 
 		FilesDirectory: getenv("FILES_DIRECTORY", "/var/lib/hmdm/files"),
+		HashSecret:     getenv("HASH_SECRET", "changeme-C3z9vi54"),
+
+		RebrandingName:      getenv("REBRANDING_NAME", "Headwind MDM"),
+		RebrandingLogo:      getenv("REBRANDING_LOGO", ""),
+		RebrandingVendor:    getenv("REBRANDING_VENDOR_NAME", ""),
+		RebrandingVendorURL: getenv("REBRANDING_VENDOR_LINK", ""),
+		RebrandingSignupURL: getenv("REBRANDING_SIGNUP_LINK", ""),
+		RebrandingTermsURL:  getenv("REBRANDING_TERMS_LINK", ""),
 	}
 }
 
