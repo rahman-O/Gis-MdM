@@ -18,6 +18,10 @@ func OK(c *gin.Context, data any) {
 	c.JSON(http.StatusOK, Envelope{Status: "OK", Data: data})
 }
 
+func OKMessage(c *gin.Context, message string, data any) {
+	c.JSON(http.StatusOK, Envelope{Status: "OK", Message: message, Data: data})
+}
+
 func ErrorEnvelope(c *gin.Context, message string) {
 	c.JSON(http.StatusOK, Envelope{Status: "ERROR", Message: message})
 }

@@ -28,6 +28,189 @@ info:
   title: Headwind MDM API (Go)
   version: "1.0"
 paths:
+  /private/roles:
+    put:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      security:
+      - BearerAuth: []
+      summary: Create or update role
+      tags:
+      - Roles
+  /private/roles/{id}:
+    delete:
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      security:
+      - BearerAuth: []
+      summary: Delete role
+      tags:
+      - Roles
+  /private/roles/all:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      security:
+      - BearerAuth: []
+      summary: List all roles
+      tags:
+      - Roles
+  /private/roles/permissions:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      security:
+      - BearerAuth: []
+      summary: List permissions
+      tags:
+      - Roles
+  /private/summary/devices:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      security:
+      - BearerAuth: []
+      summary: Device dashboard statistics
+      tags:
+      - Summary
+  /private/users:
+    put:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      security:
+      - BearerAuth: []
+      summary: Create or update user
+      tags:
+      - Users
+  /private/users/all:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      security:
+      - BearerAuth: []
+      summary: List tenant users
+      tags:
+      - Users
+  /private/users/current:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      security:
+      - BearerAuth: []
+      summary: Get current user
+      tags:
+      - Users
+    put:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      security:
+      - BearerAuth: []
+      summary: Change current user password
+      tags:
+      - Users
+  /private/users/details:
+    put:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      security:
+      - BearerAuth: []
+      summary: Update profile details
+      tags:
+      - Users
+  /private/users/other/{id}:
+    delete:
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      security:
+      - BearerAuth: []
+      summary: Delete user by id
+      tags:
+      - Users
+  /private/users/roles:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope'
+      security:
+      - BearerAuth: []
+      summary: List assignable roles
+      tags:
+      - Users
   /public/auth/login:
     post:
       consumes:
@@ -87,7 +270,7 @@ paths:
           description: OK
           headers:
             Authorization:
-              description: Bearer token
+              description: Bearer JWT — copy this into Authorize for /private/*
               type: string
           schema:
             $ref: '#/definitions/internal_modules_auth_adapter_http.JWTResultDTO'
@@ -98,4 +281,10 @@ paths:
       summary: JWT login
       tags:
       - Authentication
+securityDefinitions:
+  BearerAuth:
+    description: JWT from POST /public/jwt/login response header (e.g. Bearer eyJhbGciOiJIUzI1NiIs...)
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

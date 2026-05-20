@@ -74,6 +74,7 @@ TOTP via `github.com/pquerna/otp`. Session blocks private routes until verify wh
 
 - UI: `http://localhost:8080/swagger/index.html`
 - `make swagger`
+- **Authorize private routes**: `POST /public/jwt/login` → copy `Authorization` response header → **Authorize** (lock icon) → paste `Bearer <token>` → call `/private/*`
 
 ## Tests
 

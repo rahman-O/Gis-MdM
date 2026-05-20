@@ -6,7 +6,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gis-mdm/server-backend-go/internal/modules/auth/application"
-	"github.com/gis-mdm/server-backend-go/internal/platform/auth"
 	"github.com/gis-mdm/server-backend-go/internal/platform/httpx/middleware"
 	"github.com/gis-mdm/server-backend-go/internal/platform/httpx/response"
 	apperr "github.com/gis-mdm/server-backend-go/internal/shared/errors"
@@ -57,10 +56,7 @@ func (h *Handler) Login(c *gin.Context) {
 		response.Error(c, apperr.Internal("login failed", err))
 		return
 	}
-	middleware.SessionStore(c, &auth.Principal{
-		ID: view.ID, Login: view.Login, AuthToken: view.AuthToken, CustomerID: view.CustomerID,
-		PasswordReset: view.PasswordReset,
-	}, twoFactorPending)
+	middleware.SessionStore(c, principalFromView(view), twoFactorPending)
 	response.OK(c, view)
 }
 
@@ -84,7 +80,7 @@ func (h *Handler) Logout(c *gin.Context) {
 // @Success 200 {object} JWTResultDTO
 // @Failure 400
 // @Failure 401
-// @Header 200 {string} Authorization "Bearer token"
+// @Header 200 {string} Authorization "Bearer JWT — copy this into Authorize for /private/*"
 // @Router /public/jwt/login [post]
 func (h *Handler) JWTLogin(c *gin.Context) {
 	var req LoginRequest

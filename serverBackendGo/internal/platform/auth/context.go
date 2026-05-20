@@ -14,8 +14,12 @@ type Principal struct {
 	Login            string
 	AuthToken        string
 	CustomerID       int
+	RoleID           int
+	SuperAdmin       bool
+	Permissions      []string
 	PasswordReset    bool
 	TwoFactorPending bool
+	AuthLoaded       bool
 }
 
 const (

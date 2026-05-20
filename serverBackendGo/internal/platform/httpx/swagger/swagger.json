@@ -8,6 +8,316 @@
     },
     "basePath": "/rest",
     "paths": {
+        "/private/roles": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Roles"
+                ],
+                "summary": "Create or update role",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/roles/all": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Roles"
+                ],
+                "summary": "List all roles",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/roles/permissions": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Roles"
+                ],
+                "summary": "List permissions",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/roles/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "Roles"
+                ],
+                "summary": "Delete role",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Role ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/summary/devices": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Summary"
+                ],
+                "summary": "Device dashboard statistics",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/users": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Create or update user",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/users/all": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "List tenant users",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/users/current": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Get current user",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Change current user password",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/users/details": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Update profile details",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/users/other/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Delete user by id",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/users/roles": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "List assignable roles",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_gis-mdm_server-backend-go_internal_platform_httpx_response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
         "/public/auth/login": {
             "post": {
                 "consumes": [
@@ -105,7 +415,7 @@
                         "headers": {
                             "Authorization": {
                                 "type": "string",
-                                "description": "Bearer token"
+                                "description": "Bearer JWT — copy this into Authorize for /private/*"
                             }
                         }
                     },
@@ -152,6 +462,14 @@
                     "example": "admin"
                 }
             }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "description": "JWT from POST /public/jwt/login response header (e.g. Bearer eyJhbGciOiJIUzI1NiIs...)",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }

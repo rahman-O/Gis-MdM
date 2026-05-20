@@ -45,12 +45,16 @@ func Run() error {
 	middleware.SetupSessions(engine, cfg.SessionSecret)
 
 	var lookup platformauth.UserLookup = noopLookup{}
+	var enrich platformauth.PrincipalEnricher
 	if db != nil {
-		lookup = postgres.NewUserRepository(db)
+		repo := postgres.NewUserRepository(db)
+		lookup = repo
+		enrich = repo
 	}
 	groups := httpx.BuildRouteGroups(engine, cfg, httpx.AuthWiring{
 		JWT:    jwtProvider,
 		Lookup: lookup,
+		Enrich: enrich,
 	})
 
 	if cfg.SwaggerEnabled {

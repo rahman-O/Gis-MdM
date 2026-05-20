@@ -83,91 +83,14 @@ func (r *UserRepository) queryUsers(ctx context.Context, query string, arg strin
 }
 
 func aggregateUserRows(rows *sql.Rows) (*domain.User, error) {
-	var user *domain.User
-	permSeen := map[int]struct{}{}
-	groupSeen := map[int]struct{}{}
-	configSeen := map[int]struct{}{}
-
-	for rows.Next() {
-		var (
-			id, customerID                                                          int64
-			name, login, email, authToken, resetToken, password, twoFactorSecret    sql.NullString
-			allDev, allCfg, passReset, twoFactorAccepted, master                      bool
-			lastFail                                                                int64
-			roleID                                                                  sql.NullInt64
-			roleName                                                                sql.NullString
-			roleSuper                                                               sql.NullBool
-			permID                                                                  sql.NullInt64
-			permName                                                                sql.NullString
-			permSuper                                                               sql.NullBool
-			groupID                                                                 sql.NullInt64
-			groupName                                                               sql.NullString
-			configID                                                                sql.NullInt64
-			configName                                                              sql.NullString
-		)
-		if err := rows.Scan(
-			&id, &name, &login, &email, &customerID,
-			&allDev, &allCfg, &passReset,
-			&authToken, &resetToken, &lastFail, &password,
-			&twoFactorSecret, &twoFactorAccepted, &master,
-			&roleID, &roleName, &roleSuper,
-			&permID, &permName, &permSuper,
-			&groupID, &groupName,
-			&configID, &configName,
-		); err != nil {
-			return nil, fmt.Errorf("scan user row: %w", err)
-		}
-		if user == nil {
-			user = &domain.User{
-				ID:                  id,
-				Login:               login.String,
-				Email:               email.String,
-				Name:                name.String,
-				Password:            password.String,
-				CustomerID:          int(customerID),
-				MasterCustomer:      master,
-				AllDevicesAvailable: allDev,
-				AllConfigAvailable:  allCfg,
-				PasswordReset:       passReset,
-				AuthToken:           authToken.String,
-				PasswordResetToken:  resetToken.String,
-				LastLoginFail:       lastFail,
-				TwoFactorAccepted:   twoFactorAccepted,
-				UserRole: &domain.UserRole{
-					ID:         int(roleID.Int64),
-					Name:       roleName.String,
-					SuperAdmin: roleSuper.Bool,
-				},
-			}
-		}
-		if permID.Valid {
-			pid := int(permID.Int64)
-			if _, ok := permSeen[pid]; !ok {
-				permSeen[pid] = struct{}{}
-				user.UserRole.Permissions = append(user.UserRole.Permissions, domain.Permission{
-					ID: pid, Name: permName.String, SuperAdmin: permSuper.Bool,
-				})
-			}
-		}
-		if groupID.Valid {
-			gid := int(groupID.Int64)
-			if _, ok := groupSeen[gid]; !ok {
-				groupSeen[gid] = struct{}{}
-				user.Groups = append(user.Groups, domain.LookupItem{ID: gid, Name: groupName.String})
-			}
-		}
-		if configID.Valid {
-			cid := int(configID.Int64)
-			if _, ok := configSeen[cid]; !ok {
-				configSeen[cid] = struct{}{}
-				user.Configurations = append(user.Configurations, domain.LookupItem{ID: cid, Name: configName.String})
-			}
-		}
-	}
-	if err := rows.Err(); err != nil {
+	users, err := AggregateUsersFromRows(rows)
+	if err != nil {
 		return nil, err
 	}
-	return user, nil
+	if len(users) == 0 {
+		return nil, nil
+	}
+	return users[0], nil
 }
 
 func (r *UserRepository) SetLoginFailTime(ctx context.Context, userID int64, ts int64) error {
@@ -239,7 +162,22 @@ func (r *UserRepository) LookupByLogin(ctx context.Context, login string) (*auth
 	if u == nil {
 		return nil, nil
 	}
+	perms := make([]string, 0)
+	if u.UserRole != nil {
+		for _, perm := range u.UserRole.Permissions {
+			if perm.Name != "" {
+				perms = append(perms, perm.Name)
+			}
+		}
+	}
+	roleID := 0
+	super := false
+	if u.UserRole != nil {
+		roleID = u.UserRole.ID
+		super = u.UserRole.SuperAdmin
+	}
 	return &auth.Principal{
 		ID: u.ID, Login: u.Login, AuthToken: u.AuthToken, CustomerID: u.CustomerID,
+		RoleID: roleID, SuperAdmin: super, Permissions: perms, AuthLoaded: true,
 	}, nil
 }

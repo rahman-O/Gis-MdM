@@ -9,5 +9,9 @@ import (
 )
 
 func registerSwagger(engine *gin.Engine) {
-	engine.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	engine.GET("/swagger/*any", ginSwagger.WrapHandler(
+		swaggerFiles.Handler,
+		ginSwagger.PersistAuthorization(true),
+		ginSwagger.DefaultModelsExpandDepth(-1),
+	))
 }

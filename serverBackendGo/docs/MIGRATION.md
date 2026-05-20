@@ -4,13 +4,15 @@ Gradual migration from [`backend/`](../../backend/) (Java/JAX-RS) to [`serverBac
 
 **Rule:** implement one module at a time; keep REST paths identical so [`frontend/`](../../frontend/) and Android agents keep working.
 
+**Governance:** See [`.specify/memory/constitution.md`](../../.specify/memory/constitution.md) (Gis-MdM v1.0.0) for architecture principles and quality gates.
+
 ## Phases
 
 | Phase | Modules | Java sources (indicative) | REST prefix |
 |-------|---------|----------------------------|-------------|
 | **1** | `auth` | `AuthResource`, `JWTAuthResource` | `/rest/public/auth`, `/rest/public/jwt` |
 | **1b** | `signup`, `passwordreset` | `SignupResource`, `PasswordResetResource` | `/rest/public/signup`, `/rest/public/passwordReset` |
-| **2** | `users`, `roles` | `UserResource`, `UserRoleResource` | `/rest/private/users`, `/rest/private/roles` |
+| **2** | `users`, `roles` | `UserResource`, `UserRoleResource` | `/rest/private/users`, `/rest/private/roles` — **done** ([users](parity/users.md), [roles](parity/roles.md)) |
 | **3** | `customers`, `settings`, `hints`, `summary` | matching `*Resource.java` | `/rest/private/...` |
 | **4** | `devices`, `groups` | `DeviceResource`, `GroupResource` | `/rest/private/devices`, `groups` |
 | **5** | `applications`, `configurations`, `configfiles` | app/config resources | `/rest/private/...` |
@@ -31,11 +33,13 @@ For each module under `internal/modules/<name>/`:
 7. Enable module flag in `.env` if using feature flags
 8. Integration test against running Postgres (legacy schema)
 
-## Auth (current focus)
+## Auth — done
 
-See [parity/auth.md](parity/auth.md).
+See [parity/auth.md](parity/auth.md) and [AUTH_COMPLETE.md](AUTH_COMPLETE.md).
 
-Enable: `MODULE_AUTH_ENABLED=true`
+## Post-auth sequence (high priority)
+
+See [NEXT_STEPS.md](NEXT_STEPS.md). Current: **hints** (Phase 3 partial done for summary/settings).
 
 ## References
 
