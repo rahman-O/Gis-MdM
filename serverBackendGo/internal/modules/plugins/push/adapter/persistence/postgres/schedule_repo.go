@@ -77,3 +77,62 @@ func (r *ScheduleRepository) ResolveDeviceID(ctx context.Context, customerID int
 		SELECT id FROM devices WHERE customerid = $1 AND lower(number) = lower($2)`, customerID, number).Scan(&id)
 	return id, err
 }
+
+// ListAll returns every schedule row (filtered in application by cron masks).
+func (r *ScheduleRepository) ListAll(ctx context.Context) ([]domain.PluginPushSchedule, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT id, customerid, deviceid, groupid, configurationid, COALESCE(scope,''),
+			COALESCE(messagetype,''), COALESCE(payload,''), COALESCE(comment,''),
+			COALESCE(min,'*'), COALESCE(hour,'*'), COALESCE(day,'*'), COALESCE(weekday,'*'), COALESCE(month,'*')
+		FROM plugin_push_schedule`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []domain.PluginPushSchedule
+	for rows.Next() {
+		var s domain.PluginPushSchedule
+		if err := rows.Scan(&s.ID, &s.CustomerID, &s.DeviceID, &s.GroupID, &s.ConfigurationID, &s.Scope,
+			&s.MessageType, &s.Payload, &s.Comment, &s.Min, &s.Hour, &s.Day, &s.Weekday, &s.Month); err != nil {
+			return nil, err
+		}
+		items = append(items, s)
+	}
+	return items, rows.Err()
+}
+
+// ResolveDeviceIDs returns target device IDs for a scheduled task scope.
+func (r *ScheduleRepository) ResolveDeviceIDs(ctx context.Context, task domain.PluginPushSchedule) ([]int64, error) {
+	switch task.Scope {
+	case "device":
+		if task.DeviceID > 0 {
+			return []int64{task.DeviceID}, nil
+		}
+		return nil, nil
+	case "group":
+		return r.deviceIDsByFilter(ctx, `SELECT id FROM devices WHERE customerid = $1 AND groupid = $2`,
+			task.CustomerID, task.GroupID)
+	case "configuration":
+		return r.deviceIDsByFilter(ctx, `SELECT id FROM devices WHERE customerid = $1 AND configurationid = $2`,
+			task.CustomerID, task.ConfigurationID)
+	default:
+		return r.deviceIDsByFilter(ctx, `SELECT id FROM devices WHERE customerid = $1`, task.CustomerID)
+	}
+}
+
+func (r *ScheduleRepository) deviceIDsByFilter(ctx context.Context, q string, args ...any) ([]int64, error) {
+	rows, err := r.db.QueryContext(ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var ids []int64
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, rows.Err()
+}

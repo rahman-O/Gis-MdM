@@ -27,8 +27,9 @@ Gradual migration from [`backend/`](../../backend/) (Java/JAX-RS) to [`serverBac
 | **6** — files, icons, publicapi | **done** |
 | **7** — sync, push, notifications, updates, qrcode | **done** |
 | **8** — plugins platform, audit, messaging, deviceinfo, devicelog | **done** |
+| **9** — migration gap closure (push notifier, schedule cron, icon-files, …) | **partial** |
 
-**Next:** Post-migration hardening and frontend plugin UIs beyond settings ([`NEXT_STEPS.md`](NEXT_STEPS.md))
+**Next:** Phase 9 remaining gaps (plugin exports, audit middleware, stats/videos, …) — see [`JAVA-GO-MIGRATION-GAP-ANALYSIS.md`](../../JAVA-GO-MIGRATION-GAP-ANALYSIS.md)
 
 ---
 

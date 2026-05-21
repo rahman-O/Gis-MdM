@@ -65,6 +65,12 @@ type Config struct {
 	ModulePluginsMessagingEnabled bool
 	ModulePluginsDeviceinfoEnabled bool
 	ModulePluginsDevicelogEnabled bool
+
+	PushNotifierEnabled      bool
+	PushScheduleIntervalSec  int
+	ModuleStatsEnabled       bool
+	ModuleVideosEnabled      bool
+	VideoDirectory           string
 }
 
 // Load reads configuration from environment variables.
@@ -126,6 +132,12 @@ func Load() Config {
 		ModulePluginsMessagingEnabled: getenvBool("MODULE_PLUGINS_MESSAGING_ENABLED", true),
 		ModulePluginsDeviceinfoEnabled: getenvBool("MODULE_PLUGINS_DEVICEINFO_ENABLED", true),
 		ModulePluginsDevicelogEnabled:  getenvBool("MODULE_PLUGINS_DEVICELOG_ENABLED", true),
+
+		PushNotifierEnabled:     getenvBool("MODULE_PUSH_NOTIFIER_ENABLED", true),
+		PushScheduleIntervalSec: getenvInt("PUSH_SCHEDULE_INTERVAL_SEC", 60),
+		ModuleStatsEnabled:      getenvBool("MODULE_STATS_ENABLED", false),
+		ModuleVideosEnabled:     getenvBool("MODULE_VIDEOS_ENABLED", false),
+		VideoDirectory:          getenv("VIDEO_DIRECTORY", "./data/videos"),
 	}
 }
 

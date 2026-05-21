@@ -8,6 +8,7 @@ import (
 	filehttp "github.com/gis-mdm/server-backend-go/internal/modules/files/adapter/http"
 	filepostgres "github.com/gis-mdm/server-backend-go/internal/modules/files/adapter/persistence/postgres"
 	fileport "github.com/gis-mdm/server-backend-go/internal/modules/files/port"
+	pushapp "github.com/gis-mdm/server-backend-go/internal/platform/push/application"
 	"github.com/gis-mdm/server-backend-go/internal/platform/storage"
 )
 
@@ -30,7 +31,11 @@ func (m *Module) Register(groups module.RouteGroups, deps module.Dependencies) e
 	repo := filepostgres.NewFileRepository(deps.DB)
 	customer := filepostgres.NewCustomerRepository(deps.DB)
 	apps := filepostgres.NewAppLookup(deps.DB)
-	svc := fileapp.NewService(repo, customer, apps, store, deps.Config.BaseURL, fileport.NoopPush())
+	var push fileport.PushNotifier = fileport.NoopPush()
+	if n, ok := deps.PushNotifier.(*pushapp.Notifier); ok && n != nil {
+		push = pushapp.FilesPushAdapter{Notifier: n}
+	}
+	svc := fileapp.NewService(repo, customer, apps, store, deps.Config.BaseURL, push)
 	filehttp.NewHandler(svc).Register(groups.Private.Group("/web-ui-files"))
 	deps.Log.Info("module registered", "module", m.Name())
 	return nil

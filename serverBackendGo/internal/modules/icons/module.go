@@ -26,6 +26,9 @@ func (m *Module) Register(groups module.RouteGroups, deps module.Dependencies) e
 	repo := iconpostgres.NewIconRepository(deps.DB)
 	svc := iconapp.NewService(repo)
 	iconhttp.NewHandler(svc).Register(groups.Private.Group("/icons"))
+	uploadRepo := iconpostgres.NewUploadedFileRepository(deps.DB)
+	store := iconapp.IconFileStore{FilesDir: deps.Config.FilesDirectory}
+	iconhttp.NewIconFileHandler(store, uploadRepo, uploadRepo).Register(groups.Private.Group("/icon-files"))
 	deps.Log.Info("module registered", "module", m.Name())
 	return nil
 }

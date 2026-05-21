@@ -6,7 +6,6 @@ import (
 	"log/slog"
 
 	"github.com/gis-mdm/server-backend-go/internal/config"
-	"github.com/gis-mdm/server-backend-go/internal/module"
 	"github.com/gis-mdm/server-backend-go/internal/modules/auth/adapter/persistence/postgres"
 	platformauth "github.com/gis-mdm/server-backend-go/internal/platform/auth"
 	"github.com/gis-mdm/server-backend-go/internal/platform/database"
@@ -61,9 +60,15 @@ func Run() error {
 		registerSwagger(groups.Engine)
 	}
 
-	modDeps := module.Dependencies{Config: cfg, DB: db, Log: log}
+	modDeps := moduleDependencies(cfg, db, log)
 	if err := registerModules(toModuleGroups(groups), modDeps, jwtProvider); err != nil {
 		return fmt.Errorf("register modules: %w", err)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	if db != nil {
+		StartPushScheduleRunner(ctx, cfg, db, log)
 	}
 
 	addr := ":" + cfg.ServerPort

@@ -21,5 +21,5 @@
 
 | Area | Note |
 |------|------|
-| Push notify on save | `NoopPushNotifier` — real push in Phase 7 |
+| Push notify on save | **Done** — `platform/push` enqueues `configUpdated` (Phase 9) |
 | Full Liquibase column parity | Extended UI fields stored in `settingsjson` JSONB |

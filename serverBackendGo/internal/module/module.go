@@ -1,6 +1,7 @@
 package module
 
 import (
+	"context"
 	"database/sql"
 	"log/slog"
 
@@ -29,4 +30,9 @@ type Dependencies struct {
 	Config config.Config
 	DB     *sql.DB
 	Log    *slog.Logger
+	// PushNotifier enqueues configUpdated/appConfigUpdated (nil → modules use noop).
+	PushNotifier interface {
+		NotifyConfigurationChanged(int) error
+		NotifyAppSettings(context.Context, int) error
+	}
 }

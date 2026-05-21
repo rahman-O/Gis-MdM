@@ -1,7 +1,7 @@
 # Parity: Push messaging
 
 **Java**: `PushApiResource`, `com.hmdm.plugins.push.rest.PushResource`  
-**Status**: Phase 7–8 — **Done** (messages + schedule CRUD); **Partial**: schedule cron runner
+**Status**: Phase 7–9 — **Done** (messages + schedule CRUD + cron runner)
 
 ## Private API (`/rest/private/push`)
 

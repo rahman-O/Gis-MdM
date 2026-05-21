@@ -22,7 +22,13 @@ func (m *Module) Register(groups module.RouteGroups, deps module.Dependencies) e
 		return fmt.Errorf("configurations module requires DATABASE_URL")
 	}
 	repo := cfgpostgres.NewConfigRepository(deps.DB)
-	svc := cfgapp.NewService(repo, port.NoopPushNotifier{})
+	var push port.PushNotifier = port.NoopPushNotifier{}
+	if deps.PushNotifier != nil {
+		if n, ok := deps.PushNotifier.(port.PushNotifier); ok {
+			push = n
+		}
+	}
+	svc := cfgapp.NewService(repo, push)
 	cfghttp.NewHandler(svc).Register(groups.Private.Group("/configurations"))
 	deps.Log.Info("module registered", "module", m.Name())
 	return nil

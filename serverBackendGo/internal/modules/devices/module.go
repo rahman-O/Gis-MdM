@@ -22,7 +22,13 @@ func (m *Module) Register(groups module.RouteGroups, deps module.Dependencies) e
 		return fmt.Errorf("devices module requires DATABASE_URL")
 	}
 	repo := devpostgres.NewDeviceRepository(deps.DB)
-	svc := devapp.NewService(repo, port.NoopPush{})
+	var push port.PushNotifier = port.NoopPush{}
+	if deps.PushNotifier != nil {
+		if n, ok := deps.PushNotifier.(port.PushNotifier); ok {
+			push = n
+		}
+	}
+	svc := devapp.NewService(repo, push)
 	devhttp.NewHandler(svc).Register(groups.Private.Group("/devices"))
 	deps.Log.Info("module registered", "module", m.Name())
 	return nil

@@ -14,7 +14,7 @@
 | `POST /autocomplete` | **Done** | Up to 10 matches |
 | `GET /{id}/applicationSettings` | **Done** | |
 | `POST /{id}/applicationSettings` | **Done** | |
-| `POST /{id}/applicationSettings/notify` | **Done** | Push stub (no FCM) |
+| `POST /{id}/applicationSettings/notify` | **Done** | Enqueues `appConfigUpdated` via `platform/push` (Phase 9) |
 | `POST /{id}/description` | **Done** | Requires `edit_device_desc` |
 
 ## Partial
