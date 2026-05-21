@@ -73,6 +73,15 @@ func TestSearch_pagination(t *testing.T) {
 	}
 }
 
+func TestSearchRequest_prepareWrapsValue(t *testing.T) {
+	v := "abc"
+	req := domain.SearchRequest{PageNum: 1, PageSize: 10, Value: &v}
+	req.Prepare()
+	if req.Value == nil || *req.Value != "%abc%" {
+		t.Fatalf("value %v", req.Value)
+	}
+}
+
 func TestDelete_permissionDenied(t *testing.T) {
 	svc := NewService(&stubDeviceRepo{}, nil)
 	err := svc.Delete(context.Background(), devicePrincipal(), 1)

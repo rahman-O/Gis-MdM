@@ -29,7 +29,11 @@ Gradual migration from [`backend/`](../../backend/) (Java/JAX-RS) to [`serverBac
 | **8** — plugins platform, audit, messaging, deviceinfo, devicelog | **done** |
 | **9** — migration gap closure (push notifier, schedule cron, icon-files, …) | **partial** |
 
-**Next:** Phase 9 remaining gaps (plugin exports, audit middleware, stats/videos, …) — see [`JAVA-GO-MIGRATION-GAP-ANALYSIS.md`](../../JAVA-GO-MIGRATION-GAP-ANALYSIS.md)
+**Next:** Phase 9 remaining gaps (plugin exports, audit middleware, stats/videos, …) — see [`JAVA-GO-MIGRATION-STATUS.md`](../../JAVA-GO-MIGRATION-STATUS.md)
+
+**012 checkpoint (Phase 2):** Push notifier wiring (`internal/app/wiring.go` → modules), scheduler, icon-files — regression verified. Phase 9 status: **partial**.
+
+**012 US1 (devices):** Advanced search filters + `GET /number/{n}` `info` telemetry — see [`parity/devices.md`](parity/devices.md). Migration `000008_devices_search_extras` adds `imeiupdatets`.
 
 ---
 

@@ -5,8 +5,8 @@
 
 | Endpoint | Status | Notes |
 |----------|--------|-------|
-| `POST /search` | **Done** | `pageNum`, tenant scope, group access; configurations map |
-| `GET /number/{number}` | **Done** | Single device view |
+| `POST /search` | **Done** | `pageNum`, tenant scope, group access; configurations map; React-aligned filters (`status`, `mdmMode`, `androidVersion`, date windows, sort) |
+| `GET /number/{number}` | **Done** | Single device view; nested `info` from `devices.info` + `infojson` |
 | `PUT /` | **Done** | Create/update; bulk config via `ids` + `configurationId` |
 | `DELETE /{id}` | **Done** | Requires `edit_devices` |
 | `POST /deleteBulk` | **Done** | |
@@ -22,6 +22,7 @@
 | Area | Note |
 |------|------|
 | Search enrichment | No nested apps/files in configuration map |
-| Advanced filters | `mdmMode`, `launcherVersion`, `deviceStatuses` deferred |
-| `infojson` telemetry | Minimal columns only |
-| Fast search exact match | Basic ILIKE text search |
+| `installationStatus` | Filter uses `infojson.applications[]`; Java also uses `deviceStatuses` table (not in Go schema yet) |
+| `launcherVersion` | Matches `infojson.launcherVersion`; Java `mdm_device_launcher_version()` from `info` blob not replicated |
+| Sort `INSTALLATIONS` / `FILES` | Require `deviceStatuses` table |
+| Fast search | Exact `number` / `fastsearch` column match when `fastSearch: true` |

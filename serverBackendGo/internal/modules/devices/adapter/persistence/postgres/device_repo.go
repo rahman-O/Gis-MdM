@@ -44,46 +44,35 @@ const deviceAccessWhere = `
 	AND ($3 = TRUE OR access.groupid IS NOT NULL)
 `
 
-func searchFilters(req domain.SearchRequest, args *[]any, where *string, argN *int) {
-	if req.Value != nil && strings.TrimSpace(*req.Value) != "" {
-		pat := "%" + strings.TrimSpace(*req.Value) + "%"
-		*where += fmt.Sprintf(` AND (
-			d.number ILIKE $%d OR d.description ILIKE $%d OR d.imei ILIKE $%d OR d.phone ILIKE $%d
-		)`, *argN, *argN+1, *argN+2, *argN+3)
-		*args = append(*args, pat, pat, pat, pat)
-		*argN += 4
-	}
-	if req.GroupID != nil && *req.GroupID > 0 {
-		*where += fmt.Sprintf(` AND g.id = $%d`, *argN)
-		*args = append(*args, *req.GroupID)
-		*argN++
-	}
-	if req.ConfigurationID != nil && *req.ConfigurationID > 0 {
-		*where += fmt.Sprintf(` AND d.configurationid = $%d`, *argN)
-		*args = append(*args, *req.ConfigurationID)
-		*argN++
-	}
-}
-
 func (r *DeviceRepository) Search(ctx context.Context, scope port.UserScope, req domain.SearchRequest) ([]domain.DeviceView, error) {
 	args := []any{scope.CustomerID, scope.UserID, scope.AllDevicesAvailable}
 	where := "WHERE " + deviceAccessWhere
 	argN := 4
 	searchFilters(req, &args, &where, &argN)
 	offset := (req.PageNum - 1) * req.PageSize
+	order := orderExpr(req)
+	pageOrder := orderExprGrouped(req)
+	pageSQL := fmt.Sprintf(`
+		SELECT d.id
+		FROM devices d
+		%s
+		%s
+		%s
+		GROUP BY d.id
+		ORDER BY %s
+		OFFSET $%d LIMIT $%d`, deviceAccessJoin, searchExtraJoins, where, pageOrder, argN, argN+1)
+	pageArgs := append(append([]any{}, args...), offset, req.PageSize)
 	query := fmt.Sprintf(`
-		SELECT DISTINCT ON (d.id) d.id, d.number, d.description, d.lastupdate, d.configurationid, d.imei, d.phone,
+		SELECT d.id, d.number, d.description, d.lastupdate, d.configurationid, d.imei, d.phone,
 			CASE
 				WHEN (EXTRACT(EPOCH FROM NOW()) * 1000 - d.lastupdate) < (2 * 3600 * 1000) THEN 'green'
 				WHEN (EXTRACT(EPOCH FROM NOW()) * 1000 - d.lastupdate) < (4 * 3600 * 1000) THEN 'yellow'
 				ELSE 'red'
 			END AS statuscode
 		FROM devices d
-		%s
-		%s
-		ORDER BY d.id, lower(d.number)
-		OFFSET $%d LIMIT $%d`, deviceAccessJoin, where, argN, argN+1)
-	args = append(args, offset, req.PageSize)
+		INNER JOIN (%s) page ON page.id = d.id
+		ORDER BY %s`, pageSQL, order)
+	args = pageArgs
 
 	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -183,7 +172,8 @@ func (r *DeviceRepository) Count(ctx context.Context, scope port.UserScope, req 
 		SELECT COUNT(DISTINCT d.id)
 		FROM devices d
 		%s
-		%s`, deviceAccessJoin, where)
+		%s
+		%s`, deviceAccessJoin, searchExtraJoins, where)
 	var n int64
 	err := r.db.QueryRowContext(ctx, query, args...).Scan(&n)
 	return n, err
@@ -215,6 +205,8 @@ func (r *DeviceRepository) GetByNumber(ctx context.Context, scope port.UserScope
 	args := []any{scope.CustomerID, scope.UserID, scope.AllDevicesAvailable, number}
 	query := fmt.Sprintf(`
 		SELECT DISTINCT d.id, d.number, d.description, d.lastupdate, d.configurationid, d.imei, d.phone,
+			d.custom1, d.custom2, d.custom3, d.oldnumber,
+			d.info, d.infojson, d.enrolltime, d.publicip,
 			CASE
 				WHEN (EXTRACT(EPOCH FROM NOW()) * 1000 - d.lastupdate) < (2 * 3600 * 1000) THEN 'green'
 				WHEN (EXTRACT(EPOCH FROM NOW()) * 1000 - d.lastupdate) < (4 * 3600 * 1000) THEN 'yellow'
@@ -226,10 +218,17 @@ func (r *DeviceRepository) GetByNumber(ctx context.Context, scope port.UserScope
 		LIMIT 1`, deviceAccessJoin)
 	var v domain.DeviceView
 	var desc, imei, phone, status sql.NullString
+	var custom1, custom2, custom3, oldNumber sql.NullString
+	var info sql.NullString
+	var infojson []byte
+	var enrollTime sql.NullInt64
+	var publicIP sql.NullString
 	var lastUpdate sql.NullInt64
 	var configID sql.NullInt64
 	err := r.db.QueryRowContext(ctx, query, args...).Scan(
-		&v.ID, &v.Number, &desc, &lastUpdate, &configID, &imei, &phone, &status)
+		&v.ID, &v.Number, &desc, &lastUpdate, &configID, &imei, &phone,
+		&custom1, &custom2, &custom3, &oldNumber,
+		&info, &infojson, &enrollTime, &publicIP, &status)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -237,6 +236,19 @@ func (r *DeviceRepository) GetByNumber(ctx context.Context, scope port.UserScope
 		return nil, err
 	}
 	fillNulls(&v, desc, lastUpdate, configID, imei, phone, status)
+	if custom1.Valid {
+		v.Custom1 = &custom1.String
+	}
+	if custom2.Valid {
+		v.Custom2 = &custom2.String
+	}
+	if custom3.Valid {
+		v.Custom3 = &custom3.String
+	}
+	if oldNumber.Valid {
+		v.OldNumber = &oldNumber.String
+	}
+	v.Info = parseDeviceInfo(info, infojson, enrollTime, publicIP)
 	groups, _ := r.loadGroupsForDevices(ctx, []int{v.ID})
 	v.Groups = groups[v.ID]
 	return &v, nil

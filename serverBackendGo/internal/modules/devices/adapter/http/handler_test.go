@@ -76,3 +76,16 @@ func TestSearch_okWithPrincipal(t *testing.T) {
 		t.Fatalf("status %d body %s", w.Code, w.Body.String())
 	}
 }
+
+func TestSearch_statusFilterAccepted(t *testing.T) {
+	h := NewHandler(devapp.NewService(httpDeviceStub{}, nil))
+	r := setupDevicesRouter(h, true)
+	w := httptest.NewRecorder()
+	body := `{"pageNum":1,"pageSize":50,"status":"green","sortBy":"LAST_UPDATE","sortDir":"desc"}`
+	req := httptest.NewRequest(http.MethodPost, "/rest/private/devices/search", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	r.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("status %d body %s", w.Code, w.Body.String())
+	}
+}

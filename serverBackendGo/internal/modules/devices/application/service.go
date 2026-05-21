@@ -42,7 +42,7 @@ func (s *Service) Search(ctx context.Context, p *platformauth.Principal, req dom
 	if err != nil {
 		return nil, err
 	}
-	req.Normalize()
+	req.Prepare()
 	items, err := s.repo.Search(ctx, *scope, req)
 	if err != nil {
 		return nil, err
