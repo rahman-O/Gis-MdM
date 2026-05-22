@@ -9,6 +9,7 @@ type LookupItem struct {
 // ConfigurationApplication is a row on the configuration Applications tab.
 type ConfigurationApplication struct {
 	ID              int     `json:"id"`
+	ApplicationID   int     `json:"applicationId,omitempty"`
 	Name            *string `json:"name,omitempty"`
 	Pkg             *string `json:"pkg,omitempty"`
 	Type            *string `json:"type,omitempty"`

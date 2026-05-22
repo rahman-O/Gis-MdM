@@ -24,4 +24,5 @@ type ApplicationRepository interface {
 	UpdateVersionConfigurations(ctx context.Context, customerID int, req domain.LinkConfigurationsToAppVersionRequest) error
 	AdminSearch(ctx context.Context, value string) ([]domain.Application, error)
 	TurnIntoCommon(ctx context.Context, id int) error
+	CustomerFilesDir(ctx context.Context, customerID int) (string, error)
 }

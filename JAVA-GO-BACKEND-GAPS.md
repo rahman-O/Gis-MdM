@@ -7,6 +7,7 @@
 
 **مراجع مرتبطة:**
 
+- [`H-MDM-GITHUB-TO-GO-BACKEND-ANALYSIS.md`](H-MDM-GITHUB-TO-GO-BACKEND-ANALYSIS.md) — تحليل مستودعات [h-mdm](https://github.com/h-mdm?tab=repositories) وما يُضاف في Go
 - [`JAVA-GO-MIGRATION-STATUS.md`](JAVA-GO-MIGRATION-STATUS.md) — حالة الهجرة العامة  
 - [`FRONTEND-GO-BACKEND-INTEGRATION.md`](FRONTEND-GO-BACKEND-INTEGRATION.md) — تكامل React مع Go  
 - [`serverBackendGo/docs/MIGRATION.md`](serverBackendGo/docs/MIGRATION.md) — مراحل 1–9  

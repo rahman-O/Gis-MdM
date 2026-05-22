@@ -61,6 +61,21 @@ func mapErr(c *gin.Context, err error) {
 	}
 }
 
+// Go nil slices marshal as JSON null; React expects [] for list endpoints.
+func okAppList(c *gin.Context, data []domain.Application) {
+	if data == nil {
+		data = []domain.Application{}
+	}
+	response.OK(c, data)
+}
+
+func okVersionList(c *gin.Context, data []domain.ApplicationVersion) {
+	if data == nil {
+		data = []domain.ApplicationVersion{}
+	}
+	response.OK(c, data)
+}
+
 // Search godoc
 // @Summary List applications
 // @Tags Applications
@@ -78,7 +93,7 @@ func (h *Handler) Search(c *gin.Context) {
 		mapErr(c, err)
 		return
 	}
-	response.OK(c, data)
+	okAppList(c, data)
 }
 
 // SearchByValue godoc
@@ -99,7 +114,7 @@ func (h *Handler) SearchByValue(c *gin.Context) {
 		mapErr(c, err)
 		return
 	}
-	response.OK(c, data)
+	okAppList(c, data)
 }
 
 // Autocomplete godoc
@@ -166,7 +181,7 @@ func (h *Handler) ListVersions(c *gin.Context) {
 		mapErr(c, err)
 		return
 	}
-	response.OK(c, data)
+	okVersionList(c, data)
 }
 
 // SaveAndroid godoc
@@ -270,7 +285,7 @@ func (h *Handler) ValidatePkg(c *gin.Context) {
 		mapErr(c, err)
 		return
 	}
-	response.OK(c, data)
+	okAppList(c, data)
 }
 
 // DeleteApp godoc
@@ -426,7 +441,7 @@ func (h *Handler) AdminSearch(c *gin.Context) {
 		mapErr(c, err)
 		return
 	}
-	response.OK(c, data)
+	okAppList(c, data)
 }
 
 // AdminSearchByValue godoc
@@ -447,7 +462,7 @@ func (h *Handler) AdminSearchByValue(c *gin.Context) {
 		mapErr(c, err)
 		return
 	}
-	response.OK(c, data)
+	okAppList(c, data)
 }
 
 // TurnIntoCommon godoc

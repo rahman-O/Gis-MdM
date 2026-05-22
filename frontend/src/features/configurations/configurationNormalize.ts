@@ -71,7 +71,7 @@ export function configurationApplicationsForSaveFromApi(rows: unknown): Configur
     .filter((item) => hasLinkedApplicationVersion(item as Record<string, unknown>))
     .map((item) => {
       const rec = item as Record<string, unknown>
-      const id = Number(rec.id ?? 0)
+      const id = Number(rec.applicationId ?? rec.id ?? 0)
       const usedVersionIdRaw = rec.usedVersionId ?? rec.applicationVersionId
       const latestVersionRaw = rec.latestVersion
       const rawAction = rec.action
@@ -143,6 +143,7 @@ export function buildCreateConfigurationBody(payload: ConfigurationPayload): Con
     disableLocation: false,
     permissive: false,
     selected: false,
+    eventReceivingComponent: 'com.hmdm.launcher.AdminReceiver',
   }
 }
 

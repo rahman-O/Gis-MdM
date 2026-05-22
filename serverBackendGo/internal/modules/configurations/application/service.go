@@ -112,6 +112,18 @@ func (s *Service) Save(ctx context.Context, p *platformauth.Principal, cfg domai
 	if existing != nil && existing.ID != nil && *existing.ID != id {
 		return nil, ErrDuplicateConfiguration
 	}
+	var existingRow *domain.Configuration
+	if id > 0 {
+		existingRow, err = s.repo.GetByID(ctx, cid, id)
+		if err != nil {
+			return nil, err
+		}
+		if existingRow == nil {
+			return nil, ErrConfigurationNotFound
+		}
+	}
+	domain.EnsureQRCodeKey(&cfg, existingRow)
+
 	var savedID int
 	if id == 0 {
 		savedID, err = s.repo.Insert(ctx, cid, cfg)

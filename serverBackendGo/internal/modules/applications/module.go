@@ -7,6 +7,7 @@ import (
 	appapp "github.com/gis-mdm/server-backend-go/internal/modules/applications/application"
 	apphttp "github.com/gis-mdm/server-backend-go/internal/modules/applications/adapter/http"
 	apppostgres "github.com/gis-mdm/server-backend-go/internal/modules/applications/adapter/persistence/postgres"
+	"github.com/gis-mdm/server-backend-go/internal/platform/storage"
 )
 
 // Module registers application routes.
@@ -21,7 +22,8 @@ func (m *Module) Register(groups module.RouteGroups, deps module.Dependencies) e
 		return fmt.Errorf("applications module requires DATABASE_URL")
 	}
 	repo := apppostgres.NewApplicationRepository(deps.DB)
-	svc := appapp.NewService(repo)
+	store := storage.NewLocalStore(deps.Config.FilesDirectory)
+	svc := appapp.NewService(repo, store, deps.Config.BaseURL)
 	apphttp.NewHandler(svc).Register(groups.Private.Group("/applications"))
 	deps.Log.Info("module registered", "module", m.Name())
 	return nil

@@ -1,12 +1,12 @@
 # Parity: Device Sync (`/rest/public/sync`)
 
 **Java**: `com.hmdm.rest.resource.SyncResource`  
-**Status**: Phase 7 — **Done** (core paths); **Partial**: `SyncResponseHook` plugins, full settings merge
+**Status**: Phase 7 + **015** — **Done** (core paths); **Partial**: `SyncResponseHook` plugins
 
 | Method | Path | Status | Notes |
 |--------|------|--------|-------|
-| GET | `/configuration/{deviceId}` | Done | SyncResponse + signatures |
-| POST | `/configuration/{deviceId}` | Done | On-demand enroll |
+| GET | `/configuration/{deviceId}` | Done | SyncResponse + signatures; loads device applicationSettings |
+| POST | `/configuration/{deviceId}` | Done | On-demand enroll; `configuration` resolves by **qrcodekey** first |
 | POST | `/info` | Done | Telemetry; **014** upserts `devicestatuses` from payload (`applications`/`files` presence) |
 | POST | `/applicationSettings/{deviceId}` | Done | Per-app settings |
 

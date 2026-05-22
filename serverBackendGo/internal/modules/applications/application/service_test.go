@@ -48,11 +48,14 @@ func (appRepoStub) UpdateVersionConfigurations(context.Context, int, domain.Link
 }
 func (appRepoStub) AdminSearch(context.Context, string) ([]domain.Application, error) { return nil, nil }
 func (appRepoStub) TurnIntoCommon(context.Context, int) error { return nil }
+func (appRepoStub) CustomerFilesDir(context.Context, int) (string, error) {
+	return "customer-1", nil
+}
 
 func intPtr(n int) *int { return &n }
 
 func TestSearch_permissionDenied(t *testing.T) {
-	svc := NewService(appRepoStub{})
+	svc := NewService(appRepoStub{}, nil, "")
 	_, err := svc.Search(context.Background(), &platformauth.Principal{AuthLoaded: true})
 	if err != ErrPermissionDenied {
 		t.Fatalf("got %v", err)
@@ -60,7 +63,7 @@ func TestSearch_permissionDenied(t *testing.T) {
 }
 
 func TestSearch_ok(t *testing.T) {
-	svc := NewService(appRepoStub{})
+	svc := NewService(appRepoStub{}, nil, "")
 	p := &platformauth.Principal{AuthLoaded: true, Permissions: []string{platformauth.PermApplications}}
 	list, err := svc.Search(context.Background(), p)
 	if err != nil || len(list) != 1 {

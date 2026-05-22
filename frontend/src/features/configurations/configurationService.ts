@@ -1,10 +1,14 @@
 import apiClient from '@/services/apiClient'
 import type { HmdmEnvelope } from '@/services/hmdmEnvelope'
-import { assertHmdmOk, unwrapHmdmData } from '@/services/hmdmEnvelope'
+import { assertHmdmOk, unwrapHmdmData, unwrapHmdmList } from '@/services/hmdmEnvelope'
 import {
   buildCreateConfigurationBody,
   mergeConfigurationForUpdate,
 } from '@/features/configurations/configurationNormalize'
+import {
+  mapApplicationCatalogRows,
+  type ConfigurationAppCatalogItem,
+} from '@/features/configurations/configurationCatalog'
 import type {
   Configuration,
   ConfigurationAutocompleteRequest,
@@ -26,36 +30,25 @@ function unwrap<T>(response: { data: HmdmEnvelope<T> }, msg: string): T {
   return unwrapHmdmData(response.data, msg)
 }
 
-function asObject(value: unknown): Record<string, unknown> | null {
-  return value != null && typeof value === 'object' ? (value as Record<string, unknown>) : null
-}
-
-function extractApplications(payload: unknown): Configuration[] {
-  if (Array.isArray(payload)) return payload as Configuration[]
-  const obj = asObject(payload)
-  if (!obj) return []
-  const itemsCandidate = obj.items
-  if (Array.isArray(itemsCandidate)) return itemsCandidate as Configuration[]
-  return []
-}
+export type { ConfigurationAppCatalogItem }
 
 export async function getConfigurations(): Promise<Configuration[]> {
   const response = await apiClient.get<HmdmEnvelope<Configuration[]>>('/private/configurations/search')
-  return unwrap(response, 'Failed to load configurations.')
+  return unwrapHmdmList(response.data, 'Failed to load configurations.')
 }
 
 export async function searchConfigurations(value: string): Promise<Configuration[]> {
   const response = await apiClient.get<HmdmEnvelope<Configuration[]>>(
     `/private/configurations/search/${encodeURIComponent(value)}`
   )
-  return unwrap(response, 'Failed to search configurations.')
+  return unwrapHmdmList(response.data, 'Failed to search configurations.')
 }
 
 export async function listConfigurationNames(): Promise<ConfigurationLookupItem[]> {
   const response = await apiClient.get<HmdmEnvelope<ConfigurationLookupItem[]>>(
     '/private/configurations/list'
   )
-  return unwrap(response, 'Failed to load configuration names.')
+  return unwrapHmdmList(response.data, 'Failed to load configuration names.')
 }
 
 export async function autocompleteConfigurations(
@@ -65,7 +58,7 @@ export async function autocompleteConfigurations(
     '/private/configurations/autocomplete',
     request.value
   )
-  return unwrap(response, 'Failed to autocomplete configurations.')
+  return unwrapHmdmList(response.data, 'Failed to autocomplete configurations.')
 }
 
 export async function getConfiguration(id: number): Promise<Configuration> {
@@ -100,21 +93,19 @@ export async function getConfigurationApplications(id: number): Promise<Configur
   const response = await apiClient.get<HmdmEnvelope<Configuration[]>>(
     `/private/configurations/applications/${id}`
   )
-  return unwrap(response, 'Failed to load configuration applications.')
+  return unwrapHmdmList(response.data, 'Failed to load configuration applications.')
 }
 
-export async function getAllApplications(): Promise<Configuration[]> {
+export async function getAllApplications(): Promise<ConfigurationAppCatalogItem[]> {
   try {
-    const response = await apiClient.get<HmdmEnvelope<unknown>>('/private/configurations/applications')
-    const data = unwrap(response, 'Failed to load applications.')
-    const list = extractApplications(data)
+    const response = await apiClient.get<HmdmEnvelope<unknown>>('/private/applications/search')
+    const list = mapApplicationCatalogRows(unwrapHmdmList(response.data, 'Failed to load applications.'))
     if (list.length > 0) return list
   } catch {
     // fallback below
   }
-  const fallback = await apiClient.get<HmdmEnvelope<unknown>>('/private/applications/search')
-  const data = unwrap(fallback, 'Failed to load applications.')
-  return extractApplications(data)
+  const fallback = await apiClient.get<HmdmEnvelope<unknown>>('/private/configurations/applications')
+  return mapApplicationCatalogRows(unwrapHmdmList(fallback.data, 'Failed to load applications.'))
 }
 
 export async function upgradeConfigurationApplication(

@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -91,6 +92,19 @@ func TestGetByID_ok(t *testing.T) {
 	r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/rest/private/configurations/1", nil))
 	if w.Code != http.StatusOK {
 		t.Fatalf("status %d", w.Code)
+	}
+}
+
+func TestListConfigurationApplications_emptyList_ok(t *testing.T) {
+	h := NewHandler(cfgapp.NewService(httpCfgStub{}, nil))
+	r := setupCfgRouter(h, true, platformauth.PermConfigurations)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/rest/private/configurations/applications/1", nil))
+	if w.Code != http.StatusOK {
+		t.Fatalf("status %d body %s", w.Code, w.Body.String())
+	}
+	if strings.Contains(w.Body.String(), `"data":null`) {
+		t.Fatalf("expected data:[], got %s", w.Body.String())
 	}
 }
 

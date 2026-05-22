@@ -126,11 +126,23 @@ describe('configurationService', () => {
     expect(get).toHaveBeenCalledWith('/private/configurations/applications/3')
   })
 
-  it('getAllApplications GET /applications', async () => {
-    const apps = [{ id: 11, name: 'App A' }]
+  it('getAllApplications prefers GET /applications/search', async () => {
+    const apps = [{ id: 11, name: 'App A', latestVersion: 42 }]
     get.mockResolvedValueOnce(ok(apps))
-    await expect(configurationService.getAllApplications()).resolves.toEqual(apps)
-    expect(get).toHaveBeenCalledWith('/private/configurations/applications')
+    await expect(configurationService.getAllApplications()).resolves.toEqual([
+      { id: 11, name: 'App A', latestVersionId: 42 },
+    ])
+    expect(get).toHaveBeenCalledWith('/private/applications/search')
+  })
+
+  it('getAllApplications falls back to GET /configurations/applications', async () => {
+    get.mockRejectedValueOnce(new Error('network'))
+    const apps = [{ id: 12, name: 'Fallback', latestVersion: 7 }]
+    get.mockResolvedValueOnce(ok(apps))
+    await expect(configurationService.getAllApplications()).resolves.toEqual([
+      { id: 12, name: 'Fallback', latestVersionId: 7 },
+    ])
+    expect(get).toHaveBeenLastCalledWith('/private/configurations/applications')
   })
 
   it('upgradeConfigurationApplication PUT /application/upgrade', async () => {

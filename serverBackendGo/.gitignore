@@ -1,5 +1,7 @@
 .env
 .env.local
+.https-tunnel.pid
+.https-tunnel.log
 *.exe
 /bin/
 /dist/

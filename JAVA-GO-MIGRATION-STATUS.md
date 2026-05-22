@@ -6,7 +6,8 @@
 **الواجهة:** [`frontend/`](frontend/) (React) — نفس مسارات `/rest/*`  
 **خارطة الطريق:** [`serverBackendGo/docs/MIGRATION.md`](serverBackendGo/docs/MIGRATION.md)  
 **مواصفة إغلاق الفجوات:** [`specs/011-complete-migration-gaps/`](specs/011-complete-migration-gaps/)  
-**تفصيل نواقص Go مقابل Java:** [`JAVA-GO-BACKEND-GAPS.md`](JAVA-GO-BACKEND-GAPS.md)
+**تفصيل نواقص Go مقابل Java:** [`JAVA-GO-BACKEND-GAPS.md`](JAVA-GO-BACKEND-GAPS.md)  
+**تحليل منظمة h-mdm على GitHub:** [`H-MDM-GITHUB-TO-GO-BACKEND-ANALYSIS.md`](H-MDM-GITHUB-TO-GO-BACKEND-ANALYSIS.md)
 
 ---
 

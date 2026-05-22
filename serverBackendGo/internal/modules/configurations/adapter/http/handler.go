@@ -58,6 +58,13 @@ func mapErr(c *gin.Context, err error) {
 	}
 }
 
+func okConfigAppList(c *gin.Context, data []domain.ConfigurationApplication) {
+	if data == nil {
+		data = []domain.ConfigurationApplication{}
+	}
+	response.OK(c, data)
+}
+
 // List godoc
 // @Summary List configuration names for dropdowns
 // @Tags Configurations
@@ -199,7 +206,7 @@ func (h *Handler) Save(c *gin.Context) {
 		mapErr(c, err)
 		return
 	}
-	response.OK(c, data)
+	response.OK(c, domain.ConfigurationResponseMap(data))
 }
 
 // Delete godoc
@@ -266,7 +273,7 @@ func (h *Handler) ListAllApplications(c *gin.Context) {
 		mapErr(c, err)
 		return
 	}
-	response.OK(c, data)
+	okConfigAppList(c, data)
 }
 
 // ListConfigurationApplications godoc
@@ -288,7 +295,7 @@ func (h *Handler) ListConfigurationApplications(c *gin.Context) {
 		mapErr(c, err)
 		return
 	}
-	response.OK(c, data)
+	okConfigAppList(c, data)
 }
 
 // UpgradeApplication godoc
@@ -314,5 +321,9 @@ func (h *Handler) UpgradeApplication(c *gin.Context) {
 		return
 	}
 	cfg, _ := h.svc.GetByID(c.Request.Context(), p, req.ConfigurationID)
-	response.OK(c, cfg)
+	if cfg == nil {
+		response.OK(c, nil)
+		return
+	}
+	response.OK(c, domain.ConfigurationResponseMap(cfg))
 }

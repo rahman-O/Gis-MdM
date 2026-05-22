@@ -34,6 +34,9 @@ type Application struct {
 	IconText           *string `json:"iconText,omitempty"`
 	IconID             *int    `json:"iconId,omitempty"`
 	UseKiosk           *bool   `json:"useKiosk,omitempty"`
+	Split              *bool   `json:"split,omitempty"`
+	Arch               *string `json:"arch,omitempty"`
+	AutoUpdate         *bool   `json:"autoUpdate,omitempty"`
 }
 
 // ApplicationVersion mirrors React ApplicationVersion.

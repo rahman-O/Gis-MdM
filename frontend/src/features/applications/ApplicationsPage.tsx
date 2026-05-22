@@ -240,11 +240,20 @@ export function ApplicationsPage() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={async () => {
-                if (deleteTarget?.id == null) return
-                await applicationService.deleteApplication(deleteTarget.id)
-                setDeleteTarget(null)
-                await load()
+              onClick={() => {
+                void (async () => {
+                  if (deleteTarget?.id == null) return
+                  const id = deleteTarget.id
+                  try {
+                    await applicationService.deleteApplication(id)
+                    setDeleteTarget(null)
+                    setList((prev) => prev.filter((a) => a.id !== id))
+                    setError(null)
+                    await load()
+                  } catch (reason: unknown) {
+                    setError(reason instanceof Error ? reason.message : 'Failed to delete application.')
+                  }
+                })()
               }}
             >
               Delete

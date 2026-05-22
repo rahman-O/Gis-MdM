@@ -307,7 +307,7 @@ export function ApplicationFormDialog({ open, initialData, onClose, onSaved }: P
       const nextVersionCode = details?.versionCode ?? values.versionCode
       const nextArch = String(details?.arch ?? values.arch)
       const inferredName =
-        String(existing?.name ?? '').trim() ||
+        String(details?.name ?? existing?.name ?? '').trim() ||
         (nextPkg ? nextPkg.split('.').filter(Boolean).slice(-1)[0] || nextPkg : '') ||
         file.name.replace(/\.(apk|xapk)$/i, '')
       setValues((prev) => ({

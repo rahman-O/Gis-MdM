@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strings"
 
+	"github.com/gin-gonic/gin"
 	"github.com/gis-mdm/server-backend-go/internal/config"
 	"github.com/gis-mdm/server-backend-go/internal/modules/auth/adapter/persistence/postgres"
 	platformauth "github.com/gis-mdm/server-backend-go/internal/platform/auth"
@@ -13,6 +15,7 @@ import (
 	"github.com/gis-mdm/server-backend-go/internal/platform/httpx/middleware"
 	"github.com/gis-mdm/server-backend-go/internal/platform/jwt"
 	"github.com/gis-mdm/server-backend-go/internal/platform/logger"
+	"github.com/gis-mdm/server-backend-go/internal/platform/storage"
 )
 
 // Run bootstraps config, database, HTTP server, and modules.
@@ -41,6 +44,13 @@ func Run() error {
 	})
 
 	engine := httpx.NewEngine(cfg)
+	if cfg.FilesDirectory != "" {
+		filesBase := cfg.FilesDirectory
+		engine.GET("/files/*filepath", func(c *gin.Context) {
+			rel := strings.TrimPrefix(c.Param("filepath"), "/")
+			storage.ServeFileRel(c.Writer, c.Request, filesBase, rel)
+		})
+	}
 	middleware.SetupSessions(engine, cfg.SessionSecret)
 
 	var lookup platformauth.UserLookup = noopLookup{}

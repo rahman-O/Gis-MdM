@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -77,16 +78,23 @@ func (r *DeviceSyncRepository) CountCustomers(ctx context.Context) (int, error) 
 }
 
 func (r *DeviceSyncRepository) CreateOnDemand(ctx context.Context, number string, opts domain.DeviceCreateOptions, defaultCustomerID int64) (*domain.DeviceRecord, error) {
-	configID, err := r.resolveConfigurationID(ctx, opts.Configuration, defaultCustomerID)
+	customerID, err := r.resolveCustomerID(ctx, opts.Customer, defaultCustomerID)
 	if err != nil {
 		return nil, err
+	}
+	configID, configCustomerID, err := r.resolveConfiguration(ctx, opts.Configuration, customerID)
+	if err != nil {
+		return nil, err
+	}
+	if configCustomerID != customerID {
+		return nil, sql.ErrNoRows
 	}
 	now := time.Now().UnixMilli()
 	var id int64
 	err = r.db.QueryRowContext(ctx, `
 		INSERT INTO devices (number, description, lastupdate, configurationid, customerid, enrolltime)
 		VALUES ($1, '', 0, $2, $3, $4)
-		RETURNING id`, number, configID, defaultCustomerID, now).Scan(&id)
+		RETURNING id`, number, configID, customerID, now).Scan(&id)
 	if err != nil {
 		return nil, err
 	}
@@ -99,23 +107,51 @@ func (r *DeviceSyncRepository) CreateOnDemand(ctx context.Context, number string
 			INSERT INTO devicegroups (deviceid, groupid)
 			SELECT $1, g.id FROM groups g
 			WHERE g.customerid = $2 AND lower(g.name) = lower($3)
-			ON CONFLICT DO NOTHING`, id, defaultCustomerID, gname)
+			ON CONFLICT DO NOTHING`, id, customerID, gname)
 	}
 	return r.FindByNumber(ctx, number)
 }
 
-func (r *DeviceSyncRepository) resolveConfigurationID(ctx context.Context, name string, customerID int64) (int64, error) {
-	name = strings.TrimSpace(name)
-	if name == "" {
-		var id int64
-		err := r.db.QueryRowContext(ctx, `
-			SELECT id FROM configurations WHERE customerid = $1 ORDER BY id LIMIT 1`, customerID).Scan(&id)
-		return id, err
+func (r *DeviceSyncRepository) resolveCustomerID(ctx context.Context, customerName string, defaultCustomerID int64) (int64, error) {
+	n, err := r.CountCustomers(ctx)
+	if err != nil {
+		return 0, err
+	}
+	if n <= 1 {
+		return defaultCustomerID, nil
+	}
+	customerName = strings.TrimSpace(customerName)
+	if customerName == "" {
+		return 0, sql.ErrNoRows
 	}
 	var id int64
-	err := r.db.QueryRowContext(ctx, `
-		SELECT id FROM configurations WHERE customerid = $1 AND lower(name) = lower($2)`, customerID, name).Scan(&id)
+	err = r.db.QueryRowContext(ctx, `
+		SELECT id FROM customers WHERE lower(name) = lower($1)`, customerName).Scan(&id)
 	return id, err
+}
+
+func (r *DeviceSyncRepository) resolveConfiguration(ctx context.Context, key string, customerID int64) (configID, configCustomerID int64, err error) {
+	key = strings.TrimSpace(key)
+	if key == "" {
+		err = r.db.QueryRowContext(ctx, `
+			SELECT id, customerid FROM configurations WHERE customerid = $1 ORDER BY id LIMIT 1`, customerID).
+			Scan(&configID, &configCustomerID)
+		return configID, configCustomerID, err
+	}
+	err = r.db.QueryRowContext(ctx, `
+		SELECT id, customerid FROM configurations
+		WHERE qrcodekey IS NOT NULL AND lower(qrcodekey) = lower($1)`, key).
+		Scan(&configID, &configCustomerID)
+	if err == nil {
+		return configID, configCustomerID, nil
+	}
+	if !errors.Is(err, sql.ErrNoRows) {
+		return 0, 0, err
+	}
+	err = r.db.QueryRowContext(ctx, `
+		SELECT id, customerid FROM configurations WHERE customerid = $1 AND lower(name) = lower($2)`,
+		customerID, key).Scan(&configID, &configCustomerID)
+	return configID, configCustomerID, err
 }
 
 func (r *DeviceSyncRepository) CompleteMigration(ctx context.Context, deviceID int64) error {
@@ -233,6 +269,24 @@ func (r *DeviceSyncRepository) BuildSyncResponse(ctx context.Context, dev domain
 			}
 		}
 		resp.Applications = append(resp.Applications, app)
+	}
+
+	settingRows, err := r.db.QueryContext(ctx, `
+		SELECT applicationpkg, name, type, value
+		FROM deviceapplicationsettings WHERE deviceid = $1`, dev.ID)
+	if err == nil {
+		defer settingRows.Close()
+		for settingRows.Next() {
+			var s domain.SyncApplicationSetting
+			var typ string
+			if err := settingRows.Scan(&s.PackageID, &s.Name, &typ, &s.Value); err != nil {
+				break
+			}
+			if n, convErr := fmt.Sscanf(typ, "%d", &s.Type); convErr != nil || n != 1 {
+				s.Type = 0
+			}
+			resp.ApplicationSettings = append(resp.ApplicationSettings, s)
+		}
 	}
 
 	frows, err := r.db.QueryContext(ctx, `

@@ -93,6 +93,7 @@ export interface LinkConfigurationsToAppVersionRequest {
 
 export interface ApkFileDetails {
   pkg?: string | null
+  name?: string | null
   version?: string | null
   versionCode?: number | null
   arch?: string | null

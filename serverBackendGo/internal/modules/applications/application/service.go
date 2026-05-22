@@ -7,15 +7,18 @@ import (
 	"github.com/gis-mdm/server-backend-go/internal/modules/applications/domain"
 	"github.com/gis-mdm/server-backend-go/internal/modules/applications/port"
 	platformauth "github.com/gis-mdm/server-backend-go/internal/platform/auth"
+	"github.com/gis-mdm/server-backend-go/internal/platform/storage"
 )
 
 // Service implements application use cases.
 type Service struct {
-	repo port.ApplicationRepository
+	repo    port.ApplicationRepository
+	store   *storage.LocalStore
+	baseURL string
 }
 
-func NewService(repo port.ApplicationRepository) *Service {
-	return &Service{repo: repo}
+func NewService(repo port.ApplicationRepository, store *storage.LocalStore, baseURL string) *Service {
+	return &Service{repo: repo, store: store, baseURL: baseURL}
 }
 
 var (
@@ -85,6 +88,9 @@ func (s *Service) SaveAndroid(ctx context.Context, p *platformauth.Principal, ap
 	if p == nil || !p.CanManageApplications() {
 		return nil, ErrPermissionDenied
 	}
+	if err := s.commitApplicationAPK(ctx, customerID(p), &app); err != nil {
+		return nil, err
+	}
 	return s.repo.SaveAndroid(ctx, customerID(p), app)
 }
 
@@ -98,6 +104,9 @@ func (s *Service) SaveWeb(ctx context.Context, p *platformauth.Principal, app do
 func (s *Service) SaveVersion(ctx context.Context, p *platformauth.Principal, ver domain.ApplicationVersion) (*domain.ApplicationVersion, error) {
 	if p == nil || !p.CanManageApplications() {
 		return nil, ErrPermissionDenied
+	}
+	if err := s.commitVersionAPK(ctx, customerID(p), &ver); err != nil {
+		return nil, err
 	}
 	return s.repo.SaveVersion(ctx, customerID(p), ver)
 }

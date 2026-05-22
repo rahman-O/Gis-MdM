@@ -96,7 +96,7 @@ describe('configurationService property tests', () => {
 
         mocks.get.mockResolvedValue(ok([]))
         await configurationService.getAllApplications()
-        expect(mocks.get).toHaveBeenCalledWith('/private/configurations/applications')
+        expect(mocks.get).toHaveBeenCalledWith('/private/applications/search')
 
         mocks.put.mockResolvedValue(ok({ id }))
         await configurationService.upgradeConfigurationApplication({
@@ -195,7 +195,7 @@ describe('configurationService property tests', () => {
           }
 
           if (op === 'getAllApps') {
-            mocks.get.mockRejectedValueOnce(err)
+            mocks.get.mockRejectedValue(err)
             expect(await didReject(configurationService.getAllApplications())).toBe(true)
             return
           }

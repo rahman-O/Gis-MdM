@@ -1,6 +1,6 @@
 import apiClient from '@/services/apiClient'
 import type { HmdmEnvelope } from '@/services/hmdmEnvelope'
-import { assertHmdmOk, unwrapHmdmData } from '@/services/hmdmEnvelope'
+import { assertHmdmOk, unwrapHmdmData, unwrapHmdmList } from '@/services/hmdmEnvelope'
 import type {
   Application,
   ApplicationConfigurationLink,
@@ -16,7 +16,7 @@ function unwrap<T>(response: { data: HmdmEnvelope<T> }, message: string): T {
 
 export async function getAllApplications(): Promise<Application[]> {
   const response = await apiClient.get<HmdmEnvelope<Application[]>>('/private/applications/search')
-  return unwrap(response, 'Failed to load applications.')
+  return unwrapHmdmList(response.data, 'Failed to load applications.')
 }
 
 export async function searchApplications(value: string): Promise<Application[]> {
@@ -25,13 +25,13 @@ export async function searchApplications(value: string): Promise<Application[]> 
   const response = await apiClient.get<HmdmEnvelope<Application[]>>(
     `/private/applications/search/${encodeURIComponent(normalized)}`
   )
-  return unwrap(response, 'Failed to search applications.')
+  return unwrapHmdmList(response.data, 'Failed to search applications.')
 }
 
 /** Super-admin: all tenants’ applications (control panel). */
 export async function getAllAdminApplications(): Promise<Application[]> {
   const response = await apiClient.get<HmdmEnvelope<Application[]>>('/private/applications/admin/search')
-  return unwrap(response, 'Failed to load shared applications catalog.')
+  return unwrapHmdmList(response.data, 'Failed to load shared applications catalog.')
 }
 
 export async function searchAdminApplications(value: string): Promise<Application[]> {
@@ -40,7 +40,7 @@ export async function searchAdminApplications(value: string): Promise<Applicatio
   const response = await apiClient.get<HmdmEnvelope<Application[]>>(
     `/private/applications/admin/search/${encodeURIComponent(normalized)}`
   )
-  return unwrap(response, 'Failed to search shared applications catalog.')
+  return unwrapHmdmList(response.data, 'Failed to search shared applications catalog.')
 }
 
 /** Merges duplicates by package into one shared app (server GET, legacy API). */
@@ -69,7 +69,7 @@ export async function getApplicationVersions(id: number): Promise<ApplicationVer
 
 export async function validateApplicationPkg(payload: Pick<Application, 'id' | 'name' | 'pkg'>): Promise<Application[]> {
   const response = await apiClient.put<HmdmEnvelope<Application[]>>('/private/applications/validatePkg', payload)
-  return unwrap(response, 'Failed to validate package.')
+  return unwrapHmdmList(response.data, 'Failed to validate package.')
 }
 
 export async function createOrUpdateAndroidApplication(payload: Application): Promise<Application | void> {

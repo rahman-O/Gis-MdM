@@ -41,18 +41,43 @@ export function buildPublicQrPaths(qrCodeKey: string, deviceNumber?: string): { 
   return { primaryPath, fallbackPath }
 }
 
-/** Fetch a single enrollment QR PNG path; optionally abort in-flight loads. */
-export async function loadQrImageObjectUrl(imagePath: string, signal?: AbortSignal): Promise<string | null> {
+async function qrErrorFromResponse(response: { status: number; data: Blob }): Promise<string | null> {
+  if (response.status < 400) return null
   try {
-    const response = await apiClient.get<Blob>(imagePath, { responseType: 'blob', signal })
+    const text = (await response.data.text()).trim()
+    if (text) return text
+  } catch {
+    /* ignore */
+  }
+  if (response.status === 404) return 'Configuration not found for this QR key.'
+  if (response.status === 400) {
+    return 'Main application has no APK download URL. Upload an APK for the Main App version in Applications, then save the configuration.'
+  }
+  return `Server returned HTTP ${response.status} for the QR image.`
+}
+
+/** Fetch a single enrollment QR PNG path; optionally abort in-flight loads. */
+export async function loadQrImageObjectUrl(
+  imagePath: string,
+  signal?: AbortSignal
+): Promise<{ url: string | null; error: string | null }> {
+  try {
+    const response = await apiClient.get<Blob>(imagePath, {
+      responseType: 'blob',
+      signal,
+      validateStatus: (status) => status < 500 || status === 500,
+    })
     const blob = response.data
     if (await isLikelyQrImageBlob(blob)) {
-      return URL.createObjectURL(blob)
+      return { url: URL.createObjectURL(blob), error: null }
     }
-  } catch {
-    /* aborted or error */
+    const serverMsg = await qrErrorFromResponse(response)
+    return { url: null, error: serverMsg }
+  } catch (e: unknown) {
+    if (signal?.aborted) return { url: null, error: null }
+    const msg = e instanceof Error ? e.message : null
+    return { url: null, error: msg }
   }
-  return null
 }
 
 /**
@@ -60,5 +85,8 @@ export async function loadQrImageObjectUrl(imagePath: string, signal?: AbortSign
  * Returns an object URL to revoke after use, or null.
  */
 export async function loadDeviceQrObjectUrl(primaryPath: string, fallbackPath: string): Promise<string | null> {
-  return (await loadQrImageObjectUrl(primaryPath)) ?? (await loadQrImageObjectUrl(fallbackPath))
+  const primary = await loadQrImageObjectUrl(primaryPath)
+  if (primary.url) return primary.url
+  const fallback = await loadQrImageObjectUrl(fallbackPath)
+  return fallback.url
 }

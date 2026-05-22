@@ -32,9 +32,10 @@ type FileView struct {
 	UsedByConfigurations []string `json:"usedByConfigurations,omitempty"`
 }
 
-// APKFileDetails subset for upload UX.
+// APKFileDetails subset for upload UX (matches Java APKFileDetails / React ApkFileDetails).
 type APKFileDetails struct {
 	Pkg         string `json:"pkg,omitempty"`
+	Name        string `json:"name,omitempty"`
 	Version     string `json:"version,omitempty"`
 	VersionCode int    `json:"versionCode,omitempty"`
 	Arch        string `json:"arch,omitempty"`

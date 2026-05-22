@@ -15,7 +15,7 @@ import { ConfigurationDesignTab } from '@/features/configurations/ConfigurationD
 import { ConfigurationApplicationsTab } from '@/features/configurations/ConfigurationApplicationsTab'
 import { ConfigurationAppSettingsTab } from '@/features/configurations/ConfigurationAppSettingsTab'
 import { ConfigurationFilesTab } from '@/features/configurations/ConfigurationFilesTab'
-import { hasPermission } from '@/features/auth/permissions'
+import { canEnrollDevicesViaQr, hasPermission } from '@/features/auth/permissions'
 import {
   configurationApplicationsForSaveFromApi,
   ensureLinkedRowsForChosenVersions,
@@ -82,22 +82,7 @@ export function ConfigurationEditorPage() {
         })
         const allAppsRaw = Array.isArray(allApps) ? allApps.length : 0
         const cfgAppsRaw = Array.isArray(cfgApps) ? cfgApps.length : 0
-        setApplications(
-          (Array.isArray(allApps) ? allApps : [])
-            .map((item) => {
-              const rec = item as Record<string, unknown>
-              const lv = rec.latestVersion
-              return {
-                id: Number(rec.id ?? 0),
-                name: String(rec.name ?? '').trim(),
-                latestVersionId: (() => {
-                  const n = Number(lv ?? 0)
-                  return n > 0 ? n : null
-                })(),
-              }
-            })
-            .filter((item) => item.id > 0)
-        )
+        setApplications(Array.isArray(allApps) ? allApps : [])
         const mapped = (Array.isArray(cfgApps) ? cfgApps : [])
           .map((item) => {
             const rec = item as Record<string, unknown>
@@ -310,11 +295,33 @@ export function ConfigurationEditorPage() {
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>QR readiness</CardTitle>
-          <CardDescription>
-            {qrEligibility.eligible ? 'Configuration is eligible for QR generation.' : qrEligibility.reason}
-          </CardDescription>
+        <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
+          <div className="space-y-1.5">
+            <CardTitle>QR readiness</CardTitle>
+            <CardDescription>
+              {qrEligibility.eligible
+                ? 'Configuration is eligible for QR generation.'
+                : qrEligibility.reason}
+              {!String(configuration?.qrCodeKey ?? '').trim() ? (
+                <span className="mt-1 block">
+                  Save this configuration once to generate a QR key automatically.
+                </span>
+              ) : null}
+            </CardDescription>
+          </div>
+          {canEnrollDevicesViaQr() &&
+          qrEligibility.eligible &&
+          String(configuration?.qrCodeKey ?? '').trim() ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() =>
+                navigate(`/qr/${encodeURIComponent(String(configuration?.qrCodeKey).trim())}`)
+              }
+            >
+              Open enrollment QR
+            </Button>
+          ) : null}
         </CardHeader>
       </Card>
       {diagnosticCounts ? (

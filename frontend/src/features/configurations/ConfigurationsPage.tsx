@@ -73,8 +73,29 @@ export function ConfigurationsPage() {
     navigate(`/configurations/${c.id}/edit`)
   }
 
-  const qrEligible = (c: Configuration) =>
-    Boolean(c.qrCodeKey?.trim()) && getConfigurationQrEligibility(c).eligible && canEnrollDevicesViaQr()
+  const canOpenQrMenu = (c: Configuration) => canEnrollDevicesViaQr() && c.id != null
+
+  const openEnrollmentQr = async (c: Configuration) => {
+    if (c.id == null) return
+    try {
+      const full = await configurationService.getConfiguration(c.id)
+      const key = String(full.qrCodeKey ?? c.qrCodeKey ?? '').trim()
+      if (!key) {
+        setError('This configuration has no QR key. Open the editor, save once, then try again.')
+        return
+      }
+      const eligibility = getConfigurationQrEligibility(full)
+      if (!eligibility.eligible) {
+        setError(eligibility.reason ?? 'Configuration is not ready for QR enrollment.')
+        navigate(`/configurations/${c.id}/edit`)
+        return
+      }
+      setError(null)
+      navigate(`/qr/${encodeURIComponent(key)}`)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to open enrollment QR.')
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -150,13 +171,9 @@ export function ConfigurationsPage() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onSelect={() => openEdit(c)}>Edit</DropdownMenuItem>
                         <DropdownMenuItem
-                          disabled={!qrEligible(c)}
+                          disabled={!canOpenQrMenu(c)}
                           className="flex items-center gap-2"
-                          onSelect={() => {
-                            const raw = String(c.qrCodeKey ?? '').trim()
-                            if (!raw) return
-                            navigate(`/qr/${encodeURIComponent(raw)}`)
-                          }}
+                          onSelect={() => void openEnrollmentQr(c)}
                         >
                           <QrCode className="h-4 w-4 shrink-0" /> Enrollment QR
                         </DropdownMenuItem>

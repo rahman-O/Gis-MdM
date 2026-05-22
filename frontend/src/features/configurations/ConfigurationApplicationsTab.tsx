@@ -57,6 +57,7 @@ export function ConfigurationApplicationsTab({
         ...linked,
         {
           id: option.id,
+          applicationId: option.id,
           name: option.name,
           action: 1,
           version: null,

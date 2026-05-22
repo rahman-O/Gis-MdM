@@ -2,6 +2,7 @@ package http
 
 import (
 	"errors"
+	"log/slog"
 	"net/http"
 	"strconv"
 
@@ -34,14 +35,22 @@ func parseQuery(c *gin.Context) domain.QRQuery {
 	}
 }
 
+func writeQRError(c *gin.Context, err error) {
+	switch {
+	case errors.Is(err, qrapp.ErrNotFound):
+		c.String(http.StatusNotFound, "configuration not found for this QR key")
+	case errors.Is(err, qrapp.ErrMainAppURLMissing):
+		c.String(http.StatusBadRequest, "main application has no download URL: upload an APK for the Main App version or set launcher URL override")
+	default:
+		c.String(http.StatusInternalServerError, "failed to generate QR provisioning data")
+	}
+}
+
 func (h *Handler) JSON(c *gin.Context) {
 	body, err := h.svc.JSON(c.Request.Context(), c.Param("id"), parseQuery(c))
 	if err != nil {
-		if errors.Is(err, qrapp.ErrNotFound) {
-			c.Status(http.StatusInternalServerError)
-			return
-		}
-		c.Status(http.StatusInternalServerError)
+		slog.Warn("qr json failed", "key", c.Param("id"), "err", err)
+		writeQRError(c, err)
 		return
 	}
 	c.Data(http.StatusOK, "application/json", []byte(body))
@@ -50,8 +59,9 @@ func (h *Handler) JSON(c *gin.Context) {
 func (h *Handler) PNG(c *gin.Context) {
 	png, err := h.svc.PNG(c.Request.Context(), c.Param("id"), parseQuery(c))
 	if err != nil {
-		c.Status(http.StatusInternalServerError)
+		slog.Warn("qr png failed", "key", c.Param("id"), "err", err)
+		writeQRError(c, err)
 		return
 	}
-	c.Data(http.StatusOK, "application/octet-stream", png)
+	c.Data(http.StatusOK, "image/png", png)
 }

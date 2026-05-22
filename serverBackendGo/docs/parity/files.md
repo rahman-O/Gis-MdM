@@ -16,6 +16,6 @@
 | GET | `/apps/{url}` | **Done** | Applications by file URL |
 | GET | `/configurations/{id}` | **Done** | Configuration link rows |
 | POST | `/configurations` | **Done** | Push notify stubbed |
-| GET | `/files/*` (agent download) | **Partial** | Use servlet/static in Java; optional Gin static in dev |
+| GET | `/files/*` (agent download) | **Done** (015) | `internal/app/app.go` + `platform/storage/static_files.go`; maps `FILES_DIRECTORY` |
 
 **Permissions**: `files`, `edit_files` (see `platform/auth/permissions.go`).

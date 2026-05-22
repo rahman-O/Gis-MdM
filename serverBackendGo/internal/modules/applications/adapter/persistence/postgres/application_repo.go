@@ -18,6 +18,19 @@ func NewApplicationRepository(db *sql.DB) *ApplicationRepository {
 	return &ApplicationRepository{db: db}
 }
 
+func (r *ApplicationRepository) CustomerFilesDir(ctx context.Context, customerID int) (string, error) {
+	var filesDir sql.NullString
+	err := r.db.QueryRowContext(ctx, `
+		SELECT COALESCE(filesdir, '') FROM customers WHERE id = $1`, customerID).Scan(&filesDir)
+	if err != nil {
+		return "", err
+	}
+	if filesDir.Valid {
+		return filesDir.String, nil
+	}
+	return "", nil
+}
+
 var _ port.ApplicationRepository = (*ApplicationRepository)(nil)
 
 const appSelect = `
@@ -87,7 +100,7 @@ func (r *ApplicationRepository) ListVersions(ctx context.Context, customerID, ap
 		return nil, err
 	}
 	defer rows.Close()
-	var out []domain.ApplicationVersion
+	out := make([]domain.ApplicationVersion, 0)
 	for rows.Next() {
 		var v domain.ApplicationVersion
 		var id, appID, verCode sql.NullInt64
@@ -229,17 +242,25 @@ func (r *ApplicationRepository) saveApp(ctx context.Context, customerID int, app
 	if err != nil {
 		return nil, err
 	}
-	if app.Version != nil || app.VersionCode != nil {
+	if app.Version != nil || app.VersionCode != nil || deref(app.FilePath) != "" {
 		ver := domain.ApplicationVersion{
 			ApplicationID: &id,
 			Version:       app.Version,
 			VersionCode:   app.VersionCode,
 			URL:           app.URL,
+			URLArmeabi:    app.URLArmeabi,
+			URLArm64:      app.URLArm64,
+			FilePath:      app.FilePath,
+			Split:         app.Split,
+			Arch:          app.Arch,
+			AutoUpdate:    app.AutoUpdate,
 		}
 		if app.ID != nil && app.UsedVersionID != nil {
 			ver.ID = app.UsedVersionID
 		}
-		_, _ = r.SaveVersion(ctx, customerID, ver)
+		if _, err := r.SaveVersion(ctx, customerID, ver); err != nil {
+			return nil, err
+		}
 	}
 	return r.GetByID(ctx, customerID, id)
 }
@@ -472,7 +493,7 @@ func (r *ApplicationRepository) TurnIntoCommon(ctx context.Context, id int) erro
 }
 
 func scanApps(rows *sql.Rows) ([]domain.Application, error) {
-	var out []domain.Application
+	out := make([]domain.Application, 0)
 	for rows.Next() {
 		app, err := scanAppRow(rows)
 		if err != nil {

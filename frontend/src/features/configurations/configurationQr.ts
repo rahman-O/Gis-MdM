@@ -19,7 +19,11 @@ export function getConfigurationQrEligibility(
 
   const mainAppId = Number(configuration.mainAppId ?? 0)
   if (!mainAppId || mainAppId <= 0) {
-    return { eligible: false, reason: 'QR is unavailable: this configuration has no Main App assigned.' }
+    return {
+      eligible: false,
+      reason:
+        'QR is unavailable: assign a Main App in the configuration editor (MDM tab) with an uploaded APK version.',
+    }
   }
 
   const eventReceivingComponent = String(configuration.eventReceivingComponent ?? '').trim()

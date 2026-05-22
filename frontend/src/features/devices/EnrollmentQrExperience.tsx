@@ -105,7 +105,7 @@ export function EnrollmentQrExperience({
       latestQrBlobUrl.current = null
 
       const path = buildEnrollmentQrImagePath(qrCodeKey.trim(), qrFields)
-      const next = await loadQrImageObjectUrl(path, ac.signal)
+      const { url: next, error: loadErr } = await loadQrImageObjectUrl(path, ac.signal)
       if (disposed) {
         if (next?.startsWith('blob:')) URL.revokeObjectURL(next)
         return
@@ -115,7 +115,8 @@ export function EnrollmentQrExperience({
         setQrObjectUrl(next)
       } else {
         setQrError(
-          'The server did not return a QR image. Check Main App APK URL, launcher URL override, event receiving component, or configuration QR key.'
+          loadErr ??
+            'The server did not return a QR image. Check Main App APK URL, launcher URL override, event receiving component, or configuration QR key.'
         )
       }
       setQrLoading(false)
@@ -140,7 +141,10 @@ export function EnrollmentQrExperience({
       setJsonText(typeof raw === 'string' ? raw : raw != null ? JSON.stringify(raw, null, 2) : '')
     } catch (e: unknown) {
       setJsonText(null)
-      setJsonError(e instanceof Error ? e.message : 'Failed to load provisioning JSON.')
+      const msg = e instanceof Error ? e.message : 'Failed to load provisioning JSON.'
+      setJsonError(
+        `${msg} Ensure the configuration has a Main App with APK URL (or launcher URL), and the Go server BASE_URL is reachable from the device.`
+      )
     } finally {
       setJsonLoading(false)
     }

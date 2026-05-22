@@ -52,7 +52,8 @@ func (r *ConfigRepository) SearchByValue(ctx context.Context, customerID int, va
 func (r *ConfigRepository) searchQuery(ctx context.Context, customerID int, filter string) ([]domain.Configuration, error) {
 	q := `
 		SELECT c.id, c.name, c.description, c.type,
-		       (SELECT COUNT(*)::int FROM devices d WHERE d.configurationid = c.id) AS device_count
+		       (SELECT COUNT(*)::int FROM devices d WHERE d.configurationid = c.id) AS device_count,
+		       c.qrcodekey, c.mainappid
 		FROM configurations c
 		WHERE c.customerid = $1`
 	args := []any{customerID}
@@ -70,8 +71,9 @@ func (r *ConfigRepository) searchQuery(ctx context.Context, customerID int, filt
 	for rows.Next() {
 		var c domain.Configuration
 		var id, typ, dc int
-		var name, desc sql.NullString
-		if err := rows.Scan(&id, &name, &desc, &typ, &dc); err != nil {
+		var name, desc, qr sql.NullString
+		var mainApp sql.NullInt64
+		if err := rows.Scan(&id, &name, &desc, &typ, &dc, &qr, &mainApp); err != nil {
 			return nil, err
 		}
 		c.ID = &id
@@ -83,6 +85,13 @@ func (r *ConfigRepository) searchQuery(ctx context.Context, customerID int, filt
 		}
 		c.Type = &typ
 		c.DeviceCount = &dc
+		if qr.Valid && strings.TrimSpace(qr.String) != "" {
+			c.QRCodeKey = &qr.String
+		}
+		if mainApp.Valid && mainApp.Int64 > 0 {
+			m := int(mainApp.Int64)
+			c.MainAppID = &m
+		}
 		out = append(out, c)
 	}
 	return out, rows.Err()
@@ -273,8 +282,28 @@ func (r *ConfigRepository) save(ctx context.Context, customerID, id int, cfg dom
 		return 0, err
 	}
 	for _, app := range cfg.Applications {
-		if app.ID <= 0 {
+		appID := app.ID
+		if app.ApplicationID > 0 {
+			appID = app.ApplicationID
+		}
+		if appID <= 0 {
 			continue
+		}
+		verID := 0
+		if app.UsedVersionID != nil {
+			verID = *app.UsedVersionID
+		}
+		if verID <= 0 {
+			var latest int
+			if err := tx.QueryRowContext(ctx, `
+				SELECT av.id FROM applicationversions av
+				JOIN applications a ON a.id = av.applicationid
+				WHERE av.applicationid = $1 AND (a.customerid = $2 OR a.common = TRUE)
+				ORDER BY av.versioncode DESC, av.id DESC LIMIT 1`,
+				appID, customerID).Scan(&latest); err != nil || latest <= 0 {
+				continue
+			}
+			verID = latest
 		}
 		action := 1
 		if app.Action != nil {
@@ -301,14 +330,14 @@ func (r *ConfigRepository) save(ctx context.Context, customerID, id int, cfg dom
 				configurationid, applicationid, applicationversionid,
 				action, showicon, screenorder, keycode, bottom, remove, longtap
 			) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
-			id, app.ID, nullInt(app.UsedVersionID), action, showIcon,
+			id, appID, verID, action, showIcon,
 			nullInt(app.ScreenOrder), nullInt(app.KeyCode), bottom, remove, longTap,
 		)
 		if err != nil {
 			return 0, err
 		}
 		if app.SkipVersionCheck != nil {
-			if err := r.upsertConfigAppParam(ctx, tx, id, app.ID, *app.SkipVersionCheck); err != nil {
+			if err := r.upsertConfigAppParam(ctx, tx, id, appID, *app.SkipVersionCheck); err != nil {
 				return 0, err
 			}
 		}
@@ -365,20 +394,27 @@ func (r *ConfigRepository) Copy(ctx context.Context, customerID int, req domain.
 	name := strings.TrimSpace(req.Name)
 	src.ID = nil
 	src.Name = &name
+	src.QRCodeKey = nil
 	if req.Description != nil {
 		src.Description = req.Description
 	}
+	domain.EnsureQRCodeKey(src, nil)
 	return r.Insert(ctx, customerID, *src)
 }
 
 func (r *ConfigRepository) ListAllApplicationsForPicker(ctx context.Context, customerID int) ([]domain.ConfigurationApplication, error) {
 	rows, err := r.db.QueryContext(ctx, `
 		SELECT a.id, a.name, a.pkg, a.type,
-		       (SELECT av.id FROM applicationversions av
-		        WHERE av.applicationid = a.id ORDER BY av.versioncode DESC, av.id DESC LIMIT 1) AS latest_version,
-		       (SELECT av.version FROM applicationversions av
-		        WHERE av.applicationid = a.id ORDER BY av.versioncode DESC, av.id DESC LIMIT 1) AS latest_version_text
+		       lv.id AS latest_version,
+		       lv.version AS latest_version_text
 		FROM applications a
+		LEFT JOIN LATERAL (
+			SELECT av.id, av.version
+			FROM applicationversions av
+			WHERE av.applicationid = a.id
+			ORDER BY av.versioncode DESC, av.id DESC
+			LIMIT 1
+		) lv ON TRUE
 		WHERE a.customerid = $1 OR a.common = TRUE
 		ORDER BY lower(a.name)`, customerID)
 	if err != nil {
@@ -410,7 +446,7 @@ func (r *ConfigRepository) ListConfigurationApplications(ctx context.Context, cu
 		return nil, err
 	}
 	defer rows.Close()
-	var out []domain.ConfigurationApplication
+	out := make([]domain.ConfigurationApplication, 0)
 	for rows.Next() {
 		var app domain.ConfigurationApplication
 		var name, pkg, typ, ver, url sql.NullString
@@ -478,6 +514,7 @@ func (r *ConfigRepository) ListConfigurationApplications(ctx context.Context, cu
 			l := int(latest.Int64)
 			app.LatestVersion = &l
 		}
+		app.ApplicationID = app.ID
 		out = append(out, app)
 	}
 	return out, rows.Err()
@@ -577,7 +614,7 @@ func (r *ConfigRepository) loadAppSettings(ctx context.Context, configurationID 
 }
 
 func scanConfigApps(rows *sql.Rows) ([]domain.ConfigurationApplication, error) {
-	var out []domain.ConfigurationApplication
+	out := make([]domain.ConfigurationApplication, 0)
 	for rows.Next() {
 		var app domain.ConfigurationApplication
 		var name, pkg, typ, verText sql.NullString
@@ -601,6 +638,7 @@ func scanConfigApps(rows *sql.Rows) ([]domain.ConfigurationApplication, error) {
 		if verText.Valid {
 			app.Version = &verText.String
 		}
+		app.ApplicationID = app.ID
 		out = append(out, app)
 	}
 	return out, rows.Err()

@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -52,6 +53,9 @@ func (httpAppStub) UpdateVersionConfigurations(context.Context, int, domain.Link
 }
 func (httpAppStub) AdminSearch(context.Context, string) ([]domain.Application, error) { return nil, nil }
 func (httpAppStub) TurnIntoCommon(context.Context, int) error { return nil }
+func (httpAppStub) CustomerFilesDir(context.Context, int) (string, error) {
+	return "customer-1", nil
+}
 
 func intPtr(n int) *int { return &n }
 
@@ -71,7 +75,7 @@ func setupAppRouter(h *Handler, withPrincipal bool, perms ...string) *gin.Engine
 }
 
 func TestSearch_forbiddenWithoutPrincipal(t *testing.T) {
-	h := NewHandler(appapp.NewService(httpAppStub{}))
+	h := NewHandler(appapp.NewService(httpAppStub{}, nil, ""))
 	r := setupAppRouter(h, false)
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/rest/private/applications/search", nil))
@@ -81,7 +85,7 @@ func TestSearch_forbiddenWithoutPrincipal(t *testing.T) {
 }
 
 func TestSearch_ok(t *testing.T) {
-	h := NewHandler(appapp.NewService(httpAppStub{}))
+	h := NewHandler(appapp.NewService(httpAppStub{}, nil, ""))
 	r := setupAppRouter(h, true, platformauth.PermApplications)
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/rest/private/applications/search", nil))
@@ -90,8 +94,23 @@ func TestSearch_ok(t *testing.T) {
 	}
 }
 
+func TestValidatePkg_emptyList_ok(t *testing.T) {
+	h := NewHandler(appapp.NewService(httpAppStub{}, nil, ""))
+	r := setupAppRouter(h, true, platformauth.PermApplications)
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPut, "/rest/private/applications/validatePkg", strings.NewReader(`{"pkg":"com.new.app","name":"New"}`))
+	req.Header.Set("Content-Type", "application/json")
+	r.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("status %d body %s", w.Code, w.Body.String())
+	}
+	if !strings.Contains(w.Body.String(), `"data":[]`) && strings.Contains(w.Body.String(), `"data":null`) {
+		t.Fatalf("expected data:[] not null, got %s", w.Body.String())
+	}
+}
+
 func TestListVersions_ok(t *testing.T) {
-	h := NewHandler(appapp.NewService(httpAppStub{}))
+	h := NewHandler(appapp.NewService(httpAppStub{}, nil, ""))
 	r := setupAppRouter(h, true, platformauth.PermApplications)
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/rest/private/applications/1/versions", nil))

@@ -27,6 +27,19 @@ export function unwrapHmdmData<T>(envelope: HmdmEnvelope<T>, fallbackMessage: st
   return envelope.data
 }
 
+/** Java often returns an empty list; Go may serialize a nil slice as JSON `null`. */
+export function unwrapHmdmList<T>(
+  envelope: HmdmEnvelope<T[] | null | undefined>,
+  fallbackMessage: string
+): T[] {
+  if (envelope.status !== 'OK') {
+    throw new Error(resolveEnvelopeMessage(envelope.message, fallbackMessage))
+  }
+  const data = envelope.data
+  if (data == null) return []
+  return Array.isArray(data) ? data : []
+}
+
 /** For `Response.OK()` with no payload. */
 export function assertHmdmOk(envelope: HmdmEnvelope<unknown>, fallbackMessage: string): void {
   if (envelope.status !== 'OK') {
