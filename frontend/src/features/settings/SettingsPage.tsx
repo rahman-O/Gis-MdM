@@ -19,7 +19,8 @@ import { unwrapHmdmData } from '@/services/hmdmEnvelope'
 import type { Configuration } from '@/features/configurations/types'
 import { LANGUAGE_OPTIONS } from '@/features/settings/languageMaps'
 import * as settingsService from '@/features/settings/settingsService'
-import type { ConfigurationOption, Settings, SettingsPayload } from '@/features/settings/types'
+import * as groupService from '@/features/groups/groupService'
+import type { ConfigurationOption, GroupOption, Settings, SettingsPayload } from '@/features/settings/types'
 
 /** Matches backend `Settings.passwordStrength` and legacy `password.service.js` (0–2). */
 const PASSWORD_STRENGTH_OPTIONS = [
@@ -45,6 +46,19 @@ const settingsSchema = z
       (v) => (v === '' || v === undefined ? null : Number(v)),
       z.union([z.null(), z.number().int().min(0)])
     ),
+    newDeviceGroupId: z.number().nullable(),
+    phoneNumberFormat: z.string().min(1, 'Phone format is required'),
+    customPropertyName1: z.string(),
+    customPropertyName2: z.string(),
+    customPropertyName3: z.string(),
+    customMultiline1: z.boolean(),
+    customMultiline2: z.boolean(),
+    customMultiline3: z.boolean(),
+    customSend1: z.boolean(),
+    customSend2: z.boolean(),
+    customSend3: z.boolean(),
+    desktopHeaderTemplate: z.string(),
+    sendDescription: z.boolean(),
   })
   .refine((v) => !v.createNewDevices || v.newDeviceConfigurationId != null, {
     message:
@@ -67,6 +81,19 @@ function toFormValues(s: Settings): FormValues {
     unsecureEnrollment: s.unsecureEnrollment ?? false,
     deviceFastSearch: s.deviceFastSearch ?? false,
     idleLogout: s.idleLogout == null || Number(s.idleLogout) === 0 ? null : Number(s.idleLogout),
+    newDeviceGroupId: s.newDeviceGroupId ?? null,
+    phoneNumberFormat: s.phoneNumberFormat ?? '+9 (999) 999-99-99',
+    customPropertyName1: s.customPropertyName1 ?? '',
+    customPropertyName2: s.customPropertyName2 ?? '',
+    customPropertyName3: s.customPropertyName3 ?? '',
+    customMultiline1: s.customMultiline1 ?? false,
+    customMultiline2: s.customMultiline2 ?? false,
+    customMultiline3: s.customMultiline3 ?? false,
+    customSend1: s.customSend1 ?? false,
+    customSend2: s.customSend2 ?? false,
+    customSend3: s.customSend3 ?? false,
+    desktopHeaderTemplate: s.desktopHeaderTemplate ?? '',
+    sendDescription: s.sendDescription ?? false,
   }
 }
 
@@ -82,6 +109,19 @@ function toPayload(v: FormValues): SettingsPayload {
     unsecureEnrollment: v.unsecureEnrollment,
     deviceFastSearch: v.deviceFastSearch,
     idleLogout: v.idleLogout === 0 || v.idleLogout == null ? null : v.idleLogout,
+    newDeviceGroupId: v.newDeviceGroupId,
+    phoneNumberFormat: v.phoneNumberFormat.trim(),
+    customPropertyName1: v.customPropertyName1.trim(),
+    customPropertyName2: v.customPropertyName2.trim(),
+    customPropertyName3: v.customPropertyName3.trim(),
+    customMultiline1: v.customMultiline1,
+    customMultiline2: v.customMultiline2,
+    customMultiline3: v.customMultiline3,
+    customSend1: v.customSend1,
+    customSend2: v.customSend2,
+    customSend3: v.customSend3,
+    desktopHeaderTemplate: v.desktopHeaderTemplate.trim(),
+    sendDescription: v.sendDescription,
   }
 }
 
@@ -97,6 +137,7 @@ function mapConfigurations(list: Configuration[]): ConfigurationOption[] {
 export function SettingsPage() {
   const { toast } = useToast()
   const [configurations, setConfigurations] = useState<ConfigurationOption[]>([])
+  const [groups, setGroups] = useState<GroupOption[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -114,6 +155,19 @@ export function SettingsPage() {
       unsecureEnrollment: false,
       deviceFastSearch: false,
       idleLogout: null,
+      newDeviceGroupId: null,
+      phoneNumberFormat: '+9 (999) 999-99-99',
+      customPropertyName1: '',
+      customPropertyName2: '',
+      customPropertyName3: '',
+      customMultiline1: false,
+      customMultiline2: false,
+      customMultiline3: false,
+      customSend1: false,
+      customSend2: false,
+      customSend3: false,
+      desktopHeaderTemplate: '',
+      sendDescription: false,
     },
   })
 
@@ -124,6 +178,7 @@ export function SettingsPage() {
       const settled = await Promise.allSettled([
         settingsService.getSettings(),
         apiClient.get<HmdmEnvelope<Configuration[]>>('/private/configurations/search'),
+        groupService.getGroups(),
       ])
 
       if (settled[0].status === 'rejected') {
@@ -142,6 +197,14 @@ export function SettingsPage() {
         }
       }
       setConfigurations(configs)
+      if (settled[2].status === 'fulfilled') {
+        setGroups(
+          settled[2].value.map((g) => ({
+            id: g.id,
+            name: g.name?.trim() ? g.name : `Group #${g.id}`,
+          }))
+        )
+      }
       form.reset(toFormValues(nextSettings))
     } catch (reason: unknown) {
       setError(reason instanceof Error ? reason.message : 'Failed to load settings.')
@@ -413,6 +476,118 @@ export function SettingsPage() {
                     <div>
                       <FormLabel>Device fast search</FormLabel>
                     </div>
+                    <FormControl>
+                      <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="newDeviceGroupId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Default group for new devices</FormLabel>
+                    <Select
+                      value={field.value == null ? NONE_CONFIG_VALUE : String(field.value)}
+                      onValueChange={(v) => field.onChange(v === NONE_CONFIG_VALUE ? null : Number(v))}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select group" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value={NONE_CONFIG_VALUE}>None</SelectItem>
+                        {groups.map((g) => (
+                          <SelectItem key={g.id} value={String(g.id)}>
+                            {g.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="phoneNumberFormat"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Phone number format</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="customPropertyName1"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Custom field 1 label</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="customPropertyName2"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Custom field 2 label</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="customPropertyName3"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Custom field 3 label</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="desktopHeaderTemplate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Desktop header template</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="sendDescription"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded border p-3">
+                    <FormLabel>Send description with device info</FormLabel>
                     <FormControl>
                       <Switch checked={field.value} onCheckedChange={field.onChange} />
                     </FormControl>

@@ -7,7 +7,7 @@
 |--------|------|--------|-------|
 | GET | `/configuration/{deviceId}` | Done | SyncResponse + signatures |
 | POST | `/configuration/{deviceId}` | Done | On-demand enroll |
-| POST | `/info` | Done | Telemetry |
+| POST | `/info` | Done | Telemetry; **014** upserts `devicestatuses` from payload (`applications`/`files` presence) |
 | POST | `/applicationSettings/{deviceId}` | Done | Per-app settings |
 
 **Env**: `SECURE_ENROLLMENT`, `PREVENT_DUPLICATE_ENROLLMENT`, `HASH_SECRET`, `REBRANDING_MOBILE_NAME`

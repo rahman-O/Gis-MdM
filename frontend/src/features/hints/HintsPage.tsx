@@ -30,6 +30,15 @@ export function HintsPage() {
         <Button type="button" variant="outline" onClick={() => hintsService.disableHints().then(load)}>
           Disable hints
         </Button>
+        {keys[0] ? (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => hintsService.markHintShown(keys[0]).then(load)}
+          >
+            Mark first hint shown
+          </Button>
+        ) : null}
       </div>
       {err ? <p className="text-destructive text-sm">{err}</p> : null}
       <div>

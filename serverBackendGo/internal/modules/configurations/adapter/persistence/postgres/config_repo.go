@@ -3,7 +3,6 @@ package postgres
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"strings"
 
@@ -167,7 +166,7 @@ func (r *ConfigRepository) GetByID(ctx context.Context, customerID, id int) (*do
 		cfg.Permissive = &permissive.Bool
 	}
 	if len(settings) > 0 {
-		_ = json.Unmarshal(settings, cfg)
+		cfg.SetPolicyFromJSON(settings)
 	}
 	cfg.ID = &id
 	apps, err := r.ListConfigurationApplications(ctx, customerID, id)
@@ -208,7 +207,10 @@ func (r *ConfigRepository) Update(ctx context.Context, customerID int, cfg domai
 }
 
 func (r *ConfigRepository) save(ctx context.Context, customerID, id int, cfg domain.Configuration) (int, error) {
-	settings, _ := json.Marshal(cfg)
+	settings, err := cfg.BuildSettingsJSON()
+	if err != nil {
+		return 0, err
+	}
 	typ := 0
 	if cfg.Type != nil {
 		typ = *cfg.Type
@@ -258,6 +260,9 @@ func (r *ConfigRepository) save(ctx context.Context, customerID, id int, cfg dom
 	if err != nil {
 		return 0, err
 	}
+	if _, err = tx.ExecContext(ctx, `DELETE FROM configurationapplicationparameters WHERE configurationid=$1`, id); err != nil {
+		return 0, err
+	}
 	if _, err = tx.ExecContext(ctx, `DELETE FROM configurationapplications WHERE configurationid=$1`, id); err != nil {
 		return 0, err
 	}
@@ -283,16 +288,29 @@ func (r *ConfigRepository) save(ctx context.Context, customerID, id int, cfg dom
 		if app.Bottom != nil {
 			bottom = *app.Bottom
 		}
+		remove := false
+		if app.Remove != nil {
+			remove = *app.Remove
+		}
+		longTap := false
+		if app.LongTap != nil {
+			longTap = *app.LongTap
+		}
 		_, err = tx.ExecContext(ctx, `
 			INSERT INTO configurationapplications (
 				configurationid, applicationid, applicationversionid,
-				action, showicon, screenorder, keycode, bottom
-			) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+				action, showicon, screenorder, keycode, bottom, remove, longtap
+			) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
 			id, app.ID, nullInt(app.UsedVersionID), action, showIcon,
-			nullInt(app.ScreenOrder), nullInt(app.KeyCode), bottom,
+			nullInt(app.ScreenOrder), nullInt(app.KeyCode), bottom, remove, longTap,
 		)
 		if err != nil {
 			return 0, err
+		}
+		if app.SkipVersionCheck != nil {
+			if err := r.upsertConfigAppParam(ctx, tx, id, app.ID, *app.SkipVersionCheck); err != nil {
+				return 0, err
+			}
 		}
 	}
 	for _, f := range cfg.Files {
@@ -322,6 +340,15 @@ func (r *ConfigRepository) save(ctx context.Context, customerID, id int, cfg dom
 		return 0, err
 	}
 	return id, nil
+}
+
+func (r *ConfigRepository) upsertConfigAppParam(ctx context.Context, tx *sql.Tx, configurationID, applicationID int, skip bool) error {
+	_, err := tx.ExecContext(ctx, `
+		INSERT INTO configurationapplicationparameters (configurationid, applicationid, skipversioncheck)
+		VALUES ($1, $2, $3)
+		ON CONFLICT (configurationid, applicationid) DO UPDATE SET skipversioncheck = $3`,
+		configurationID, applicationID, skip)
+	return err
 }
 
 func (r *ConfigRepository) Delete(ctx context.Context, customerID, id int) error {
@@ -367,12 +394,16 @@ func (r *ConfigRepository) ListConfigurationApplications(ctx context.Context, cu
 		SELECT a.id, a.name, a.pkg, a.type,
 		       ca.applicationversionid, ca.action, ca.showicon,
 		       ca.screenorder, ca.keycode, ca.bottom,
+		       ca.remove, ca.longtap,
+		       COALESCE(cap.skipversioncheck, false),
 		       av.version, av.versioncode, av.url,
 		       (SELECT av2.id FROM applicationversions av2
 		        WHERE av2.applicationid = a.id ORDER BY av2.versioncode DESC, av2.id DESC LIMIT 1) AS latest_version
 		FROM configurationapplications ca
 		JOIN applications a ON a.id = ca.applicationid
 		LEFT JOIN applicationversions av ON av.id = ca.applicationversionid
+		LEFT JOIN configurationapplicationparameters cap
+		       ON cap.configurationid = ca.configurationid AND cap.applicationid = ca.applicationid
 		WHERE ca.configurationid = $1
 		ORDER BY lower(a.name)`, configurationID)
 	if err != nil {
@@ -384,11 +415,12 @@ func (r *ConfigRepository) ListConfigurationApplications(ctx context.Context, cu
 		var app domain.ConfigurationApplication
 		var name, pkg, typ, ver, url sql.NullString
 		var usedVer, latest, action, verCode sql.NullInt64
-		var showIcon, bottom sql.NullBool
+		var showIcon, bottom, remove, longTap, skipVer sql.NullBool
 		var screenOrder, keyCode sql.NullInt64
 		if err := rows.Scan(
 			&app.ID, &name, &pkg, &typ, &usedVer, &action, &showIcon,
-			&screenOrder, &keyCode, &bottom, &ver, &verCode, &url, &latest,
+			&screenOrder, &keyCode, &bottom, &remove, &longTap, &skipVer,
+			&ver, &verCode, &url, &latest,
 		); err != nil {
 			return nil, err
 		}
@@ -422,6 +454,15 @@ func (r *ConfigRepository) ListConfigurationApplications(ctx context.Context, cu
 		}
 		if bottom.Valid {
 			app.Bottom = &bottom.Bool
+		}
+		if remove.Valid {
+			app.Remove = &remove.Bool
+		}
+		if longTap.Valid {
+			app.LongTap = &longTap.Bool
+		}
+		if skipVer.Valid {
+			app.SkipVersionCheck = &skipVer.Bool
 		}
 		if ver.Valid {
 			app.Version = &ver.String

@@ -1,0 +1,13 @@
+ALTER TABLE settings DROP COLUMN IF EXISTS senddescription;
+ALTER TABLE settings DROP COLUMN IF EXISTS desktopheadertemplate;
+ALTER TABLE settings DROP COLUMN IF EXISTS customsend3;
+ALTER TABLE settings DROP COLUMN IF EXISTS customsend2;
+ALTER TABLE settings DROP COLUMN IF EXISTS customsend1;
+ALTER TABLE settings DROP COLUMN IF EXISTS custommultiline3;
+ALTER TABLE settings DROP COLUMN IF EXISTS custommultiline2;
+ALTER TABLE settings DROP COLUMN IF EXISTS custommultiline1;
+ALTER TABLE settings DROP COLUMN IF EXISTS custompropertyname3;
+ALTER TABLE settings DROP COLUMN IF EXISTS custompropertyname2;
+ALTER TABLE settings DROP COLUMN IF EXISTS custompropertyname1;
+ALTER TABLE settings DROP COLUMN IF EXISTS phonenumberformat;
+ALTER TABLE settings DROP COLUMN IF EXISTS newdevicegroupid;

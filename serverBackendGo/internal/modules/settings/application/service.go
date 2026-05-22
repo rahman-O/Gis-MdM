@@ -45,6 +45,23 @@ func (s *Service) MergeAndSaveLang(ctx context.Context, customerID int, body map
 	return s.repo.SaveLanguage(ctx, cur)
 }
 
+func (s *Service) GetUserRoleSettings(ctx context.Context, customerID, roleID int) (*domain.UserRoleSettings, error) {
+	return s.repo.GetUserRoleSettings(ctx, customerID, roleID)
+}
+
+func (s *Service) SaveUserRoleSettings(ctx context.Context, customerID int, body map[string]interface{}) error {
+	b, _ := json.Marshal(body)
+	var settings domain.UserRoleSettings
+	if err := json.Unmarshal(b, &settings); err != nil {
+		return err
+	}
+	if rid, ok := body["roleId"].(float64); ok {
+		settings.RoleID = int(rid)
+	}
+	settings.CustomerID = customerID
+	return s.repo.SaveUserRoleSettings(ctx, customerID, settings)
+}
+
 func (s *Service) MergeAndSaveDesign(ctx context.Context, customerID int, body map[string]interface{}) error {
 	cur, err := s.repo.GetByCustomerID(ctx, customerID)
 	if err != nil {
@@ -97,5 +114,47 @@ func applyMap(s *domain.Settings, body map[string]interface{}) {
 	}
 	if patch.DesktopHeader != "" {
 		s.DesktopHeader = patch.DesktopHeader
+	}
+	if v, ok := body["newDeviceGroupId"].(float64); ok {
+		n := int(v)
+		s.NewDeviceGroupID = &n
+	} else if body["newDeviceGroupId"] == nil {
+		s.NewDeviceGroupID = nil
+	}
+	if v, ok := body["phoneNumberFormat"].(string); ok {
+		s.PhoneNumberFormat = v
+	}
+	if v, ok := body["customPropertyName1"].(string); ok {
+		s.CustomPropertyName1 = v
+	}
+	if v, ok := body["customPropertyName2"].(string); ok {
+		s.CustomPropertyName2 = v
+	}
+	if v, ok := body["customPropertyName3"].(string); ok {
+		s.CustomPropertyName3 = v
+	}
+	if v, ok := body["customMultiline1"].(bool); ok {
+		s.CustomMultiline1 = v
+	}
+	if v, ok := body["customMultiline2"].(bool); ok {
+		s.CustomMultiline2 = v
+	}
+	if v, ok := body["customMultiline3"].(bool); ok {
+		s.CustomMultiline3 = v
+	}
+	if v, ok := body["customSend1"].(bool); ok {
+		s.CustomSend1 = v
+	}
+	if v, ok := body["customSend2"].(bool); ok {
+		s.CustomSend2 = v
+	}
+	if v, ok := body["customSend3"].(bool); ok {
+		s.CustomSend3 = v
+	}
+	if v, ok := body["desktopHeaderTemplate"].(string); ok {
+		s.DesktopHeaderTemplate = v
+	}
+	if v, ok := body["sendDescription"].(bool); ok {
+		s.SendDescription = v
 	}
 }

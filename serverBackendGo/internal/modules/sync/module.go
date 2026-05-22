@@ -24,6 +24,7 @@ func (m *Module) Register(groups module.RouteGroups, deps module.Dependencies) e
 		return fmt.Errorf("sync module requires DATABASE_URL")
 	}
 	repo := syncpostgres.NewDeviceSyncRepository(deps.DB)
+	statusRepo := syncpostgres.NewDeviceStatusRepository(deps.DB)
 	svc := syncapp.NewService(repo, syncapp.Config{
 		BaseURL:           deps.Config.BaseURL,
 		FilesDirectory:    deps.Config.FilesDirectory,
@@ -34,6 +35,7 @@ func (m *Module) Register(groups module.RouteGroups, deps module.Dependencies) e
 		VendorName:        deps.Config.RebrandingVendor,
 		DefaultCustomerID: 1,
 	})
+	svc.SetDeviceStatusWriter(statusRepo)
 	synchttp.NewHandler(svc, deps.Config.HashSecret).Register(groups.Public.Group("/sync"))
 	deps.Log.Info("module registered", "module", m.Name())
 	return nil

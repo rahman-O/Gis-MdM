@@ -4,6 +4,19 @@ export interface Settings {
   customerName: string
   createNewDevices: boolean
   newDeviceConfigurationId: number | null
+  newDeviceGroupId: number | null
+  phoneNumberFormat: string
+  customPropertyName1: string
+  customPropertyName2: string
+  customPropertyName3: string
+  customMultiline1: boolean
+  customMultiline2: boolean
+  customMultiline3: boolean
+  customSend1: boolean
+  customSend2: boolean
+  customSend3: boolean
+  desktopHeaderTemplate: string
+  sendDescription: boolean
   language: string
   passwordLength: number
   passwordStrength: number
@@ -19,6 +32,19 @@ export interface SettingsPayload {
   customerName: string
   createNewDevices: boolean
   newDeviceConfigurationId: number | null
+  newDeviceGroupId: number | null
+  phoneNumberFormat: string
+  customPropertyName1: string
+  customPropertyName2: string
+  customPropertyName3: string
+  customMultiline1: boolean
+  customMultiline2: boolean
+  customMultiline3: boolean
+  customSend1: boolean
+  customSend2: boolean
+  customSend3: boolean
+  desktopHeaderTemplate: string
+  sendDescription: boolean
   language: string
   passwordLength: number
   passwordStrength: number
@@ -29,6 +55,11 @@ export interface SettingsPayload {
 }
 
 export interface ConfigurationOption {
+  id: number
+  name: string
+}
+
+export interface GroupOption {
   id: number
   name: string
 }

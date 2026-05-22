@@ -28,13 +28,24 @@ type Config struct {
 	DefaultCustomerID  int64
 }
 
+// DeviceStatusWriter updates devicestatuses after agent info sync.
+type DeviceStatusWriter interface {
+	UpsertFromInfoJSON(ctx context.Context, deviceID int, infoJSON string) error
+}
+
 type Service struct {
-	repo port.SyncRepository
-	cfg  Config
+	repo   port.SyncRepository
+	status DeviceStatusWriter
+	cfg    Config
 }
 
 func NewService(repo port.SyncRepository, cfg Config) *Service {
 	return &Service{repo: repo, cfg: cfg}
+}
+
+// SetDeviceStatusWriter wires optional devicestatuses upsert (014).
+func (s *Service) SetDeviceStatusWriter(w DeviceStatusWriter) {
+	s.status = w
 }
 
 func (s *Service) checkSig(signature, deviceID string) bool {
@@ -103,9 +114,13 @@ func (s *Service) UpdateInfo(ctx context.Context, info domain.DeviceInfo) error 
 		}
 	}
 	b, _ := json.Marshal(info)
-	_ = s.repo.UpdateInfo(ctx, dev.ID, string(b), "")
+	infoStr := string(b)
+	_ = s.repo.UpdateInfo(ctx, dev.ID, infoStr, "")
 	if info.Custom1 != nil || info.Custom2 != nil || info.Custom3 != nil {
 		_ = s.repo.UpdateCustomProps(ctx, dev.ID, info.Custom1, info.Custom2, info.Custom3)
+	}
+	if s.status != nil {
+		_ = s.status.UpsertFromInfoJSON(ctx, int(dev.ID), infoStr)
 	}
 	return nil
 }

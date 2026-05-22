@@ -4,6 +4,19 @@
 
 ---
 
+## 014 — React ↔ Go integration (2026-05-21)
+
+| Wave | Scope | Status |
+|------|--------|--------|
+| A (P1) | Settings `000015`, config `settingsjson`/CAP, icons upload UI | **منجز** |
+| B (P2) | `sync/info` → `devicestatuses`, `stats` module | **منجز** |
+| C (P3) | Updates apply, hints mark shown | **منجز** |
+| Optional | Device list `infojson` columns, monthly enrollment chart | مفتوح |
+
+Spec: [`specs/014-complete-frontend-go-integration/`](../specs/014-complete-frontend-go-integration/)
+
+---
+
 ## منجز
 
 | المرحلة | الوحدات | الحالة |

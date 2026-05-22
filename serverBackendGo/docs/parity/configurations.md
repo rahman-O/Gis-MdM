@@ -22,4 +22,7 @@
 | Area | Note |
 |------|------|
 | Push notify on save | **Done** — `platform/push` enqueues `configUpdated` (Phase 9) |
-| Full Liquibase column parity | Extended UI fields stored in `settingsjson` JSONB |
+| Full Liquibase column parity | Extended UI fields in `settingsjson`; legacy SQL columns → JSON via `000017` on Java dumps |
+| `configurationapplicationparameters` | **Done** — `000013`; upsert on save when `skipVersionCheck` set |
+| `configurationapplications.remove` / `longtap` | **Done** — `000016`; returned on GET apps list (014) |
+| MDM policy flatten on GET/PUT | **Done** (014) — `settingsjson` merged via `Configuration.Policy`; `ParseConfigurationBody` / `ConfigurationResponseMap` |

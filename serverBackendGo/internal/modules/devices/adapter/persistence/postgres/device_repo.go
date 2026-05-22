@@ -60,7 +60,7 @@ func (r *DeviceRepository) Search(ctx context.Context, scope port.UserScope, req
 		%s
 		GROUP BY d.id
 		ORDER BY %s
-		OFFSET $%d LIMIT $%d`, deviceAccessJoin, searchExtraJoins, where, pageOrder, argN, argN+1)
+		OFFSET $%d LIMIT $%d`, deviceAccessJoin, searchJoins(req), where, pageOrder, argN, argN+1)
 	pageArgs := append(append([]any{}, args...), offset, req.PageSize)
 	query := fmt.Sprintf(`
 		SELECT d.id, d.number, d.description, d.lastupdate, d.configurationid, d.imei, d.phone,
@@ -173,7 +173,7 @@ func (r *DeviceRepository) Count(ctx context.Context, scope port.UserScope, req 
 		FROM devices d
 		%s
 		%s
-		%s`, deviceAccessJoin, searchExtraJoins, where)
+		%s`, deviceAccessJoin, searchJoins(req), where)
 	var n int64
 	err := r.db.QueryRowContext(ctx, query, args...).Scan(&n)
 	return n, err

@@ -75,7 +75,96 @@ func (r *SummaryRepository) GetDeviceStats(ctx context.Context, customerID int, 
 		Scan(&stats.DevicesEnrolledLastMonth); err != nil {
 		return nil, err
 	}
+
+	if err := r.fillInstallSummary(ctx, customerID, userID, stats); err != nil {
+		return nil, err
+	}
+	if err := r.fillAppStatusByConfig(ctx, customerID, userID, stats); err != nil {
+		return nil, err
+	}
 	return stats, nil
+}
+
+func (r *SummaryRepository) fillInstallSummary(ctx context.Context, customerID int, userID int64, stats *domain.DeviceStats) error {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT COALESCE(ds.applicationsstatus, 'FAILURE') AS st, COUNT(DISTINCT d.id)
+		FROM devices d
+		INNER JOIN users u ON u.id = $2
+		LEFT JOIN devicegroups dg ON d.id = dg.deviceid
+		LEFT JOIN groups g ON dg.groupid = g.id
+		LEFT JOIN userdevicegroupsaccess access ON g.id = access.groupid AND access.userid = u.id
+		LEFT JOIN devicestatuses ds ON ds.deviceid = d.id
+		WHERE d.customerid = $1
+		  AND (u.alldevicesavailable = TRUE OR access.groupid IS NOT NULL)
+		GROUP BY st`, customerID, userID)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	counts := map[string]int{}
+	for rows.Next() {
+		var st string
+		var n int
+		if err := rows.Scan(&st, &n); err != nil {
+			return err
+		}
+		counts[st] = n
+	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	stats.InstallSummary = []domain.ChartItem{
+		{StringAttr: "SUCCESS", Number: counts["SUCCESS"]},
+		{StringAttr: "VERSION_MISMATCH", Number: counts["VERSION_MISMATCH"]},
+		{StringAttr: "FAILURE", Number: counts["FAILURE"]},
+	}
+	return nil
+}
+
+func (r *SummaryRepository) fillAppStatusByConfig(ctx context.Context, customerID int, userID int64, stats *domain.DeviceStats) error {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT c.id, c.name,
+			SUM(CASE WHEN COALESCE(ds.applicationsstatus, 'FAILURE') = 'FAILURE' THEN 1 ELSE 0 END),
+			SUM(CASE WHEN COALESCE(ds.applicationsstatus, 'FAILURE') = 'VERSION_MISMATCH' THEN 1 ELSE 0 END),
+			SUM(CASE WHEN COALESCE(ds.applicationsstatus, 'FAILURE') = 'SUCCESS' THEN 1 ELSE 0 END)
+		FROM configurations c
+		JOIN devices d ON d.configurationid = c.id
+		INNER JOIN users u ON u.id = $2
+		LEFT JOIN devicegroups dg ON d.id = dg.deviceid
+		LEFT JOIN groups g ON dg.groupid = g.id
+		LEFT JOIN userdevicegroupsaccess access ON g.id = access.groupid AND access.userid = u.id
+		LEFT JOIN devicestatuses ds ON ds.deviceid = d.id
+		WHERE c.customerid = $1
+		  AND (u.alldevicesavailable = TRUE OR access.groupid IS NOT NULL)
+		GROUP BY c.id, c.name
+		ORDER BY lower(c.name)
+		LIMIT 10`, customerID, userID)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	var names []string
+	var fail, mismatch, success []int
+	for rows.Next() {
+		var id int
+		var name string
+		var f, m, s int
+		if err := rows.Scan(&id, &name, &f, &m, &s); err != nil {
+			return err
+		}
+		names = append(names, name)
+		fail = append(fail, f)
+		mismatch = append(mismatch, m)
+		success = append(success, s)
+	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	stats.TopConfigs = names
+	stats.AppFailureByConfig = fail
+	stats.AppMismatchByConfig = mismatch
+	stats.AppSuccessByConfig = success
+	return nil
 }
 
 func (r *SummaryRepository) countByOnlineWindow(ctx context.Context, customerID int, userID int64, minUpdate, maxUpdate int64) (int64, error) {

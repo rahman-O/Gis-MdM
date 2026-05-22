@@ -5,7 +5,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gis-mdm/server-backend-go/internal/modules/settings/application"
-	"github.com/gis-mdm/server-backend-go/internal/modules/settings/domain"
 	platformauth "github.com/gis-mdm/server-backend-go/internal/platform/auth"
 	"github.com/gis-mdm/server-backend-go/internal/platform/httpx/response"
 )
@@ -117,8 +116,18 @@ func (h *Handler) saveBody(c *gin.Context, fn func(*gin.Context, int, map[string
 // @Success 200 {object} response.Envelope
 // @Router /private/settings/userRole/{roleId} [get]
 func (h *Handler) GetUserRole(c *gin.Context) {
+	principal, ok := platformauth.PrincipalFromContext(c)
+	if !ok {
+		response.PermissionDenied(c)
+		return
+	}
 	roleID, _ := strconv.Atoi(c.Param("roleId"))
-	response.OK(c, domain.UserRoleSettings{RoleID: roleID})
+	settings, err := h.svc.GetUserRoleSettings(c.Request.Context(), principal.CustomerID, roleID)
+	if err != nil {
+		response.ErrorEnvelope(c, "error.internal.server")
+		return
+	}
+	response.OK(c, settings)
 }
 
 // SaveUserRolesCommon godoc
@@ -130,5 +139,21 @@ func (h *Handler) GetUserRole(c *gin.Context) {
 // @Success 200 {object} response.Envelope
 // @Router /private/settings/userRoles/common [post]
 func (h *Handler) SaveUserRolesCommon(c *gin.Context) {
+	principal, ok := platformauth.PrincipalFromContext(c)
+	if !ok {
+		response.PermissionDenied(c)
+		return
+	}
+	var rows []map[string]interface{}
+	if err := c.ShouldBindJSON(&rows); err != nil {
+		response.ErrorEnvelope(c, "")
+		return
+	}
+	for _, row := range rows {
+		if err := h.svc.SaveUserRoleSettings(c.Request.Context(), principal.CustomerID, row); err != nil {
+			response.ErrorEnvelope(c, "error.internal.server")
+			return
+		}
+	}
 	response.OK(c, nil)
 }

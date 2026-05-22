@@ -100,7 +100,9 @@ export function configurationApplicationsForSaveFromApi(rows: unknown): Configur
       if (rec.keyCode != null) extra.keyCode = Number(rec.keyCode)
       if (rec.bottom !== undefined) extra.bottom = Boolean(rec.bottom)
       if (rec.longTap !== undefined) extra.longTap = Boolean(rec.longTap)
-      if (rec.skipVersion === true) base.skipVersion = true
+      if (rec.skipVersionCheck === true || rec.skipVersion === true) {
+        extra.skipVersionCheck = true
+      }
       return { ...base, ...extra }
     })
     .filter((row) => Number(row.id) > 0)

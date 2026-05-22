@@ -5,6 +5,7 @@ import type { HmdmEnvelope } from '@/services/hmdmEnvelope'
 import { unwrapHmdmData } from '@/services/hmdmEnvelope'
 import axios from 'axios'
 import apiClient from './apiClient'
+import { clearToken } from '@/shared/utils/tokenStorage'
 
 interface AuthOptionsPayload extends AuthLandingOptions {}
 
@@ -60,20 +61,56 @@ function redirectAfterLogin(user: LoginUserPayload): string {
   return '/dashboard'
 }
 
+/**
+ * Go backend expects a signed JWT in `Authorization`, not the DB `authToken` from session login.
+ * Prefer `/public/jwt/login`; fall back to session login for legacy Java-only stacks.
+ */
 export async function login(credentials: LoginRequest): Promise<LoginOutcome> {
+  clearToken()
   const options = await fetchAuthOptions()
   const encodedPassword = encodeLoginPassword(credentials.password, options.publicKey)
-  const response = await apiClient.post<HmdmEnvelope<LoginUserPayload>>('/public/auth/login', {
-    login: credentials.login,
-    password: encodedPassword,
-  })
-  const data = unwrapHmdmData(response.data, 'Login failed.')
-  const token = data.authToken?.trim()
-  if (!token) {
-    throw new Error('Login failed.')
+  const body = { login: credentials.login, password: encodedPassword }
+
+  try {
+    const jwtRes = await apiClient.post<{ id_token?: string }>('/public/jwt/login', body)
+    const headerAuth = jwtRes.headers?.authorization ?? jwtRes.headers?.Authorization
+    const fromHeader =
+      typeof headerAuth === 'string' && headerAuth.startsWith('Bearer ')
+        ? headerAuth.slice(7).trim()
+        : ''
+    const idToken = (jwtRes.data?.id_token ?? fromHeader).trim()
+    if (idToken) {
+      applySessionFromUserPayload({}, idToken)
+      const current = await fetchCurrentUserAfterLogin()
+      applySessionFromUserPayload(toSessionPayloadFromCurrentUser(current), idToken)
+      return { authToken: idToken, redirectPath: redirectAfterLogin(current) }
+    }
+  } catch (err: unknown) {
+    if (!axios.isAxiosError(err) || err.response?.status !== 404) {
+      if (axios.isAxiosError(err) && (err.response?.status === 401 || err.response?.status === 403)) {
+        throw new Error('Invalid username or password.')
+      }
+      throw err
+    }
   }
-  applySessionFromUserPayload(toSessionPayload(data), token)
+
+  const response = await apiClient.post<HmdmEnvelope<LoginUserPayload>>('/public/auth/login', body)
+  const data = unwrapHmdmData(response.data, 'Login failed.')
+  // Session cookie is set by the server; do not send DB authToken as Bearer (Go JWT middleware rejects it).
+  applySessionFromUserPayload(toSessionPayload(data))
+  await refreshSessionFromCurrentUser()
+  const token = getSessionAuthMarker()
   return { authToken: token, redirectPath: redirectAfterLogin(data) }
+}
+
+async function fetchCurrentUserAfterLogin(): Promise<LoginUserPayload> {
+  const response = await apiClient.get<HmdmEnvelope<LoginUserPayload>>('/private/users/current')
+  return unwrapHmdmData(response.data, 'Failed to load user profile after login.')
+}
+
+/** Marker stored so AuthGuard treats session-only login as authenticated without a fake Bearer token. */
+function getSessionAuthMarker(): string {
+  return 'session'
 }
 
 /**

@@ -17,3 +17,11 @@ export async function disableHints(): Promise<void> {
   const response = await apiClient.post<HmdmEnvelope<unknown>>('/private/hints/disable')
   assertHmdmOk(response.data, 'Failed to disable hints.')
 }
+
+/** Mark a hint key as shown (JSON string body per Go handler). */
+export async function markHintShown(hintKey: string): Promise<void> {
+  const response = await apiClient.post<HmdmEnvelope<unknown>>('/private/hints/history', JSON.stringify(hintKey), {
+    headers: { 'Content-Type': 'application/json' },
+  })
+  assertHmdmOk(response.data, 'Failed to record hint.')
+}

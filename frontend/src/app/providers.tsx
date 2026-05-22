@@ -14,12 +14,26 @@ interface AuthContextValue {
 
 export const AuthContext = createContext<AuthContextValue | null>(null)
 
+function isStoredAuthTokenValid(value: string | null): boolean {
+  if (!value) return false
+  if (value === 'session') return true
+  const parts = value.split('.')
+  return parts.length === 3 && parts.every((p) => p.length > 0)
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [token, setTokenState] = useState<string | null>(() => getToken())
+  const [token, setTokenState] = useState<string | null>(() => {
+    const stored = getToken()
+    if (!isStoredAuthTokenValid(stored)) {
+      if (stored) clearToken()
+      return null
+    }
+    return stored
+  })
   const [username, setUsername] = useState<string | null>(null)
   const navigate = useNavigate()
 
-  // Hydrate username from token on mount (token is opaque, so we store login name separately)
+  // Hydrate username from token on mount
   useEffect(() => {
     const stored = localStorage.getItem('hmdm_username')
     if (stored) setUsername(stored)

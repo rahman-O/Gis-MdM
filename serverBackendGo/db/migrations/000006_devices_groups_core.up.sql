@@ -49,6 +49,9 @@ CREATE TABLE IF NOT EXISTS deviceapplicationsettings (
     value           TEXT
 );
 
+-- 000001 seeds permission id=1 without bumping the sequence; align before new rows.
+SELECT setval('permissions_id_seq', GREATEST((SELECT COALESCE(MAX(id), 1) FROM permissions), 1));
+
 INSERT INTO permissions (name, description, superadmin)
 SELECT 'edit_devices', 'Create and edit devices', FALSE
 WHERE NOT EXISTS (SELECT 1 FROM permissions WHERE lower(name) = 'edit_devices');

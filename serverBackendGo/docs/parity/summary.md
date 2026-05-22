@@ -6,4 +6,4 @@
 
 **Java:** `backend/server/src/main/java/com/hmdm/rest/resource/SummaryResource.java`
 
-**Note:** Status summary (green/yellow/red), totals, and enrollment counts use real SQL when `devices` exist. Install-by-config charts remain simplified (no `devicestatuses` table in Phase 4).
+**Note:** Status summary, totals, enrollment, `installSummary`, and per-config app status charts use `devicestatuses` (`000011`). Monthly enrollment series still simplified.

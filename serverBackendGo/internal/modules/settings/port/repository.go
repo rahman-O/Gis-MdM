@@ -13,4 +13,6 @@ type SettingsRepository interface {
 	SaveMisc(ctx context.Context, s *domain.Settings) error
 	SaveLanguage(ctx context.Context, s *domain.Settings) error
 	SaveDesign(ctx context.Context, s *domain.Settings) error
+	GetUserRoleSettings(ctx context.Context, customerID, roleID int) (*domain.UserRoleSettings, error)
+	SaveUserRoleSettings(ctx context.Context, customerID int, s domain.UserRoleSettings) error
 }

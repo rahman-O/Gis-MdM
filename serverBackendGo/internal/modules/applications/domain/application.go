@@ -54,6 +54,7 @@ type ApplicationVersion struct {
 	KeyCode       *int    `json:"keyCode,omitempty"`
 	Bottom        *bool   `json:"bottom,omitempty"`
 	AutoUpdate    *bool   `json:"autoUpdate,omitempty"`
+	ApkHash       *string `json:"apkHash,omitempty"`
 }
 
 // ValidatePkgRequest is PUT /validatePkg body.

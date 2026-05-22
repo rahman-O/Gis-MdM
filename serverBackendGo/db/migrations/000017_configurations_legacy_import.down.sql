@@ -1,0 +1,1 @@
+-- Non-reversible: legacy column → settingsjson merge cannot be undone without backup.

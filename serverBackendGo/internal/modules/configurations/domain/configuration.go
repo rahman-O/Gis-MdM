@@ -21,7 +21,10 @@ type ConfigurationApplication struct {
 	ShowIcon        *bool   `json:"showIcon,omitempty"`
 	ScreenOrder     *int    `json:"screenOrder,omitempty"`
 	KeyCode         *int    `json:"keyCode,omitempty"`
-	Bottom          *bool   `json:"bottom,omitempty"`
+	Bottom            *bool `json:"bottom,omitempty"`
+	Remove            *bool `json:"remove,omitempty"`
+	LongTap           *bool `json:"longTap,omitempty"`
+	SkipVersionCheck  *bool `json:"skipVersionCheck,omitempty"`
 }
 
 // ConfigurationFile is a file entry on a configuration.
@@ -63,7 +66,8 @@ type Configuration struct {
 	Applications             []ConfigurationApplication        `json:"applications,omitempty"`
 	Files                    []ConfigurationFile               `json:"files,omitempty"`
 	ApplicationSettings      []ConfigurationApplicationSetting `json:"applicationSettings,omitempty"`
-	Extra                    map[string]any                    `json:"-"`
+	// Policy holds MDM keys from settingsjson (merged into API JSON on read/write).
+	Policy map[string]any `json:"-"`
 }
 
 // CopyRequest is PUT /copy body.

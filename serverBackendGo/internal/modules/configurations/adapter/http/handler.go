@@ -164,7 +164,11 @@ func (h *Handler) GetByID(c *gin.Context) {
 		mapErr(c, err)
 		return
 	}
-	response.OK(c, data)
+	if data == nil {
+		response.ErrorEnvelope(c, "error.notfound.configuration")
+		return
+	}
+	response.OK(c, domain.ConfigurationResponseMap(data))
 }
 
 // Save godoc
@@ -180,8 +184,13 @@ func (h *Handler) Save(c *gin.Context) {
 	if !ok {
 		return
 	}
-	var cfg domain.Configuration
-	if err := c.ShouldBindJSON(&cfg); err != nil {
+	raw, err := c.GetRawData()
+	if err != nil {
+		response.ErrorEnvelope(c, "")
+		return
+	}
+	cfg, err := domain.ParseConfigurationBody(raw)
+	if err != nil {
 		response.ErrorEnvelope(c, "")
 		return
 	}

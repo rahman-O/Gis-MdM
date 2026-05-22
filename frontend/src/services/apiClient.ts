@@ -17,11 +17,10 @@ apiClient.interceptors.request.use((config) => {
   } else if (config.headers && !('Content-Type' in config.headers) && !('content-type' in config.headers)) {
     ;(config.headers as Record<string, unknown>)['Content-Type'] = 'application/json'
   }
-  // Attach Authorization header when token is present
+  // Attach Bearer only for JWTs; session login uses the HTTP-only cookie (withCredentials).
   try {
     const token = getToken()
-    if (token && config.headers) {
-      // Do not overwrite existing Authorization header if set explicitly
+    if (token && shouldAttachBearer(token) && config.headers) {
       if (!('Authorization' in config.headers) && !('authorization' in config.headers)) {
         ;(config.headers as Record<string, unknown>)['Authorization'] = `Bearer ${token}`
       }
@@ -44,12 +43,15 @@ apiClient.interceptors.response.use(
       clearToken()
       window.location.href = '/login'
     }
-    if (status === 403 && isPrivate) {
-      clearToken()
-      window.location.href = '/login'
-    }
     return Promise.reject(error)
   }
 )
+
+/** Session-only marker in localStorage; real auth is the cookie. */
+function shouldAttachBearer(token: string): boolean {
+  if (token === 'session') return false
+  const parts = token.split('.')
+  return parts.length === 3 && parts.every((p) => p.length > 0)
+}
 
 export default apiClient

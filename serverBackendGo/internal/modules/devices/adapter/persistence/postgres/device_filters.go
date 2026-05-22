@@ -16,6 +16,31 @@ const searchExtraJoins = `
 	LEFT JOIN configurations cfg ON d.configurationid = cfg.id
 `
 
+const deviceStatusJoin = `
+	LEFT JOIN devicestatuses ds ON ds.deviceid = d.id
+`
+
+func needsDeviceStatusJoin(req domain.SearchRequest) bool {
+	if req.InstallationStatus != nil && strings.TrimSpace(*req.InstallationStatus) != "" {
+		return true
+	}
+	if req.SortBy != nil {
+		switch strings.ToUpper(strings.TrimSpace(*req.SortBy)) {
+		case "INSTALLATIONS", "FILES":
+			return true
+		}
+	}
+	return false
+}
+
+func searchJoins(req domain.SearchRequest) string {
+	joins := searchExtraJoins
+	if needsDeviceStatusJoin(req) {
+		joins += deviceStatusJoin
+	}
+	return joins
+}
+
 func sortDirection(req domain.SearchRequest) string {
 	if req.SortDir != nil && strings.EqualFold(strings.TrimSpace(*req.SortDir), "desc") {
 		return "DESC"
@@ -72,6 +97,10 @@ func orderExprInner(req domain.SearchRequest, grouped bool) string {
 		return fmt.Sprintf("lower(COALESCE(d.description, '')) %s, d.id ASC", dir)
 	case "CONFIGURATION":
 		return fmt.Sprintf("lower(COALESCE(cfg.name, '')) %s, d.id ASC", dir)
+	case "INSTALLATIONS":
+		return fmt.Sprintf("COALESCE(ds.applicationsstatus, 'FAILURE') %s, lower(d.number) ASC", dir)
+	case "FILES":
+		return fmt.Sprintf("COALESCE(ds.configfilesstatus, 'OTHER') %s, lower(d.number) ASC", dir)
 	case "STATUS":
 		return fmt.Sprintf(`CASE
 			WHEN (%s) < %d THEN 1
@@ -170,10 +199,7 @@ func searchFilters(req domain.SearchRequest, args *[]any, where *string, argN *i
 		*argN++
 	}
 	if req.InstallationStatus != nil && strings.TrimSpace(*req.InstallationStatus) != "" {
-		*where += fmt.Sprintf(` AND EXISTS (
-			SELECT 1 FROM jsonb_array_elements(COALESCE(d.infojson->'applications', '[]'::jsonb)) elem
-			WHERE elem->>'status' = $%d
-		)`, *argN)
+		*where += fmt.Sprintf(` AND ds.applicationsstatus = $%d`, *argN)
 		*args = append(*args, strings.TrimSpace(*req.InstallationStatus))
 		*argN++
 	}

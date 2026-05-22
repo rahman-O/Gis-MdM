@@ -35,6 +35,10 @@ Gradual migration from [`backend/`](../../backend/) (Java/JAX-RS) to [`serverBac
 
 **012 US1 (devices):** Advanced search filters + `GET /number/{n}` `info` telemetry — see [`parity/devices.md`](parity/devices.md). Migration `000008_devices_search_extras` adds `imeiupdatets`.
 
+**013 schema gaps (done):** Migrations `000011`–`000017` — `devicestatuses`, `userrolesettings`, `configurationapplicationparameters`, `usagestats`, extended `settings`/`applicationversions`/`configurationapplications`, optional legacy `settingsjson` import. See [`JAVA-GO-DATABASE-GAPS.md`](../../JAVA-GO-DATABASE-GAPS.md) and [`specs/013-complete-database-gaps/`](../specs/013-complete-database-gaps/). Plugin-only tables remain per-plugin specs (no `000018+` in v1).
+
+**014 frontend ↔ Go integration (in progress):** No new DDL. Depends on 013. Closes P1 gaps: tenant settings fields (`000015`), configuration `settingsjson` + CAP + `remove`/`longTap`, icons upload UI; P2: `sync/info` → `devicestatuses`, `stats` module (`PUT /public/stats`); P3: Updates apply + hints mark shown. See [`specs/014-complete-frontend-go-integration/`](../specs/014-complete-frontend-go-integration/).
+
 ---
 
 ## Phases

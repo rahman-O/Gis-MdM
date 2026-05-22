@@ -29,6 +29,7 @@ import (
 	"github.com/gis-mdm/server-backend-go/internal/modules/roles"
 	"github.com/gis-mdm/server-backend-go/internal/modules/settings"
 	"github.com/gis-mdm/server-backend-go/internal/modules/signup"
+	"github.com/gis-mdm/server-backend-go/internal/modules/stats"
 	"github.com/gis-mdm/server-backend-go/internal/modules/summary"
 	"github.com/gis-mdm/server-backend-go/internal/modules/sync"
 	"github.com/gis-mdm/server-backend-go/internal/modules/twofactor"
@@ -56,6 +57,7 @@ func allModules(jwtProvider *platformjwt.Provider) []module.Module {
 		files.New(),
 		icons.New(),
 		publicapi.New(),
+		stats.New(),
 		sync.New(),
 		push.New(),
 		notifications.New(),

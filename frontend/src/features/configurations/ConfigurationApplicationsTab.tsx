@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Button } from '@/shared/ui/button'
+import { Checkbox } from '@/shared/ui/checkbox'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select'
@@ -140,6 +141,29 @@ export function ConfigurationApplicationsTab({
                   onChange={(e) => updateApp(index, { version: e.target.value })}
                 />
               </div>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-4">
+              <label className="flex items-center gap-2 text-sm">
+                <Checkbox
+                  checked={Boolean((app as Record<string, unknown>).skipVersionCheck)}
+                  onCheckedChange={(c) => updateApp(index, { skipVersionCheck: c === true })}
+                />
+                Skip version check
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <Checkbox
+                  checked={Boolean(app.remove)}
+                  onCheckedChange={(c) => updateApp(index, { remove: c === true })}
+                />
+                Remove
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <Checkbox
+                  checked={Boolean((app as Record<string, unknown>).longTap)}
+                  onCheckedChange={(c) => updateApp(index, { longTap: c === true })}
+                />
+                Long tap
+              </label>
             </div>
           </div>
         ))}

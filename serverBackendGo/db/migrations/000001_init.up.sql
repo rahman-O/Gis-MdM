@@ -115,5 +115,6 @@ VALUES (
 ON CONFLICT (login) DO NOTHING;
 
 SELECT setval('customers_id_seq', GREATEST((SELECT MAX(id) FROM customers), 1));
+SELECT setval('permissions_id_seq', GREATEST((SELECT MAX(id) FROM permissions), 1));
 SELECT setval('userroles_id_seq', GREATEST((SELECT MAX(id) FROM userroles), 3));
 SELECT setval('users_id_seq', GREATEST((SELECT MAX(id) FROM users), 1));

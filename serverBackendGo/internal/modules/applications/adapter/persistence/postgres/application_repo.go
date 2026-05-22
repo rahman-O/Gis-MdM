@@ -268,27 +268,27 @@ func (r *ApplicationRepository) SaveVersion(ctx context.Context, customerID int,
 		err = r.db.QueryRowContext(ctx, `
 			INSERT INTO applicationversions (
 				applicationid, version, versioncode, url, urlarmeabi, urlarm64,
-				filepath, split, arch, action, showicon, screenorder, keycode, bottom, autoupdate
-			) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+				filepath, split, arch, action, showicon, screenorder, keycode, bottom, autoupdate, apkhash
+			) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
 			RETURNING id`,
 			appID, nullStr(ver.Version), verCode, nullStr(ver.URL), nullStr(ver.URLArmeabi),
 			nullStr(ver.URLArm64), nullStr(ver.FilePath), boolOrFalse(ver.Split), nullStr(ver.Arch),
 			nullInt(ver.Action), boolOrFalse(ver.ShowIcon), nullInt(ver.ScreenOrder),
-			nullInt(ver.KeyCode), boolOrFalse(ver.Bottom), boolOrFalse(ver.AutoUpdate),
+			nullInt(ver.KeyCode), boolOrFalse(ver.Bottom), boolOrFalse(ver.AutoUpdate), nullStr(ver.ApkHash),
 		).Scan(&id)
 	} else {
 		_, err = r.db.ExecContext(ctx, `
 			UPDATE applicationversions av SET
 				version=$1, versioncode=$2, url=$3, urlarmeabi=$4, urlarm64=$5,
 				filepath=$6, split=$7, arch=$8, action=$9, showicon=$10,
-				screenorder=$11, keycode=$12, bottom=$13, autoupdate=$14
+				screenorder=$11, keycode=$12, bottom=$13, autoupdate=$14, apkhash=$15
 			FROM applications a
-			WHERE av.id=$15 AND av.applicationid=a.id
-			  AND (a.customerid=$16 OR a.common=TRUE)`,
+			WHERE av.id=$16 AND av.applicationid=a.id
+			  AND (a.customerid=$17 OR a.common=TRUE)`,
 			nullStr(ver.Version), verCode, nullStr(ver.URL), nullStr(ver.URLArmeabi),
 			nullStr(ver.URLArm64), nullStr(ver.FilePath), boolOrFalse(ver.Split), nullStr(ver.Arch),
 			nullInt(ver.Action), boolOrFalse(ver.ShowIcon), nullInt(ver.ScreenOrder),
-			nullInt(ver.KeyCode), boolOrFalse(ver.Bottom), boolOrFalse(ver.AutoUpdate),
+			nullInt(ver.KeyCode), boolOrFalse(ver.Bottom), boolOrFalse(ver.AutoUpdate), nullStr(ver.ApkHash),
 			id, customerID,
 		)
 	}

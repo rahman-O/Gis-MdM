@@ -22,7 +22,8 @@
 | Area | Note |
 |------|------|
 | Search enrichment | No nested apps/files in configuration map |
-| `installationStatus` | Filter uses `infojson.applications[]`; Java also uses `deviceStatuses` table (not in Go schema yet) |
+| `installationStatus` | **Done** — `devicestatuses.applicationsstatus` via migration `000011` |
 | `launcherVersion` | Matches `infojson.launcherVersion`; Java `mdm_device_launcher_version()` from `info` blob not replicated |
-| Sort `INSTALLATIONS` / `FILES` | Require `deviceStatuses` table |
+| Sort `INSTALLATIONS` / `FILES` | **Done** — `devicestatuses` JOIN in `device_filters.go` |
 | Fast search | Exact `number` / `fastsearch` column match when `fastSearch: true` |
+| Status recalc | Business sync to update `devicestatuses` from agent `info` — follow-up |
