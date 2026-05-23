@@ -11,7 +11,7 @@ var configurationScalarKeys = map[string]struct{}{
 	"password": {}, "backgroundColor": {}, "textColor": {}, "backgroundImageUrl": {},
 	"qrCodeKey": {}, "baseUrl": {}, "mainAppId": {}, "contentAppId": {},
 	"defaultFilePath": {}, "permissive": {},
-	"applications": {}, "files": {}, "applicationSettings": {},
+	"applications": {}, "files": {}, "applicationSettings": {}, "policyLocks": {},
 }
 
 // SetPolicyFromJSON stores MDM policy keys from settingsjson for merge on API responses.
@@ -33,6 +33,13 @@ func (c *Configuration) SetPolicyFromJSON(raw []byte) {
 			out[k] = val
 		}
 	}
+	if raw, ok := m[policyLocksKey]; ok {
+		var locks map[string]bool
+		if err := json.Unmarshal(raw, &locks); err == nil {
+			c.PolicyLocks = NormalizePolicyLocks(locks)
+		}
+		delete(m, policyLocksKey)
+	}
 	if len(out) > 0 {
 		c.Policy = out
 	}
@@ -41,6 +48,9 @@ func (c *Configuration) SetPolicyFromJSON(raw []byte) {
 // BuildSettingsJSON returns settingsjson bytes: policy map merged over scalar fields from cfg.
 func (c Configuration) BuildSettingsJSON() ([]byte, error) {
 	m := make(map[string]any)
+	if locks := NormalizePolicyLocks(c.PolicyLocks); locks != nil {
+		m[policyLocksKey] = locks
+	}
 	if c.Policy != nil {
 		for k, v := range c.Policy {
 			m[k] = v
@@ -82,6 +92,9 @@ func ConfigurationResponseMap(cfg *Configuration) map[string]any {
 			m[k] = v
 		}
 	}
+	if cfg.PolicyLocks != nil {
+		m["policyLocks"] = cfg.PolicyLocks
+	}
 	delete(m, "policy")
 	return m
 }
@@ -105,6 +118,13 @@ func ParseConfigurationBody(raw []byte) (Configuration, error) {
 		if err := json.Unmarshal(v, &val); err == nil {
 			policy[k] = val
 		}
+	}
+	if raw, ok := m[policyLocksKey]; ok {
+		var locks map[string]bool
+		if err := json.Unmarshal(raw, &locks); err == nil {
+			cfg.PolicyLocks = NormalizePolicyLocks(locks)
+		}
+		delete(policy, policyLocksKey)
 	}
 	if len(policy) > 0 {
 		cfg.Policy = policy

@@ -26,3 +26,5 @@
 | `configurationapplicationparameters` | **Done** — `000013`; upsert on save when `skipVersionCheck` set |
 | `configurationapplications.remove` / `longtap` | **Done** — `000016`; returned on GET apps list (014) |
 | MDM policy flatten on GET/PUT | **Done** (014) — `settingsjson` merged via `Configuration.Policy`; `ParseConfigurationBody` / `ConfigurationResponseMap` |
+| `policyLocks` in `settingsjson` | **Done** (016) — map of field key → `true`; allowlist in `domain/policy_locks.go`; round-trip on GET/PUT |
+| Readonly app settings | **Done** (016) — configuration-level readonly settings merged into sync; device cannot override locked keys via sync POST |

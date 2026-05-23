@@ -11,3 +11,18 @@
 | POST | `/applicationSettings/{deviceId}` | Done | Per-app settings |
 
 **Env**: `SECURE_ENROLLMENT`, `PREVENT_DUPLICATE_ENROLLMENT`, `HASH_SECRET`, `REBRANDING_MOBILE_NAME`
+
+## SyncResponse policy fields (016)
+
+**Status**: **Done** — `ApplyConfigurationPolicy` in `internal/modules/sync/application/sync_configuration_mapper.go` maps `settingsjson` + `backgroundimageurl` onto `SyncResponse` (Java `SyncResource` parity subset).
+
+| Area | Fields (representative) |
+|------|-------------------------|
+| Kiosk | `kioskMode`, `kioskHome`, `kioskRecents`, `kioskNotifications`, `kioskSystemInfo`, `kioskKeyguard`, `kioskLockButtons`, `kioskScreenOn`, `kioskExit` |
+| Restrictions | `restrictions`, `allowedClasses`, `lockSafeSettings` |
+| Connectivity | `gps`, `bluetooth`, `wifi`, `mobileData`, `usbStorage`, `showWifi` |
+| Display / device | `orientation`, `brightness`, `timeout`, `volume`, `autoBrightness`, `disableScreenshots`, … |
+| Updates | `downloadUpdates`, `systemUpdateType`, `systemUpdateFrom`/`To`, `appUpdateFrom`/`To`, `scheduleAppUpdate` |
+| Apps / files | Still loaded via `device_sync_repo` queries (unchanged) |
+
+**Application settings merge**: configuration defaults + device overrides; `policyLocks` and readonly configuration settings skip device POST updates.

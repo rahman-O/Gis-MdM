@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	cfgdomain "github.com/gis-mdm/server-backend-go/internal/modules/configurations/domain"
+	"github.com/gis-mdm/server-backend-go/internal/modules/sync/application"
 	"github.com/gis-mdm/server-backend-go/internal/modules/sync/domain"
 	"github.com/gis-mdm/server-backend-go/internal/modules/sync/port"
 	"github.com/gis-mdm/server-backend-go/internal/platform/storage"
@@ -180,11 +182,25 @@ func (r *DeviceSyncRepository) UpdateCustomProps(ctx context.Context, deviceID i
 }
 
 func (r *DeviceSyncRepository) SaveApplicationSettings(ctx context.Context, deviceID int64, settings []domain.SyncApplicationSetting) error {
+	locks, err := r.policyLocksForDevice(ctx, deviceID)
+	if err != nil {
+		return err
+	}
 	for _, s := range settings {
+		key := cfgdomain.ApplicationSettingLockKey(s.PackageID, s.Name)
+		if locks[key] {
+			continue
+		}
 		_, err := r.db.ExecContext(ctx, `
+			DELETE FROM deviceapplicationsettings
+			WHERE deviceid = $1 AND applicationpkg = $2 AND name = $3`,
+			deviceID, s.PackageID, s.Name)
+		if err != nil {
+			return err
+		}
+		_, err = r.db.ExecContext(ctx, `
 			INSERT INTO deviceapplicationsettings (deviceid, applicationpkg, name, type, value)
-			VALUES ($1, $2, $3, $4, $5)
-			ON CONFLICT DO NOTHING`,
+			VALUES ($1, $2, $3, $4, $5)`,
 			deviceID, s.PackageID, s.Name, fmt.Sprintf("%d", s.Type), s.Value)
 		if err != nil {
 			return err
@@ -193,14 +209,50 @@ func (r *DeviceSyncRepository) SaveApplicationSettings(ctx context.Context, devi
 	return nil
 }
 
+func (r *DeviceSyncRepository) policyLocksForDevice(ctx context.Context, deviceID int64) (map[string]bool, error) {
+	var settingsJSON []byte
+	err := r.db.QueryRowContext(ctx, `
+		SELECT c.settingsjson FROM devices d
+		JOIN configurations c ON c.id = d.configurationid
+		WHERE d.id = $1`, deviceID).Scan(&settingsJSON)
+	if err != nil {
+		return nil, err
+	}
+	return parsePolicyLocks(settingsJSON), nil
+}
+
+func parsePolicyLocks(settingsJSON []byte) map[string]bool {
+	out := make(map[string]bool)
+	if len(settingsJSON) == 0 {
+		return out
+	}
+	var m map[string]json.RawMessage
+	if json.Unmarshal(settingsJSON, &m) != nil {
+		return out
+	}
+	raw, ok := m[cfgdomain.PolicyLocksKey()]
+	if !ok {
+		return out
+	}
+	var locks map[string]bool
+	if json.Unmarshal(raw, &locks) == nil {
+		for k, v := range locks {
+			if v {
+				out[k] = true
+			}
+		}
+	}
+	return out
+}
+
 func (r *DeviceSyncRepository) BuildSyncResponse(ctx context.Context, dev domain.DeviceRecord, baseURL, filesDir, cpuArch, mobileName, vendor string) (*domain.SyncResponse, error) {
-	var password, bg, fg sql.NullString
+	var password, bg, fg, bgi sql.NullString
 	var permissive bool
 	var settingsJSON []byte
 	err := r.db.QueryRowContext(ctx, `
-		SELECT password, backgroundcolor, textcolor, permissive, settingsjson
+		SELECT password, backgroundcolor, textcolor, backgroundimageurl, permissive, settingsjson
 		FROM configurations WHERE id = $1`, dev.ConfigurationID).
-		Scan(&password, &bg, &fg, &permissive, &settingsJSON)
+		Scan(&password, &bg, &fg, &bgi, &permissive, &settingsJSON)
 	if err != nil {
 		return nil, err
 	}
@@ -233,14 +285,12 @@ func (r *DeviceSyncRepository) BuildSyncResponse(ctx context.Context, dev domain
 	resp.Custom2 = dev.Custom2
 	resp.Custom3 = dev.Custom3
 
-	var extra map[string]any
-	_ = json.Unmarshal(settingsJSON, &extra)
-	if v, ok := extra["pushOptions"].(string); ok {
-		resp.PushOptions = &v
+	var bgiPtr *string
+	if bgi.Valid && bgi.String != "" {
+		s := bgi.String
+		bgiPtr = &s
 	}
-	if v, ok := extra["requestUpdates"].(string); ok {
-		resp.RequestUpdates = &v
-	}
+	application.ApplyConfigurationPolicy(resp, settingsJSON, bgiPtr)
 
 	rows, err := r.db.QueryContext(ctx, `
 		SELECT a.id, a.name, a.pkg, COALESCE(av.version, ''), COALESCE(av.url, ''),
@@ -271,23 +321,7 @@ func (r *DeviceSyncRepository) BuildSyncResponse(ctx context.Context, dev domain
 		resp.Applications = append(resp.Applications, app)
 	}
 
-	settingRows, err := r.db.QueryContext(ctx, `
-		SELECT applicationpkg, name, type, value
-		FROM deviceapplicationsettings WHERE deviceid = $1`, dev.ID)
-	if err == nil {
-		defer settingRows.Close()
-		for settingRows.Next() {
-			var s domain.SyncApplicationSetting
-			var typ string
-			if err := settingRows.Scan(&s.PackageID, &s.Name, &typ, &s.Value); err != nil {
-				break
-			}
-			if n, convErr := fmt.Sscanf(typ, "%d", &s.Type); convErr != nil || n != 1 {
-				s.Type = 0
-			}
-			resp.ApplicationSettings = append(resp.ApplicationSettings, s)
-		}
-	}
+	resp.ApplicationSettings = r.mergeApplicationSettings(ctx, dev.ConfigurationID, dev.ID, settingsJSON)
 
 	frows, err := r.db.QueryContext(ctx, `
 		SELECT COALESCE(path, ''), COALESCE(externalurl, ''), COALESCE(url, ''), remove
@@ -317,4 +351,74 @@ func (r *DeviceSyncRepository) BuildSyncResponse(ctx context.Context, dev domain
 		resp.Files = append(resp.Files, f)
 	}
 	return resp, nil
+}
+
+type appSettingKey struct {
+	pkg  string
+	name string
+}
+
+func (r *DeviceSyncRepository) mergeApplicationSettings(ctx context.Context, configurationID, deviceID int64, settingsJSON []byte) []domain.SyncApplicationSetting {
+	locks := parsePolicyLocks(settingsJSON)
+	merged := make(map[appSettingKey]domain.SyncApplicationSetting)
+
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT COALESCE(a.pkg, ''), s.name, s.type, s.value
+		FROM configurationapplicationsettings s
+		LEFT JOIN applications a ON a.id = s.applicationid
+		WHERE s.configurationid = $1`, configurationID)
+	if err == nil {
+		defer rows.Close()
+		for rows.Next() {
+			var s domain.SyncApplicationSetting
+			var typ sql.NullString
+			if err := rows.Scan(&s.PackageID, &s.Name, &typ, &s.Value); err != nil {
+				break
+			}
+			s.Type = parseSettingType(typ)
+			key := appSettingKey{pkg: s.PackageID, name: s.Name}
+			lockKey := cfgdomain.ApplicationSettingLockKey(s.PackageID, s.Name)
+			if locks[lockKey] {
+				s.Readonly = true
+			}
+			merged[key] = s
+		}
+	}
+
+	drows, err := r.db.QueryContext(ctx, `
+		SELECT applicationpkg, name, type, value
+		FROM deviceapplicationsettings WHERE deviceid = $1`, deviceID)
+	if err == nil {
+		defer drows.Close()
+		for drows.Next() {
+			var s domain.SyncApplicationSetting
+			var typ string
+			if err := drows.Scan(&s.PackageID, &s.Name, &typ, &s.Value); err != nil {
+				break
+			}
+			s.Type = parseSettingType(sql.NullString{String: typ, Valid: true})
+			key := appSettingKey{pkg: s.PackageID, name: s.Name}
+			if existing, ok := merged[key]; ok && existing.Readonly {
+				continue
+			}
+			merged[key] = s
+		}
+	}
+
+	out := make([]domain.SyncApplicationSetting, 0, len(merged))
+	for _, s := range merged {
+		out = append(out, s)
+	}
+	return out
+}
+
+func parseSettingType(typ sql.NullString) int {
+	if !typ.Valid {
+		return 0
+	}
+	var n int
+	if _, err := fmt.Sscanf(typ.String, "%d", &n); err == nil {
+		return n
+	}
+	return 0
 }

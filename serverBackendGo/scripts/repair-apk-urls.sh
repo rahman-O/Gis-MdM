@@ -40,7 +40,15 @@ run_sql() {
   exit 1
 }
 
-echo "Repairing APK URLs with BASE_URL=$BASE"
+echo "Repairing APK URLs and configuration baseUrl with BASE_URL=$BASE"
+
+run_sql "
+UPDATE configurations
+SET baseurl = '${sql_base}'
+WHERE baseurl IS NULL OR trim(baseurl) = ''
+   OR baseurl ~ '^https?://[^/]*\\.trycloudflare\\.com'
+   OR baseurl ~ '^https?://(localhost|127\\.0\\.0\\.1)';
+"
 
 run_sql "
 UPDATE applicationversions av

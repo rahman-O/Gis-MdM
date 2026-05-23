@@ -3,11 +3,6 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { AlertCircle } from 'lucide-react'
 import { Button } from '@/shared/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card'
-import { Input } from '@/shared/ui/input'
-import { Label } from '@/shared/ui/label'
-import { Textarea } from '@/shared/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select'
-import { Checkbox } from '@/shared/ui/checkbox'
 import * as configurationService from '@/features/configurations/configurationService'
 import { getConfigurationQrEligibility } from '@/features/configurations/configurationQr'
 import { ConfigurationCommonTab } from '@/features/configurations/ConfigurationCommonTab'
@@ -15,10 +10,13 @@ import { ConfigurationDesignTab } from '@/features/configurations/ConfigurationD
 import { ConfigurationApplicationsTab } from '@/features/configurations/ConfigurationApplicationsTab'
 import { ConfigurationAppSettingsTab } from '@/features/configurations/ConfigurationAppSettingsTab'
 import { ConfigurationFilesTab } from '@/features/configurations/ConfigurationFilesTab'
+import { ConfigurationMdmTab } from '@/features/configurations/ConfigurationMdmTab'
+import { ConfigurationRestrictionsTab } from '@/features/configurations/ConfigurationRestrictionsTab'
 import { canEnrollDevicesViaQr, hasPermission } from '@/features/auth/permissions'
 import {
   configurationApplicationsForSaveFromApi,
   ensureLinkedRowsForChosenVersions,
+  normalizePolicyLocksForEditor,
 } from '@/features/configurations/configurationNormalize'
 import type { Configuration } from '@/features/configurations/types'
 
@@ -34,10 +32,6 @@ interface MdmAppOption {
   versionId: number
   action: number
   name: string
-}
-
-function toText(value: unknown): string {
-  return value == null ? '' : String(value)
 }
 
 export function ConfigurationEditorPage() {
@@ -59,7 +53,9 @@ export function ConfigurationEditorPage() {
     configAppsRaw: number
     configAppsMapped: number
   } | null>(null)
-  const [activeTab, setActiveTab] = useState<'common' | 'mdm' | 'design' | 'applications' | 'appSettings' | 'files'>('common')
+  const [activeTab, setActiveTab] = useState<
+    'common' | 'mdm' | 'restrictions' | 'design' | 'applications' | 'appSettings' | 'files'
+  >('common')
 
   useEffect(() => {
     if (!Number.isFinite(configId) || configId <= 0) {
@@ -76,10 +72,12 @@ export function ConfigurationEditorPage() {
       configurationService.getConfigurationApplications(configId),
     ])
       .then(([cfg, allApps, cfgApps]) => {
-        setConfiguration({
-          ...cfg,
-          applications: configurationApplicationsForSaveFromApi(cfgApps),
-        })
+        setConfiguration(
+          normalizePolicyLocksForEditor({
+            ...cfg,
+            applications: configurationApplicationsForSaveFromApi(cfgApps),
+          })
+        )
         const allAppsRaw = Array.isArray(allApps) ? allApps.length : 0
         const cfgAppsRaw = Array.isArray(cfgApps) ? cfgApps.length : 0
         setApplications(Array.isArray(allApps) ? allApps : [])
@@ -175,11 +173,11 @@ export function ConfigurationEditorPage() {
   )
 
   const validateBeforeSave = (cfg: Configuration): string | null => {
-    if (!String(cfg.name ?? '').trim()) return 'Name is required.'
-    if (!String(cfg.password ?? '').trim()) return 'Admin password is required.'
-    if (!String(cfg.pushOptions ?? '').trim()) return 'Push options are required.'
+    if (!String(cfg.name ?? '').trim()) return 'Common: name is required.'
+    if (!String(cfg.password ?? '').trim()) return 'Common: admin password is required.'
+    if (!String(cfg.pushOptions ?? '').trim()) return 'Common: push options are required.'
     if (cfg.kioskMode && !(Number(cfg.contentAppId ?? 0) > 0)) {
-      return 'Content app is required when kiosk mode is enabled.'
+      return 'MDM: content app is required when kiosk mode is enabled.'
     }
     return null
   }
@@ -221,15 +219,19 @@ export function ConfigurationEditorPage() {
         return
       }
 
-      const savedCfg = await configurationService.saveConfiguration({
-        ...configuration,
-        applications: applicationsPayload,
-      })
+      const savedCfg = await configurationService.saveConfiguration(
+        normalizePolicyLocksForEditor({
+          ...configuration,
+          applications: applicationsPayload,
+        })
+      )
       const freshCfgApps = await configurationService.getConfigurationApplications(configId)
-      setConfiguration({
-        ...savedCfg,
-        applications: configurationApplicationsForSaveFromApi(freshCfgApps),
-      })
+      setConfiguration(
+        normalizePolicyLocksForEditor({
+          ...savedCfg,
+          applications: configurationApplicationsForSaveFromApi(freshCfgApps),
+        })
+      )
       setSaveSuccess('Configuration saved successfully.')
     } catch (reason: unknown) {
       setSaveError(reason instanceof Error ? reason.message : 'Failed to save configuration.')
@@ -282,7 +284,7 @@ export function ConfigurationEditorPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Configuration Editor</h1>
-          <p className="text-sm text-muted-foreground">MDM block (phase 1): QR-critical fields.</p>
+          <p className="text-sm text-muted-foreground">Device policy profile — changes sync to enrolled devices after save.</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={() => navigate('/configurations')}>
@@ -334,6 +336,7 @@ export function ConfigurationEditorPage() {
         {[
           { key: 'common', label: 'Common' },
           { key: 'mdm', label: 'MDM' },
+          { key: 'restrictions', label: 'Restrictions' },
           { key: 'design', label: 'Design' },
           { key: 'applications', label: 'Applications' },
           { key: 'appSettings', label: 'App Settings' },
@@ -355,14 +358,16 @@ export function ConfigurationEditorPage() {
           <CardTitle>
             {activeTab === 'common' && 'Common settings'}
             {activeTab === 'mdm' && 'MDM settings'}
+            {activeTab === 'restrictions' && 'Restrictions'}
             {activeTab === 'design' && 'Design settings'}
             {activeTab === 'applications' && 'Applications'}
             {activeTab === 'appSettings' && 'Application settings'}
             {activeTab === 'files' && 'Files'}
           </CardTitle>
           <CardDescription>
-            {activeTab === 'mdm' && 'Main app, receiver component, content app, and provisioning options.'}
-            {activeTab === 'common' && 'Core validation fields and behavior flags.'}
+            {activeTab === 'mdm' && 'Main app, receiver, and provisioning.'}
+            {activeTab === 'restrictions' && 'Device restrictions and connectivity.'}
+            {activeTab === 'common' && 'Name, QR, and general options.'}
             {activeTab === 'design' && 'Theme, header, orientation, and display settings.'}
             {activeTab === 'applications' && 'Linked applications, actions, versions, and upgrade flow.'}
             {activeTab === 'appSettings' && 'Configuration-level app settings.'}
@@ -379,331 +384,15 @@ export function ConfigurationEditorPage() {
           ) : null}
 
           {configuration && activeTab === 'mdm' ? (
-            <>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label>Main app</Label>
-                  <Select
-                    value={
-                      configuration.mainAppId != null && configuration.mainAppId > 0
-                        ? String(configuration.mainAppId)
-                        : 'none'
-                    }
-                    onValueChange={(value) =>
-                      setConfiguration((current) =>
-                        current ? { ...current, mainAppId: value === 'none' ? null : Number(value) } : current
-                      )
-                    }
-                  >
-                    <SelectTrigger><SelectValue placeholder="Select main app" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
-                      {selectableMdmApps.map((app) => (
-                        <SelectItem key={`m-${app.applicationId}-${app.versionId}`} value={String(app.versionId)}>
-                          {app.name || `Application #${app.applicationId}`}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {selectableMdmApps.length === 0 ? (
-                    <p className="text-xs text-muted-foreground">
-                      No applications were returned by backend for this customer/session.
-                    </p>
-                  ) : null}
-                  {selectableMdmApps.some((app) => app.applicationId <= 0) ? (
-                    <p className="text-xs text-muted-foreground">
-                      Some entries only have a version id (no catalog match). Pick an app again if save does not persist.
-                    </p>
-                  ) : null}
-                </div>
-                <div className="space-y-2">
-                  <Label>Content app</Label>
-                  <Select
-                    value={configuration.contentAppId != null && configuration.contentAppId > 0 ? String(configuration.contentAppId) : 'none'}
-                    onValueChange={(value) =>
-                      setConfiguration((current) =>
-                        current ? { ...current, contentAppId: value === 'none' ? null : Number(value) } : current
-                      )
-                    }
-                  >
-                    <SelectTrigger><SelectValue placeholder="Select content app" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
-                      {selectableMdmApps.map((app) => (
-                        <SelectItem key={`c-${app.applicationId}-${app.versionId}`} value={String(app.versionId)}>
-                          {app.name || `Application #${app.applicationId}`}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label>Event receiving component</Label>
-                <Input
-                  placeholder="com.example/.AdminReceiver"
-                  value={toText(configuration.eventReceivingComponent)}
-                  onChange={(event) =>
-                    setConfiguration((current) =>
-                      current ? { ...current, eventReceivingComponent: event.target.value } : current
-                    )
-                  }
-                />
-              </div>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label>Launcher URL override</Label>
-                  <Input
-                    placeholder="https://..."
-                    value={toText(configuration.launcherUrl)}
-                    onChange={(event) =>
-                      setConfiguration((current) =>
-                        current ? { ...current, launcherUrl: event.target.value } : current
-                      )
-                    }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Wi-Fi SSID</Label>
-                  <Input
-                    value={toText(configuration.wifiSSID)}
-                    onChange={(event) =>
-                      setConfiguration((current) =>
-                        current ? { ...current, wifiSSID: event.target.value } : current
-                      )
-                    }
-                  />
-                </div>
-              </div>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label>Wi-Fi password</Label>
-                  <Input
-                    value={toText(configuration.wifiPassword)}
-                    onChange={(event) =>
-                      setConfiguration((current) =>
-                        current ? { ...current, wifiPassword: event.target.value } : current
-                      )
-                    }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Wi-Fi security type</Label>
-                  <Input
-                    value={toText(configuration.wifiSecurityType)}
-                    onChange={(event) =>
-                      setConfiguration((current) =>
-                        current ? { ...current, wifiSecurityType: event.target.value } : current
-                      )
-                    }
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label>QR parameters</Label>
-                <Textarea
-                  rows={3}
-                  value={toText(configuration.qrParameters)}
-                  onChange={(event) =>
-                    setConfiguration((current) =>
-                      current ? { ...current, qrParameters: event.target.value } : current
-                    )
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Admin extras</Label>
-                <Textarea
-                  rows={3}
-                  value={toText(configuration.adminExtras)}
-                  onChange={(event) =>
-                    setConfiguration((current) =>
-                      current ? { ...current, adminExtras: event.target.value } : current
-                    )
-                  }
-                />
-              </div>
-              <div className="flex items-center gap-6">
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    checked={Boolean(configuration.mobileEnrollment)}
-                    onCheckedChange={(checked) =>
-                      setConfiguration((current) =>
-                        current ? { ...current, mobileEnrollment: checked === true } : current
-                      )
-                    }
-                  />
-                  <Label>Mobile enrollment</Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    checked={Boolean(configuration.encryptDevice)}
-                    onCheckedChange={(checked) =>
-                      setConfiguration((current) =>
-                        current ? { ...current, encryptDevice: checked === true } : current
-                      )
-                    }
-                  />
-                  <Label>Encrypt device</Label>
-                </div>
-              </div>
-              <div className="flex flex-wrap items-center gap-6">
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    checked={Boolean(configuration.permissive)}
-                    disabled={Boolean(configuration.kioskMode)}
-                    onCheckedChange={(checked) =>
-                      setConfiguration((current) =>
-                        current ? { ...current, permissive: checked === true } : current
-                      )
-                    }
-                  />
-                  <Label>Permissive mode</Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    checked={Boolean(configuration.lockSafeSettings)}
-                    disabled={Boolean(configuration.permissive)}
-                    onCheckedChange={(checked) =>
-                      setConfiguration((current) =>
-                        current ? { ...current, lockSafeSettings: checked === true } : current
-                      )
-                    }
-                  />
-                  <Label>Lock safe settings</Label>
-                </div>
-                {Boolean(configuration.kioskMode) ? (
-                  <>
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    checked={Boolean(configuration.kioskHome)}
-                    onCheckedChange={(checked) =>
-                      setConfiguration((current) =>
-                        current ? { ...current, kioskHome: checked === true } : current
-                      )
-                    }
-                  />
-                  <Label>Kiosk: Home</Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    checked={Boolean(configuration.kioskRecents)}
-                    onCheckedChange={(checked) =>
-                      setConfiguration((current) =>
-                        current ? { ...current, kioskRecents: checked === true } : current
-                      )
-                    }
-                  />
-                  <Label>Kiosk: Recents</Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    checked={Boolean(configuration.kioskNotifications)}
-                    onCheckedChange={(checked) =>
-                      setConfiguration((current) =>
-                        current ? { ...current, kioskNotifications: checked === true } : current
-                      )
-                    }
-                  />
-                  <Label>Kiosk: Notifications</Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    checked={Boolean(configuration.kioskSystemInfo)}
-                    onCheckedChange={(checked) =>
-                      setConfiguration((current) =>
-                        current ? { ...current, kioskSystemInfo: checked === true } : current
-                      )
-                    }
-                  />
-                  <Label>Kiosk: System info</Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    checked={Boolean(configuration.kioskKeyguard)}
-                    onCheckedChange={(checked) =>
-                      setConfiguration((current) =>
-                        current ? { ...current, kioskKeyguard: checked === true } : current
-                      )
-                    }
-                  />
-                  <Label>Kiosk: Keyguard</Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    checked={Boolean(configuration.kioskLockButtons)}
-                    onCheckedChange={(checked) =>
-                      setConfiguration((current) =>
-                        current ? { ...current, kioskLockButtons: checked === true } : current
-                      )
-                    }
-                  />
-                  <Label>Kiosk: Lock buttons</Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    checked={Boolean(configuration.kioskScreenOn)}
-                    onCheckedChange={(checked) =>
-                      setConfiguration((current) =>
-                        current ? { ...current, kioskScreenOn: checked === true } : current
-                      )
-                    }
-                  />
-                  <Label>Kiosk: Keep screen on</Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    checked={Boolean(configuration.kioskExit)}
-                    onCheckedChange={(checked) =>
-                      setConfiguration((current) =>
-                        current ? { ...current, kioskExit: checked === true } : current
-                      )
-                    }
-                  />
-                  <Label>Kiosk: Allow exit</Label>
-                </div>
-                  </>
-                ) : null}
-              </div>
-              <div className="space-y-2">
-                <Label>Allowed classes</Label>
-                <Textarea
-                  rows={3}
-                  value={toText(configuration.allowedClasses)}
-                  disabled={Boolean(configuration.permissive)}
-                  onChange={(event) =>
-                    setConfiguration((current) =>
-                      current ? { ...current, allowedClasses: event.target.value } : current
-                    )
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Restrictions (UserManager keys)</Label>
-                <Textarea
-                  rows={3}
-                  value={toText(configuration.restrictions)}
-                  disabled={Boolean(configuration.permissive)}
-                  onChange={(event) =>
-                    setConfiguration((current) =>
-                      current ? { ...current, restrictions: event.target.value } : current
-                    )
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>New server URL</Label>
-                <Input
-                  placeholder="http://server:8080"
-                  value={toText(configuration.newServerUrl)}
-                  onChange={(event) =>
-                    setConfiguration((current) =>
-                      current ? { ...current, newServerUrl: event.target.value } : current
-                    )
-                  }
-                />
-              </div>
-            </>
+            <ConfigurationMdmTab
+              configuration={configuration}
+              selectableMdmApps={selectableMdmApps}
+              onChange={setConfiguration}
+            />
+          ) : null}
+
+          {configuration && activeTab === 'restrictions' ? (
+            <ConfigurationRestrictionsTab configuration={configuration} onChange={setConfiguration} />
           ) : null}
 
           {configuration && activeTab === 'design' ? (

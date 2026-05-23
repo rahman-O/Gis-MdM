@@ -144,6 +144,7 @@ export interface Configuration {
   allowedClasses?: string | null
   restrictions?: string | null
   newServerUrl?: string | null
+  policyLocks?: Record<string, boolean> | null
   applications?: ConfigurationApplication[]
   applicationSettings?: ConfigurationApplicationSetting[]
   files?: ConfigurationFile[]

@@ -147,6 +147,21 @@ export function buildCreateConfigurationBody(payload: ConfigurationPayload): Con
   }
 }
 
+/** Ensures `policyLocks` is a plain object with only `true` entries for editor/save. */
+export function normalizePolicyLocksForEditor(configuration: Configuration): Configuration {
+  const raw = configuration.policyLocks
+  if (!raw || typeof raw !== 'object') {
+    return { ...configuration, policyLocks: {} }
+  }
+  const policyLocks: Record<string, boolean> = {}
+  for (const [key, value] of Object.entries(raw)) {
+    if (value === true) {
+      policyLocks[key] = true
+    }
+  }
+  return { ...configuration, policyLocks }
+}
+
 export function mergeConfigurationForUpdate(
   current: Configuration,
   id: number,

@@ -67,6 +67,7 @@ type Configuration struct {
 	Applications             []ConfigurationApplication        `json:"applications,omitempty"`
 	Files                    []ConfigurationFile               `json:"files,omitempty"`
 	ApplicationSettings      []ConfigurationApplicationSetting `json:"applicationSettings,omitempty"`
+	PolicyLocks              map[string]bool                   `json:"policyLocks,omitempty"`
 	// Policy holds MDM keys from settingsjson (merged into API JSON on read/write).
 	Policy map[string]any `json:"-"`
 }

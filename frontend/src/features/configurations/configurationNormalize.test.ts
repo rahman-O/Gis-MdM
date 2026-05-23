@@ -5,6 +5,7 @@ import {
   ensureLinkedRowsForChosenVersions,
   mergeConfigurationForUpdate,
   normalizeConfigurationPayload,
+  normalizePolicyLocksForEditor,
 } from '@/features/configurations/configurationNormalize'
 
 describe('configurationNormalize', () => {
@@ -115,6 +116,20 @@ describe('configurationNormalize', () => {
         description: 'Desc',
       })
     )
+  })
+
+  it('normalizePolicyLocksForEditor keeps only true lock entries', () => {
+    expect(
+      normalizePolicyLocksForEditor({
+        name: 'X',
+        policyLocks: { mainAppId: true, kioskMode: false, restrictions: true, junk: 'yes' as unknown as boolean },
+      })
+    ).toEqual(
+      expect.objectContaining({
+        policyLocks: { mainAppId: true, restrictions: true },
+      })
+    )
+    expect(normalizePolicyLocksForEditor({ name: 'Y' }).policyLocks).toEqual({})
   })
 
   it('mergeConfigurationForUpdate preserves advanced configuration fields', () => {
