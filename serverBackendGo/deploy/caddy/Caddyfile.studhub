@@ -1,0 +1,17 @@
+# DuckDNS + automatic Let's Encrypt (Caddy).
+# Prerequisites:
+#   - DuckDNS A record: mdm.studhub.duckdns.org → your public IP
+#   - Router forwards TCP 80 and 443 to this host
+#   - Go MDM: make dev (listens on 127.0.0.1:8080)
+#
+# Run: sudo caddy run --config deploy/caddy/Caddyfile.studhub
+# .env: BASE_URL=https://mdm.studhub.duckdns.org
+
+mdm.studhub.duckdns.org {
+	reverse_proxy 127.0.0.1:8080
+}
+
+# If you use the root hostname only (and nothing else on :443):
+# studhub.duckdns.org {
+# 	reverse_proxy 127.0.0.1:8080
+# }

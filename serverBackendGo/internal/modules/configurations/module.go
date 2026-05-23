@@ -1,0 +1,37 @@
+package configurations
+
+import (
+	"fmt"
+
+	"github.com/gis-mdm/server-backend-go/internal/module"
+	cfgapp "github.com/gis-mdm/server-backend-go/internal/modules/configurations/application"
+	cfghttp "github.com/gis-mdm/server-backend-go/internal/modules/configurations/adapter/http"
+	cfgpostgres "github.com/gis-mdm/server-backend-go/internal/modules/configurations/adapter/persistence/postgres"
+	"github.com/gis-mdm/server-backend-go/internal/modules/configurations/port"
+)
+
+// Module registers configuration routes.
+type Module struct{}
+
+func New() *Module { return &Module{} }
+
+func (m *Module) Name() string { return "configurations" }
+
+func (m *Module) Register(groups module.RouteGroups, deps module.Dependencies) error {
+	if deps.DB == nil {
+		return fmt.Errorf("configurations module requires DATABASE_URL")
+	}
+	repo := cfgpostgres.NewConfigRepository(deps.DB)
+	var push port.PushNotifier = port.NoopPushNotifier{}
+	if deps.PushNotifier != nil {
+		if n, ok := deps.PushNotifier.(port.PushNotifier); ok {
+			push = n
+		}
+	}
+	svc := cfgapp.NewService(repo, push)
+	cfghttp.NewHandler(svc).Register(groups.Private.Group("/configurations"))
+	deps.Log.Info("module registered", "module", m.Name())
+	return nil
+}
+
+var _ module.Module = (*Module)(nil)

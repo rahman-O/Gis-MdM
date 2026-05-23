@@ -1,0 +1,63 @@
+services:
+
+  db:
+    image: postgres:14-alpine
+    container_name: hmdm-db
+    environment:
+      POSTGRES_DB: hmdm
+      POSTGRES_USER: hmdm
+      POSTGRES_PASSWORD: topsecret
+    ports:
+      # Avoid conflict when host already runs PostgreSQL (or another stack on 5432).
+      - "5433:5432"
+    volumes:
+      - hmdm_db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hmdm"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - hmdm-network
+
+  
+
+  backend-go:
+    build:
+      context: ./backend-go
+      dockerfile: Dockerfile
+    container_name: hmdm-backend-go
+    ports:
+      - "8081:8080"
+    environment:
+      DATABASE_HOST: db
+      DATABASE_PORT: "5432"
+      DATABASE_NAME: hmdm
+      DATABASE_USER: hmdm
+      DATABASE_PASSWORD: topsecret
+      SERVER_PORT: "8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - hmdm-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: hmdm-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend-go
+    networks:
+      - hmdm-network
+
+volumes:
+  hmdm_db:
+  hmdm_files:
+
+networks:
+  hmdm-network:
+    driver: bridge

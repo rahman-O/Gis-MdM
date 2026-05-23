@@ -1,0 +1,36 @@
+# Docker Compose Override for Development
+# This file overrides the production docker-compose.yml for local development
+# Use with: docker-compose -f docker-compose.yml -f docker-compose.override.yml up
+
+version: '3.8'
+
+services:
+  db:
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: hmdm
+      POSTGRES_USER: hmdm
+      POSTGRES_PASSWORD: topsecret
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hmdm"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend-go:
+    build:
+      context: ./backend-go
+      dockerfile: Dockerfile
+    environment:
+      - DATABASE_HOST=db
+      - DATABASE_PORT=5432
+      - SERVER_PORT=8080
+      - LOG_LEVEL=debug
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    environment:
+      - VITE_API_URL=http://localhost:8081

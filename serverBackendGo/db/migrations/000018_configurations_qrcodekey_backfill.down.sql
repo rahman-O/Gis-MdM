@@ -1,0 +1,1 @@
+-- No-op: cannot safely remove auto-generated keys.
