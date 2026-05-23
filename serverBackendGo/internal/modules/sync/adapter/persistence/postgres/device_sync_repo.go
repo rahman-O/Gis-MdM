@@ -294,21 +294,42 @@ func (r *DeviceSyncRepository) BuildSyncResponse(ctx context.Context, dev domain
 
 	rows, err := r.db.QueryContext(ctx, `
 		SELECT a.id, a.name, a.pkg, COALESCE(av.version, ''), COALESCE(av.url, ''),
-			COALESCE(a.type, 'app'), COALESCE(av.urlarm64, ''), COALESCE(av.urlarmeabi, ''), COALESCE(av.split, false)
+			COALESCE(a.type, 'app'), COALESCE(av.urlarm64, ''), COALESCE(av.urlarmeabi, ''), COALESCE(av.split, false),
+			av.versioncode,
+			a.runafterinstall, a.runatboot, COALESCE(a.system, false), COALESCE(a.usekiosk, false),
+			a.icontext, a.intent,
+			COALESCE(ca.showicon, a.showicon, true), COALESCE(ca.remove, false),
+			ca.screenorder, ca.keycode, COALESCE(ca.bottom, false), COALESCE(ca.longtap, false),
+			COALESCE(cap.skipversioncheck, false),
+			uf.filepath
 		FROM configurationapplications ca
 		JOIN applications a ON a.id = ca.applicationid
 		LEFT JOIN applicationversions av ON av.id = ca.applicationversionid
+		LEFT JOIN configurationapplicationparameters cap
+			ON cap.configurationid = ca.configurationid AND cap.applicationid = ca.applicationid
+		LEFT JOIN icons ON icons.id = a.iconid
+		LEFT JOIN uploadedfiles uf ON uf.id = icons.fileid
 		WHERE ca.configurationid = $1
 		ORDER BY ca.screenorder NULLS LAST, a.name`, dev.ConfigurationID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
+	screenIdx := 0
 	for rows.Next() {
 		var app domain.SyncApplication
-		var urlArm64, urlArm sql.NullString
-		var split bool
-		if err := rows.Scan(&app.ID, &app.Name, &app.Pkg, &app.Version, &app.URL, &app.Type, &urlArm64, &urlArm, &split); err != nil {
+		var urlArm64, urlArm, iconPath, iconText, intent sql.NullString
+		var split, runAfter, runAtBoot, system, useKiosk, showIcon, remove, bottom, longTap, skipVer bool
+		var verCode sql.NullInt64
+		var screenOrder, keyCode sql.NullInt64
+		if err := rows.Scan(
+			&app.ID, &app.Name, &app.Pkg, &app.Version, &app.URL, &app.Type,
+			&urlArm64, &urlArm, &split,
+			&verCode, &runAfter, &runAtBoot, &system, &useKiosk,
+			&iconText, &intent,
+			&showIcon, &remove, &screenOrder, &keyCode, &bottom, &longTap, &skipVer,
+			&iconPath,
+		); err != nil {
 			return nil, err
 		}
 		if split {
@@ -317,6 +338,43 @@ func (r *DeviceSyncRepository) BuildSyncResponse(ctx context.Context, dev domain
 			} else if urlArm.Valid && urlArm.String != "" {
 				app.URL = urlArm.String
 			}
+		}
+		if verCode.Valid && verCode.Int64 > 0 {
+			c := int(verCode.Int64)
+			app.Code = &c
+		}
+		if iconPath.Valid && strings.TrimSpace(iconPath.String) != "" {
+			u := storage.BuildPublicURL(baseURL, filesDir, iconPath.String)
+			app.Icon = &u
+		}
+		app.ShowIcon = application.BoolTrueOnly(showIcon)
+		if screenOrder.Valid {
+			s := int(screenOrder.Int64)
+			app.ScreenOrder = &s
+		} else {
+			screenIdx++
+			s := screenIdx
+			app.ScreenOrder = &s
+		}
+		app.UseKiosk = application.BoolTrueOnly(useKiosk)
+		app.Remove = application.BoolTrueOnly(remove)
+		app.System = application.BoolTrueOnly(system)
+		app.RunAfterInstall = application.BoolTrueOnly(runAfter)
+		app.RunAtBoot = application.BoolTrueOnly(runAtBoot)
+		app.SkipVersion = application.BoolTrueOnly(skipVer)
+		app.Bottom = application.BoolTrueOnly(bottom)
+		app.LongTap = application.BoolTrueOnly(longTap)
+		if iconText.Valid && strings.TrimSpace(iconText.String) != "" {
+			t := iconText.String
+			app.IconText = &t
+		}
+		if keyCode.Valid && keyCode.Int64 > 0 {
+			k := int(keyCode.Int64)
+			app.KeyCode = &k
+		}
+		if intent.Valid && strings.TrimSpace(intent.String) != "" {
+			in := intent.String
+			app.Intent = &in
 		}
 		resp.Applications = append(resp.Applications, app)
 	}

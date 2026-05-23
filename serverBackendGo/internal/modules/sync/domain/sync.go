@@ -34,15 +34,29 @@ type SyncApplicationSetting struct {
 	LastUpdate int64  `json:"lastUpdate"`
 }
 
-// SyncApplication is an app row in SyncResponse.
+// SyncApplication is an app row in SyncResponse (Headwind launcher / SyncApplicationInt parity).
 type SyncApplication struct {
-	ID      int64   `json:"id"`
-	Name    string  `json:"name"`
-	Pkg     string  `json:"pkg"`
-	Version string  `json:"version"`
-	URL     string  `json:"url"`
-	Type    string  `json:"type"`
-	Icon    *string `json:"icon,omitempty"`
+	ID              int     `json:"id"`
+	Name            string  `json:"name"`
+	Pkg             string  `json:"pkg"`
+	Version         string  `json:"version"`
+	URL             string  `json:"url"`
+	Type            string  `json:"type"`
+	Code            *int    `json:"code,omitempty"`
+	Icon            *string `json:"icon,omitempty"`
+	ShowIcon        *bool   `json:"showIcon,omitempty"`
+	ScreenOrder     *int    `json:"screenOrder,omitempty"`
+	UseKiosk        *bool   `json:"useKiosk,omitempty"`
+	Remove          *bool   `json:"remove,omitempty"`
+	System          *bool   `json:"system,omitempty"`
+	RunAfterInstall *bool   `json:"runAfterInstall,omitempty"`
+	RunAtBoot       *bool   `json:"runAtBoot,omitempty"`
+	SkipVersion     *bool   `json:"skipVersion,omitempty"`
+	IconText        *string `json:"iconText,omitempty"`
+	KeyCode         *int    `json:"keyCode,omitempty"`
+	Bottom          *bool   `json:"bottom,omitempty"`
+	LongTap         *bool   `json:"longTap,omitempty"`
+	Intent          *string `json:"intent,omitempty"`
 }
 
 // SyncConfigurationFile is a file entry in SyncResponse.

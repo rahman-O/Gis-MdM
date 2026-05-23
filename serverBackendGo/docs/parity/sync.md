@@ -23,6 +23,6 @@
 | Connectivity | `gps`, `bluetooth`, `wifi`, `mobileData`, `usbStorage`, `showWifi` |
 | Display / device | `orientation`, `brightness`, `timeout`, `volume`, `autoBrightness`, `disableScreenshots`, … |
 | Updates | `downloadUpdates`, `systemUpdateType`, `systemUpdateFrom`/`To`, `appUpdateFrom`/`To`, `scheduleAppUpdate` |
-| Apps / files | Still loaded via `device_sync_repo` queries (unchanged) |
+| Apps / files | `device_sync_repo` — includes `showIcon`, `screenOrder`, `code`, launcher icon URL, and related flags (016) |
 
 **Application settings merge**: configuration defaults + device overrides; `policyLocks` and readonly configuration settings skip device POST updates.

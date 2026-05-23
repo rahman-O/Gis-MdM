@@ -98,13 +98,13 @@ export async function getConfigurationApplications(id: number): Promise<Configur
 
 export async function getAllApplications(): Promise<ConfigurationAppCatalogItem[]> {
   try {
-    const response = await apiClient.get<HmdmEnvelope<unknown>>('/private/applications/search')
+    const response = await apiClient.get<HmdmEnvelope<unknown[]>>('/private/applications/search')
     const list = mapApplicationCatalogRows(unwrapHmdmList(response.data, 'Failed to load applications.'))
     if (list.length > 0) return list
   } catch {
     // fallback below
   }
-  const fallback = await apiClient.get<HmdmEnvelope<unknown>>('/private/configurations/applications')
+  const fallback = await apiClient.get<HmdmEnvelope<unknown[]>>('/private/configurations/applications')
   return mapApplicationCatalogRows(unwrapHmdmList(fallback.data, 'Failed to load applications.'))
 }
 

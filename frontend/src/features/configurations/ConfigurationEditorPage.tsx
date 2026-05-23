@@ -4,7 +4,6 @@ import { AlertCircle } from 'lucide-react'
 import { Button } from '@/shared/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card'
 import * as configurationService from '@/features/configurations/configurationService'
-import { getConfigurationQrEligibility } from '@/features/configurations/configurationQr'
 import { ConfigurationCommonTab } from '@/features/configurations/ConfigurationCommonTab'
 import { ConfigurationDesignTab } from '@/features/configurations/ConfigurationDesignTab'
 import { ConfigurationApplicationsTab } from '@/features/configurations/ConfigurationApplicationsTab'
@@ -12,7 +11,7 @@ import { ConfigurationAppSettingsTab } from '@/features/configurations/Configura
 import { ConfigurationFilesTab } from '@/features/configurations/ConfigurationFilesTab'
 import { ConfigurationMdmTab } from '@/features/configurations/ConfigurationMdmTab'
 import { ConfigurationRestrictionsTab } from '@/features/configurations/ConfigurationRestrictionsTab'
-import { canEnrollDevicesViaQr, hasPermission } from '@/features/auth/permissions'
+import { hasPermission } from '@/features/auth/permissions'
 import {
   configurationApplicationsForSaveFromApi,
   ensureLinkedRowsForChosenVersions,
@@ -47,12 +46,6 @@ export function ConfigurationEditorPage() {
   const [configuration, setConfiguration] = useState<Configuration | null>(null)
   const [applications, setApplications] = useState<AppOption[]>([])
   const [mdmApplications, setMdmApplications] = useState<MdmAppOption[]>([])
-  const [diagnosticCounts, setDiagnosticCounts] = useState<{
-    allAppsRaw: number
-    allAppsMapped: number
-    configAppsRaw: number
-    configAppsMapped: number
-  } | null>(null)
   const [activeTab, setActiveTab] = useState<
     'common' | 'mdm' | 'restrictions' | 'design' | 'applications' | 'appSettings' | 'files'
   >('common')
@@ -78,8 +71,6 @@ export function ConfigurationEditorPage() {
             applications: configurationApplicationsForSaveFromApi(cfgApps),
           })
         )
-        const allAppsRaw = Array.isArray(allApps) ? allApps.length : 0
-        const cfgAppsRaw = Array.isArray(cfgApps) ? cfgApps.length : 0
         setApplications(Array.isArray(allApps) ? allApps : [])
         const mapped = (Array.isArray(cfgApps) ? cfgApps : [])
           .map((item) => {
@@ -100,14 +91,6 @@ export function ConfigurationEditorPage() {
           })
           .filter((item) => item.applicationId > 0 && item.versionId > 0)
         setMdmApplications(mapped)
-        setDiagnosticCounts({
-          allAppsRaw,
-          allAppsMapped: (Array.isArray(allApps) ? allApps : []).filter(
-            (item) => Number((item as { id?: unknown }).id ?? 0) > 0
-          ).length,
-          configAppsRaw: cfgAppsRaw,
-          configAppsMapped: mapped.length,
-        })
       })
       .catch((reason: unknown) => {
         setError(reason instanceof Error ? reason.message : 'Failed to load configuration editor.')
@@ -166,11 +149,6 @@ export function ConfigurationEditorPage() {
     selectableMdmApps.forEach(add)
     return out
   }, [mdmApplications, selectableMdmApps])
-
-  const qrEligibility = useMemo(
-    () => getConfigurationQrEligibility(configuration),
-    [configuration]
-  )
 
   const validateBeforeSave = (cfg: Configuration): string | null => {
     if (!String(cfg.name ?? '').trim()) return 'Common: name is required.'
@@ -295,42 +273,6 @@ export function ConfigurationEditorPage() {
           </Button>
         </div>
       </div>
-
-      <Card>
-        <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
-          <div className="space-y-1.5">
-            <CardTitle>QR readiness</CardTitle>
-            <CardDescription>
-              {qrEligibility.eligible
-                ? 'Configuration is eligible for QR generation.'
-                : qrEligibility.reason}
-              {!String(configuration?.qrCodeKey ?? '').trim() ? (
-                <span className="mt-1 block">
-                  Save this configuration once to generate a QR key automatically.
-                </span>
-              ) : null}
-            </CardDescription>
-          </div>
-          {canEnrollDevicesViaQr() &&
-          qrEligibility.eligible &&
-          String(configuration?.qrCodeKey ?? '').trim() ? (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() =>
-                navigate(`/qr/${encodeURIComponent(String(configuration?.qrCodeKey).trim())}`)
-              }
-            >
-              Open enrollment QR
-            </Button>
-          ) : null}
-        </CardHeader>
-      </Card>
-      {diagnosticCounts ? (
-        <p className="text-xs text-muted-foreground">
-          Apps diagnostic — all(raw/mapped): {diagnosticCounts.allAppsRaw}/{diagnosticCounts.allAppsMapped}, config(raw/mapped): {diagnosticCounts.configAppsRaw}/{diagnosticCounts.configAppsMapped}
-        </p>
-      ) : null}
 
       <div className="flex flex-wrap gap-2">
         {[

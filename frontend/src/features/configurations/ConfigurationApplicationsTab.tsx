@@ -60,6 +60,7 @@ export function ConfigurationApplicationsTab({
           applicationId: option.id,
           name: option.name,
           action: 1,
+          showIcon: true,
           version: null,
           // Persist as a linked row; otherwise backend may store NULL version id and UI drops it on reload.
           ...(latestVersionId > 0
@@ -144,6 +145,13 @@ export function ConfigurationApplicationsTab({
               </div>
             </div>
             <div className="mt-3 flex flex-wrap gap-4">
+              <label className="flex items-center gap-2 text-sm">
+                <Checkbox
+                  checked={(app as Record<string, unknown>).showIcon !== false}
+                  onCheckedChange={(c) => updateApp(index, { showIcon: c === true })}
+                />
+                Show on home screen
+              </label>
               <label className="flex items-center gap-2 text-sm">
                 <Checkbox
                   checked={Boolean((app as Record<string, unknown>).skipVersionCheck)}
