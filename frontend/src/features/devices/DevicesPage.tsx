@@ -24,6 +24,7 @@ import { DeviceDetailPanel } from '@/features/devices/DeviceDetailPanel'
 import { DeviceForm } from '@/features/devices/DeviceForm'
 import { FilterPanel } from '@/features/devices/FilterPanel'
 import { BulkActionBar } from '@/features/devices/BulkActionBar'
+import { DeviceTreeSidebar } from '@/features/device-tree/DeviceTreeSidebar'
 const PAGE_SIZE = 20
 const EMPTY_FILTERS: DeviceFilters = {
   groupId: null,
@@ -81,6 +82,7 @@ export function DevicesPage() {
     deviceNumber: string
     configuration: Configuration | null
   } | null>(null)
+  const [selectedTreeNodeId, setSelectedTreeNodeId] = useState<number | null>(null)
   const [columnVisibility, setColumnVisibility] = useState({
     imei: false,
     phone: false,
@@ -107,6 +109,8 @@ export function DevicesPage() {
     pageSize: PAGE_SIZE,
     value: debouncedSearch.trim() || null,
     ...filters,
+    treeNodeId: selectedTreeNodeId,
+    includeDescendants: selectedTreeNodeId != null ? true : null,
   })
 
   const fetchDevices = async (withLoading = true) => {
@@ -139,12 +143,12 @@ export function DevicesPage() {
   useEffect(() => {
     void fetchDevices(true)
     setSelectedIds(new Set())
-  }, [page, debouncedSearch, filters])
+  }, [page, debouncedSearch, filters, selectedTreeNodeId])
 
   useEffect(() => {
     const intervalId = window.setInterval(() => void fetchDevices(false), 60_000)
     return () => window.clearInterval(intervalId)
-  }, [page, debouncedSearch, filters])
+  }, [page, debouncedSearch, filters, selectedTreeNodeId])
 
   const allColumns = [
     { key: 'imei' as const, label: 'IMEI' },
@@ -243,7 +247,13 @@ export function DevicesPage() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="flex gap-4">
+      <DeviceTreeSidebar
+        selectedNodeId={selectedTreeNodeId}
+        onSelectNode={setSelectedTreeNodeId}
+        onTreeChanged={() => void fetchDevices(true)}
+      />
+      <div className="min-w-0 flex-1 space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold tracking-tight">Devices</h1>
@@ -309,6 +319,7 @@ export function DevicesPage() {
               <TableHead>Last Seen</TableHead>
               <TableHead>Number</TableHead>
               <TableHead>Configuration</TableHead>
+              <TableHead>Enrollment</TableHead>
               <TableHead>Groups</TableHead>
               {columnVisibility.imei ? <TableHead>IMEI</TableHead> : null}
               {columnVisibility.phone ? <TableHead>Phone</TableHead> : null}
@@ -322,10 +333,10 @@ export function DevicesPage() {
           </TableHeader>
           <TableBody>
             {loading ? Array.from({ length: 5 }).map((_, index) => (
-              <TableRow key={index}><TableCell colSpan={14}><Skeleton className="h-9 w-full" /></TableCell></TableRow>
+              <TableRow key={index}><TableCell colSpan={15}><Skeleton className="h-9 w-full" /></TableCell></TableRow>
             )) : devices.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={14} className="h-24 text-center text-muted-foreground">
+                <TableCell colSpan={15} className="h-24 text-center text-muted-foreground">
                   {debouncedSearch.trim() ? `No devices found for '${debouncedSearch.trim()}'.` : 'No devices yet.'}
                 </TableCell>
               </TableRow>
@@ -346,6 +357,7 @@ export function DevicesPage() {
                 <TableCell>{formatLastSeen(device.lastUpdate)}</TableCell>
                 <TableCell className="font-medium">{device.number || '—'}</TableCell>
                 <TableCell>{device.configurationId != null ? configurationsMap[device.configurationId]?.name?.trim() || `Configuration #${device.configurationId}` : '—'}</TableCell>
+                <TableCell className="capitalize text-muted-foreground text-xs">{device.enrollmentState ?? '—'}</TableCell>
                 <TableCell className="max-w-[240px] truncate">{groupsCell(device.groups)}</TableCell>
                 {columnVisibility.imei ? <TableCell>{device.imei || '—'}</TableCell> : null}
                 {columnVisibility.phone ? <TableCell>{device.phone || '—'}</TableCell> : null}
@@ -463,6 +475,7 @@ export function DevicesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   )
 }

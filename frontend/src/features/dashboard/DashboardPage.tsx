@@ -28,6 +28,7 @@ import {
 import type { DeviceView } from '@/features/devices/types'
 import { StatusBadge } from '@/features/devices/StatusBadge'
 import { formatLastSeen } from '@/features/devices/deviceFormat'
+import { OnboardingChecklist } from '@/features/onboarding/OnboardingChecklist'
 
 interface CustomTooltipProps {
   active?: boolean
@@ -211,6 +212,8 @@ export function DashboardPage() {
           </Button>
         </div>
       </div>
+
+      <OnboardingChecklist />
 
       {error ? (
         <div className="border-destructive/50 bg-destructive/10 flex flex-wrap items-center gap-2 rounded-lg border px-3 py-2 text-sm">

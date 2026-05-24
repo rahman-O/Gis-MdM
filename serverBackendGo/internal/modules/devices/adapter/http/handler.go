@@ -32,6 +32,7 @@ func (h *Handler) Register(g *gin.RouterGroup) {
 	g.GET("/:id/applicationSettings", h.GetAppSettings)
 	g.POST("/:id/applicationSettings", h.SaveAppSettings)
 	g.POST("/:id/applicationSettings/notify", h.NotifyAppSettings)
+	g.POST("/:id/move-tree", h.MoveTree)
 }
 
 func principal(c *gin.Context) (*platformauth.Principal, bool) {
@@ -308,6 +309,33 @@ func (h *Handler) SaveAppSettings(c *gin.Context) {
 // @Param id path int true "Device ID"
 // @Success 200 {object} response.Envelope
 // @Router /private/devices/{id}/applicationSettings/notify [post]
+// MoveTree godoc
+// @Summary Move device to another tree folder
+// @Tags Devices
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Device ID"
+// @Success 200 {object} response.Envelope
+// @Router /private/devices/{id}/move-tree [post]
+func (h *Handler) MoveTree(c *gin.Context) {
+	p, ok := principal(c)
+	if !ok {
+		return
+	}
+	id, _ := strconv.Atoi(c.Param("id"))
+	var req domain.MoveTreeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.ErrorEnvelope(c, "")
+		return
+	}
+	if err := h.svc.MoveTree(c.Request.Context(), p, id, req.TreeNodeID); err != nil {
+		mapErr(c, err)
+		return
+	}
+	response.OK(c, nil)
+}
+
 func (h *Handler) NotifyAppSettings(c *gin.Context) {
 	if _, ok := principal(c); !ok {
 		return

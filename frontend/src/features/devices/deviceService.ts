@@ -42,6 +42,8 @@ export async function getDevices(params: DeviceSearchRequest): Promise<DeviceLis
     installationStatus: params.installationStatus?.trim() ? params.installationStatus.trim() : null,
     imeiChanged: params.imeiChanged,
     fastSearch: params.fastSearch,
+    treeNodeId: params.treeNodeId,
+    includeDescendants: params.includeDescendants,
   }
   Object.entries(candidates).forEach(([key, value]) => {
     if (value !== null && value !== undefined && value !== '') {
@@ -115,6 +117,13 @@ export async function notifyAppSettings(deviceId: number): Promise<void> {
 export async function updateDescription(deviceId: number, description: string): Promise<void> {
   const response = await apiClient.post<HmdmEnvelope<unknown>>(`/private/devices/${deviceId}/description`, description)
   assertHmdmOk(response.data, 'Failed to update description.')
+}
+
+export async function moveDeviceToTree(deviceId: number, treeNodeId: number): Promise<void> {
+  const response = await apiClient.post<HmdmEnvelope<unknown>>(`/private/devices/${deviceId}/move-tree`, {
+    treeNodeId,
+  })
+  assertHmdmOk(response.data, 'Failed to move device.')
 }
 
 export async function autocomplete(value: string): Promise<string[]> {

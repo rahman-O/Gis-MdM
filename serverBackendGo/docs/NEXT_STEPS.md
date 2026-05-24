@@ -17,6 +17,39 @@ Spec: [`specs/014-complete-frontend-go-integration/`](../specs/014-complete-fron
 
 ---
 
+## 017 — Device control plane (2026-05-23)
+
+| Area | Status |
+|------|--------|
+| Device tree + move/filter | **منجز** |
+| Profiles (draft/publish/artifact) | **منجز** |
+| Enrollment routes + QR | **منجز** |
+| Sync from artifacts | **منجز** |
+| Onboarding checklist/wizard | **منجز** |
+| Nav: Profiles + Enrollment routes | **منجز** |
+
+Spec: [`specs/017-device-control-plane/`](../specs/017-device-control-plane/) · Parity: [`parity/device-control-plane.md`](parity/device-control-plane.md) · Gates: [`gates/sprint-017-v1-gates.md`](../specs/017-device-control-plane/gates/sprint-017-v1-gates.md)
+
+**Deploy:** `cd serverBackendGo && make migrate` (through `000027`), enable `MODULE_DEVICE_TREE_ENABLED`, `MODULE_PROFILES_ENABLED`, `MODULE_ENROLLMENT_ROUTES_ENABLED`.
+
+---
+
+## 018 — Profile rollout & operations (2026-05-23)
+
+| Area | Status |
+|------|--------|
+| Tree assignment (nearest folder wins) | **منجز** |
+| Version navigation + fork draft | **منجز** |
+| Rollout status grid + recompute | **منجز** |
+| Profile enable/disable | **منجز** |
+| Sync effective profile (tree > route) | **منجز** |
+
+Spec: [`specs/018-profile-rollout-ops/`](../specs/018-profile-rollout-ops/) · Parity: [`parity/profile-rollout-ops.md`](parity/profile-rollout-ops.md)
+
+**Deploy:** `make migrate` through `000028`, `MODULE_PROFILE_ROLLOUT_ENABLED=true` (with 017 flags).
+
+---
+
 ## منجز
 
 | المرحلة | الوحدات | الحالة |

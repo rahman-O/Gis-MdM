@@ -34,4 +34,5 @@ type DeviceRepository interface {
 	UpdateDescription(ctx context.Context, customerID int, id int, description string) error
 	ListAppSettings(ctx context.Context, deviceID int) ([]domain.AppSetting, error)
 	SaveAppSettings(ctx context.Context, deviceID int, settings []domain.AppSetting) error
+	MoveTreeNode(ctx context.Context, customerID int, deviceID int, treeNodeID int) error
 }

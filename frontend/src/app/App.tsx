@@ -10,7 +10,11 @@ import { GroupsPage } from '@/features/groups/GroupsPage'
 import { UsersPage } from '@/features/users/UsersPage'
 import { RolesPage } from '@/features/roles/RolesPage'
 import { SettingsPage } from '@/features/settings/SettingsPage'
-import { ConfigurationsPage } from '@/features/configurations/ConfigurationsPage'
+import { ProfilesPage } from '@/features/profiles/ProfilesPage'
+import { ProfileEditRedirect } from '@/features/profiles/ProfileEditRedirect'
+import { EnrollmentRouteListPage } from '@/features/enrollment-routes/EnrollmentRouteListPage'
+import { EnrollmentRouteEditorPage } from '@/features/enrollment-routes/EnrollmentRouteEditorPage'
+import { OnboardingWizardPage } from '@/features/onboarding/OnboardingWizardPage'
 import { ConfigurationEditorPage } from '@/features/configurations/ConfigurationEditorPage'
 import { EnrollmentQrPage } from '@/features/devices/EnrollmentQrPage'
 import { ApplicationsPage } from '@/features/applications/ApplicationsPage'
@@ -64,12 +68,19 @@ export function App() {
         }
       >
         <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/onboarding" element={<OnboardingWizardPage />} />
         <Route path="/devices" element={<DevicesPage />} />
         <Route path="/groups" element={<GroupsPage />} />
         <Route path="/applications" element={<ApplicationsPage />} />
         <Route path="/applications/admin" element={<AdminApplicationsPage />} />
         <Route path="/application/:id/versions" element={<ApplicationVersionsPage />} />
-        <Route path="/configurations" element={<ConfigurationsPage />} />
+        <Route path="/profiles" element={<ProfilesPage />} />
+        <Route path="/profiles/:profileId/edit" element={<ProfileEditRedirect />} />
+        <Route path="/profiles/:profileId/versions/:versionId/edit" element={<ProfileEditRedirect />} />
+        <Route path="/enrollment-routes" element={<EnrollmentRouteListPage />} />
+        <Route path="/enrollment-routes/new" element={<EnrollmentRouteEditorPage />} />
+        <Route path="/enrollment-routes/:id" element={<EnrollmentRouteEditorPage />} />
+        <Route path="/configurations" element={<Navigate to="/profiles" replace />} />
         <Route path="/configurations/:id/edit" element={<ConfigurationEditorPage />} />
         <Route path="/qr/:qrCodeKey/:deviceId" element={<EnrollmentQrPage />} />
         <Route path="/qr/:qrCodeKey" element={<EnrollmentQrPage />} />

@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/shared/ui/sheet'
 import { cn } from '@/shared/utils/cn'
 import { canManageRoles, hasPermission, isSuperAdmin } from '@/features/auth/permissions'
@@ -10,6 +11,7 @@ interface SidebarProps {
 }
 
 function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
+  const { t } = useTranslation()
   return (
     <nav aria-label="Main navigation" className="flex flex-col gap-1 p-2.5">
       {NAV_ITEMS.filter((item) => {
@@ -37,7 +39,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
           {({ isActive }) => (
             <>
               <item.icon className="h-3.5 w-3.5 shrink-0" />
-              <span>{item.label}</span>
+              <span>{item.labelKey ? t(item.labelKey) : item.label}</span>
               {isActive && <span className="sr-only">(current page)</span>}
             </>
           )}

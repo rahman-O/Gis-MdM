@@ -49,6 +49,7 @@ func (s *Service) provisioningJSON(ctx context.Context, key string, q domain.QRQ
 	} else {
 		s.builder.SingleCustomer = false
 	}
+	q = applyEnrollmentRouteQRDefaults(q, cfg)
 	body, err := s.builder.Build(cfg, q)
 	if err != nil {
 		s.log.Warn("qr provisioning failed", "key", key, "err", err)

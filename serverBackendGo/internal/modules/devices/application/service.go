@@ -201,6 +201,20 @@ func (s *Service) NotifyAppSettings(ctx context.Context, deviceID int) error {
 	return s.push.NotifyAppSettings(ctx, deviceID)
 }
 
+func (s *Service) MoveTree(ctx context.Context, p *platformauth.Principal, deviceID int, treeNodeID int) error {
+	if !p.CanEditDevices() {
+		return ErrPermissionDenied
+	}
+	scope, err := s.scope(ctx, p)
+	if err != nil {
+		return err
+	}
+	if err := s.repo.MoveTreeNode(ctx, scope.CustomerID, deviceID, treeNodeID); err != nil {
+		return ErrDeviceNotFound
+	}
+	return nil
+}
+
 func ptrStr(p *string) string {
 	if p == nil {
 		return ""

@@ -71,6 +71,9 @@ type SyncConfigurationFile struct {
 type SyncResponse struct {
 	DeviceID            string                   `json:"deviceId"`
 	ConfigurationID     int64                    `json:"configurationId"`
+	ProfileID           *int64                   `json:"profileId,omitempty"`
+	ProfileVersionID    *int64                   `json:"profileVersionId,omitempty"`
+	ProfileRevision     *string                  `json:"profileRevision,omitempty"`
 	Password            string                   `json:"password,omitempty"`
 	BackgroundColor     *string                  `json:"backgroundColor,omitempty"`
 	TextColor           *string                  `json:"textColor,omitempty"`
@@ -138,10 +141,11 @@ type SyncResponse struct {
 
 // DeviceRecord is internal persistence shape.
 type DeviceRecord struct {
-	ID              int64
-	CustomerID      int64
-	ConfigurationID int64
-	Number          string
+	ID                int64
+	CustomerID        int64
+	ConfigurationID   int64
+	EnrollmentRouteID int64
+	Number            string
 	OldNumber       *string
 	IMEI            *string
 	Phone           *string

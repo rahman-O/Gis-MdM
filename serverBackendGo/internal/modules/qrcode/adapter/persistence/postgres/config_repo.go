@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 
 	"github.com/gis-mdm/server-backend-go/internal/modules/qrcode/port"
 )
@@ -25,24 +26,64 @@ func (r *ConfigRepository) CountCustomers(ctx context.Context) (int, error) {
 }
 
 func (r *ConfigRepository) ConfigurationByQRKey(ctx context.Context, key string) (*port.QRConfig, error) {
+	cfg, err := r.routeByQRKey(ctx, key)
+	if err == nil {
+		return cfg, nil
+	}
+	if !errors.Is(err, sql.ErrNoRows) {
+		return nil, err
+	}
+	return r.configurationByQRKeyLegacy(ctx, key)
+}
+
+func (r *ConfigRepository) routeByQRKey(ctx context.Context, key string) (*port.QRConfig, error) {
 	var cfg port.QRConfig
 	var mainAppID sql.NullInt64
 	var settingsJSON []byte
 	var customerName sql.NullString
+	var defaultDeviceIDMode string
 	err := r.db.QueryRowContext(ctx, `
-		SELECT c.id, c.name, COALESCE(c.qrcodekey, ''), c.customerid,
-		       COALESCE(cu.filesdir, ''), COALESCE(cu.name, ''), c.mainappid, c.settingsjson
-		FROM configurations c
-		JOIN customers cu ON cu.id = c.customerid
-		WHERE c.qrcodekey IS NOT NULL AND lower(c.qrcodekey) = lower($1)`, key).
-		Scan(&cfg.ID, &cfg.Name, &cfg.QRCodeKey, &cfg.CustomerID, &cfg.FilesDir, &customerName, &mainAppID, &settingsJSON)
+		SELECT er.id, er.name, COALESCE(er.qrcodekey, ''), er.customerid,
+		       COALESCE(cu.filesdir, ''), COALESCE(cu.name, ''),
+		       COALESCE(er.mainappid, pv.mainappid), pv.settingsjson,
+		       COALESCE(NULLIF(TRIM(er.default_device_id_mode), ''), 'imei')
+		FROM enrollment_routes er
+		JOIN customers cu ON cu.id = er.customerid
+		LEFT JOIN profile_versions pv ON pv.id = er.profile_version_id
+		WHERE er.qrcodekey IS NOT NULL AND lower(er.qrcodekey) = lower($1)`, key).
+		Scan(&cfg.ID, &cfg.Name, &cfg.QRCodeKey, &cfg.CustomerID, &cfg.FilesDir, &customerName, &mainAppID, &settingsJSON, &defaultDeviceIDMode)
 	if err != nil {
 		return nil, err
 	}
+	return r.finishQRConfig(ctx, &cfg, mainAppID, settingsJSON, customerName, defaultDeviceIDMode)
+}
+
+func (r *ConfigRepository) configurationByQRKeyLegacy(ctx context.Context, key string) (*port.QRConfig, error) {
+	var cfg port.QRConfig
+	var mainAppID sql.NullInt64
+	var settingsJSON []byte
+	var customerName sql.NullString
+	var defaultDeviceIDMode string
+	err := r.db.QueryRowContext(ctx, `
+		SELECT c.id, c.name, COALESCE(c.qrcodekey, ''), c.customerid,
+		       COALESCE(cu.filesdir, ''), COALESCE(cu.name, ''), c.mainappid, c.settingsjson,
+		       COALESCE(NULLIF(TRIM(c.default_device_id_mode), ''), 'imei')
+		FROM configurations c
+		JOIN customers cu ON cu.id = c.customerid
+		WHERE c.qrcodekey IS NOT NULL AND lower(c.qrcodekey) = lower($1)`, key).
+		Scan(&cfg.ID, &cfg.Name, &cfg.QRCodeKey, &cfg.CustomerID, &cfg.FilesDir, &customerName, &mainAppID, &settingsJSON, &defaultDeviceIDMode)
+	if err != nil {
+		return nil, err
+	}
+	return r.finishQRConfig(ctx, &cfg, mainAppID, settingsJSON, customerName, defaultDeviceIDMode)
+}
+
+func (r *ConfigRepository) finishQRConfig(ctx context.Context, cfg *port.QRConfig, mainAppID sql.NullInt64, settingsJSON []byte, customerName sql.NullString, defaultDeviceIDMode string) (*port.QRConfig, error) {
 	if customerName.Valid {
 		cfg.CustomerName = customerName.String
 	}
-	parseQRSettings(settingsJSON, &cfg)
+	cfg.DefaultDeviceIDMode = defaultDeviceIDMode
+	parseQRSettings(settingsJSON, cfg)
 	if mainAppID.Valid {
 		cfg.MainAppVersionID = mainAppID.Int64
 		var apkHash sql.NullString
@@ -61,7 +102,7 @@ func (r *ConfigRepository) ConfigurationByQRKey(ctx context.Context, key string)
 			cfg.ApkHash = apkHash.String
 		}
 	}
-	return &cfg, nil
+	return cfg, nil
 }
 
 func parseQRSettings(raw []byte, cfg *port.QRConfig) {

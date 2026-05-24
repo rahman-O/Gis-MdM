@@ -39,6 +39,10 @@ Gradual migration from [`backend/`](../../backend/) (Java/JAX-RS) to [`serverBac
 
 **014 frontend ↔ Go integration (in progress):** No new DDL. Depends on 013. Closes P1 gaps: tenant settings fields (`000015`), configuration `settingsjson` + CAP + `remove`/`longTap`, icons upload UI; P2: `sync/info` → `devicestatuses`, `stats` module (`PUT /public/stats`); P3: Updates apply + hints mark shown. See [`specs/014-complete-frontend-go-integration/`](../specs/014-complete-frontend-go-integration/).
 
+**017 device control plane (v1 done):** Migrations `000019`–`000027` — device tree, enrollment identity, profiles/versioning, enrollment routes, publish artifacts, domain events, device tree placement backfill. Modules: `device_tree`, `profiles`, `enrollment_routes`; sync artifact loader; configurations API alias via `legacy_configuration_id`. Parity: [`parity/device-control-plane.md`](parity/device-control-plane.md). Spec: [`specs/017-device-control-plane/`](../specs/017-device-control-plane/).
+
+**018 profile rollout ops:** Migration `000028` — `profiles.enabled`, `profile_tree_assignments`, device rollout columns (`target_profile_version_id`, `applied_profile_version_id`, `profile_rollout_status`, …). Extends `profiles` module with assignment/resolver/rollout HTTP APIs; sync uses tree-over-route effective profile. Parity: [`parity/profile-rollout-ops.md`](parity/profile-rollout-ops.md). Spec: [`specs/018-profile-rollout-ops/`](../specs/018-profile-rollout-ops/).
+
 ---
 
 ## Phases

@@ -2,6 +2,8 @@ import type React from 'react'
 
 export interface NavItem {
   label: string
+  /** When set, sidebar uses i18n `t(labelKey)` instead of `label`. */
+  labelKey?: string
   path: string
   icon: React.ComponentType<{ className?: string }>
   permission?: string

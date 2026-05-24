@@ -1,4 +1,18 @@
 {
+  "nav": {
+    "profiles": "Profiles",
+    "enrollmentRoutes": "Enrollment routes"
+  },
+  "enrollmentRoute": {
+    "help": {
+      "profileOnly": "Device restrictions and apps are configured in the Profile, not here."
+    }
+  },
+  "onboarding": {
+    "title": "Complete your MDM setup",
+    "wizard": "Setup wizard",
+    "openWizard": "Open wizard"
+  },
   "brand": {
     "title": "Headwind MDM"
   },

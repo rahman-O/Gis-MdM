@@ -29,7 +29,11 @@ func (m *Module) Register(groups module.RouteGroups, deps module.Dependencies) e
 		}
 	}
 	svc := cfgapp.NewService(repo, push)
-	cfghttp.NewHandler(svc).Register(groups.Private.Group("/configurations"))
+	var alias *cfghttp.ProfileAlias
+	if deps.Config.ModuleProfilesEnabled {
+		alias = cfghttp.NewProfileAlias(deps.DB)
+	}
+	cfghttp.NewHandler(svc, alias).Register(groups.Private.Group("/configurations"))
 	deps.Log.Info("module registered", "module", m.Name())
 	return nil
 }

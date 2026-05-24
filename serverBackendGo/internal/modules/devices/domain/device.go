@@ -61,6 +61,10 @@ type DeviceView struct {
 	Description     *string      `json:"description"`
 	LastUpdate      *int64       `json:"lastUpdate"`
 	ConfigurationID *int         `json:"configurationId"`
+	TreeNodeID      *int         `json:"treeNodeId,omitempty"`
+	AgentID         *string      `json:"agentId,omitempty"`
+	EnrollmentRouteID *int       `json:"enrollmentRouteId,omitempty"`
+	EnrollmentState *string      `json:"enrollmentState,omitempty"`
 	IMEI            *string      `json:"imei"`
 	Phone           *string      `json:"phone"`
 	StatusCode      *string      `json:"statusCode"`
@@ -77,9 +81,11 @@ type SearchRequest struct {
 	PageNum         int     `json:"pageNum"`
 	PageSize        int     `json:"pageSize"`
 	Value           *string `json:"value"`
-	GroupID         *int    `json:"groupId"`
-	ConfigurationID *int    `json:"configurationId"`
-	Status          *string `json:"status"`
+	GroupID            *int    `json:"groupId"`
+	ConfigurationID    *int    `json:"configurationId"`
+	TreeNodeID         *int    `json:"treeNodeId"`
+	IncludeDescendants *bool   `json:"includeDescendants"`
+	Status             *string `json:"status"`
 	AndroidVersion  *string `json:"androidVersion"`
 	LauncherVersion *string `json:"launcherVersion"`
 	MdmMode         *bool   `json:"mdmMode"`
@@ -155,6 +161,11 @@ type SaveDevice struct {
 // BulkDeleteRequest is POST /deleteBulk.
 type BulkDeleteRequest struct {
 	IDs []int `json:"ids"`
+}
+
+// MoveTreeRequest is POST /devices/:id/move-tree.
+type MoveTreeRequest struct {
+	TreeNodeID int `json:"treeNodeId"`
 }
 
 // GroupBulkRequest is POST /groupBulk.

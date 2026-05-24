@@ -9,6 +9,12 @@ export interface HmdmEnvelope<T = unknown> {
 /** Backend often returns localization keys from `Response`; map common ones for the React UI. */
 const KNOWN_SERVER_MESSAGE_KEYS: Record<string, string> = {
   'error.internal.server': 'Internal server error. If this persists, check server logs for the underlying exception.',
+  'error.profile.version.delete.activePublished':
+    'Cannot delete the version currently published for this profile.',
+  'error.profile.version.delete.assigned':
+    'This version is still assigned to a folder. Remove the assignment first.',
+  'error.profile.version.delete.devicesTarget':
+    'Devices are still targeting this version.',
 }
 
 function resolveEnvelopeMessage(raw: string | null | undefined, fallback: string): string {

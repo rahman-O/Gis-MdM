@@ -41,8 +41,8 @@ export function EnrollmentQrExperience({
   footer,
 }: EnrollmentQrExperienceProps) {
   const [deviceIdInput, setDeviceIdInput] = useState(initialDeviceId)
-  const [useMode, setUseMode] = useState<QrDeviceIdUseMode>('request')
-  const [createOnDemand, setCreateOnDemand] = useState(false)
+  const [useMode, setUseMode] = useState<QrDeviceIdUseMode>('imei')
+  const [createOnDemand, setCreateOnDemand] = useState(true)
   const [groupSelection, setGroupSelection] = useState<Set<number>>(new Set())
   const [pixelSize, setPixelSize] = useState(() => defaultViewportQrSize())
   const [showHelp, setShowHelp] = useState(false)

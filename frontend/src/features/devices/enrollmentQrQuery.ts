@@ -23,7 +23,7 @@ function appendCommonQrParams(search: URLSearchParams, fields: Omit<EnrollmentQr
   if (deviceTrimmed.length > 0) {
     search.set('deviceId', deviceTrimmed)
   } else {
-    const mode = fields.deviceIdUseMode ?? 'request'
+    const mode = fields.deviceIdUseMode ?? 'imei'
     if (mode === 'imei') search.set('useId', 'imei')
     else if (mode === 'serial') search.set('useId', 'serial')
   }

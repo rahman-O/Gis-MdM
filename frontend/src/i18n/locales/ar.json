@@ -1,4 +1,18 @@
 {
+  "nav": {
+    "profiles": "ملفات الجهاز",
+    "enrollmentRoutes": "مسارات التسجيل"
+  },
+  "enrollmentRoute": {
+    "help": {
+      "profileOnly": "قيود الجهاز والتطبيقات تُضبط في ملف الجهاز (Profile) وليس هنا."
+    }
+  },
+  "onboarding": {
+    "title": "أكمل إعداد MDM",
+    "wizard": "معالج الإعداد",
+    "openWizard": "فتح المعالج"
+  },
   "brand": {
     "title": "منصة الجهاز MDM"
   },

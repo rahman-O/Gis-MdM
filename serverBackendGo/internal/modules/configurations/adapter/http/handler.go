@@ -13,11 +13,12 @@ import (
 
 // Handler serves /private/configurations/* endpoints.
 type Handler struct {
-	svc *cfgapp.Service
+	svc   *cfgapp.Service
+	alias *ProfileAlias
 }
 
-func NewHandler(svc *cfgapp.Service) *Handler {
-	return &Handler{svc: svc}
+func NewHandler(svc *cfgapp.Service, alias *ProfileAlias) *Handler {
+	return &Handler{svc: svc, alias: alias}
 }
 
 func (h *Handler) Register(g *gin.RouterGroup) {
@@ -166,6 +167,16 @@ func (h *Handler) GetByID(c *gin.Context) {
 		return
 	}
 	id, _ := strconv.Atoi(c.Param("id"))
+	if h.alias != nil {
+		if data, ok, err := h.alias.GetByConfigurationID(c.Request.Context(), p.CustomerID, id); ok {
+			if err != nil {
+				mapErr(c, err)
+				return
+			}
+			response.OK(c, data)
+			return
+		}
+	}
 	data, err := h.svc.GetByID(c.Request.Context(), p, id)
 	if err != nil {
 		mapErr(c, err)
@@ -200,6 +211,16 @@ func (h *Handler) Save(c *gin.Context) {
 	if err != nil {
 		response.ErrorEnvelope(c, "")
 		return
+	}
+	if cfg.ID != nil && *cfg.ID > 0 && h.alias != nil {
+		if data, ok, err := h.alias.SaveByConfigurationID(c.Request.Context(), p.CustomerID, *cfg.ID, cfg); ok {
+			if err != nil {
+				mapErr(c, err)
+				return
+			}
+			response.OK(c, data)
+			return
+		}
 	}
 	data, err := h.svc.Save(c.Request.Context(), p, cfg)
 	if err != nil {

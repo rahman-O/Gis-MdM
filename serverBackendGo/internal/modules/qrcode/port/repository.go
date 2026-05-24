@@ -30,4 +30,5 @@ type QRConfig struct {
 	WifiSecurityType        string
 	MobileEnrollment        bool
 	EncryptDevice           bool
+	DefaultDeviceIDMode     string
 }

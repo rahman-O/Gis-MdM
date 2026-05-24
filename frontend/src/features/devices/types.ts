@@ -79,6 +79,8 @@ export interface DeviceView {
   custom3: string | null
   oldNumber: string | null
   launcherVersion: string | null
+  enrollmentState?: string | null
+  treeNodeId?: number | null
   info: DeviceInfoView | null
 }
 
@@ -118,6 +120,8 @@ export interface DeviceSearchRequest {
   installationStatus?: string | null
   imeiChanged?: boolean | null
   fastSearch?: boolean | null
+  treeNodeId?: number | null
+  includeDescendants?: boolean | null
 }
 
 export interface DeviceListResponse {

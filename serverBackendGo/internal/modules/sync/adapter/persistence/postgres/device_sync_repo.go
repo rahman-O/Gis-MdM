@@ -10,6 +10,9 @@ import (
 	"time"
 
 	cfgdomain "github.com/gis-mdm/server-backend-go/internal/modules/configurations/domain"
+	profilepostgres "github.com/gis-mdm/server-backend-go/internal/modules/profiles/adapter/persistence/postgres"
+	profileapp "github.com/gis-mdm/server-backend-go/internal/modules/profiles/application"
+	profiledomain "github.com/gis-mdm/server-backend-go/internal/modules/profiles/domain"
 	"github.com/gis-mdm/server-backend-go/internal/modules/sync/application"
 	"github.com/gis-mdm/server-backend-go/internal/modules/sync/domain"
 	"github.com/gis-mdm/server-backend-go/internal/modules/sync/port"
@@ -31,8 +34,12 @@ func scanDevice(row *sql.Row) (*domain.DeviceRecord, error) {
 	var d domain.DeviceRecord
 	var old sql.NullString
 	var imei, phone, c1, c2, c3, info sql.NullString
-	err := row.Scan(&d.ID, &d.CustomerID, &d.ConfigurationID, &d.Number, &old, &imei, &phone,
+	var enrollmentRoute sql.NullInt64
+	err := row.Scan(&d.ID, &d.CustomerID, &d.ConfigurationID, &enrollmentRoute, &d.Number, &old, &imei, &phone,
 		&d.LastUpdate, &c1, &c2, &c3, &info)
+	if enrollmentRoute.Valid {
+		d.EnrollmentRouteID = enrollmentRoute.Int64
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +68,7 @@ func scanDevice(row *sql.Row) (*domain.DeviceRecord, error) {
 }
 
 const deviceSelect = `
-	SELECT id, customerid, configurationid, number, oldnumber, imei, phone, lastupdate,
+	SELECT id, customerid, configurationid, enrollment_route_id, number, oldnumber, imei, phone, lastupdate,
 	       custom1, custom2, custom3, info
 	FROM devices WHERE `
 
@@ -84,19 +91,32 @@ func (r *DeviceSyncRepository) CreateOnDemand(ctx context.Context, number string
 	if err != nil {
 		return nil, err
 	}
-	configID, configCustomerID, err := r.resolveConfiguration(ctx, opts.Configuration, customerID)
+	routeID, legacyConfigID, routeCustomerID, err := r.resolveEnrollmentRoute(ctx, opts.Configuration, customerID)
 	if err != nil {
 		return nil, err
 	}
-	if configCustomerID != customerID {
+	if routeCustomerID != customerID {
 		return nil, sql.ErrNoRows
 	}
 	now := time.Now().UnixMilli()
+	var treeNodeID sql.NullInt64
+	_ = r.db.QueryRowContext(ctx, `
+		SELECT COALESCE(er.default_tree_node_id, (
+			SELECT n.id FROM device_tree_nodes n
+			WHERE n.customerid = $1 AND n.parent_id IS NULL
+			ORDER BY n.id LIMIT 1
+		))
+		FROM enrollment_routes er WHERE er.id = $2`, customerID, routeID).Scan(&treeNodeID)
+
 	var id int64
 	err = r.db.QueryRowContext(ctx, `
-		INSERT INTO devices (number, description, lastupdate, configurationid, customerid, enrolltime)
-		VALUES ($1, '', 0, $2, $3, $4)
-		RETURNING id`, number, configID, customerID, now).Scan(&id)
+		INSERT INTO devices (
+			number, description, lastupdate, configurationid, customerid, enrolltime,
+			tree_node_id, enrollment_route_id, enrollment_state
+		)
+		VALUES ($1, '', 0, $2, $3, $4, $5, $6, 'enrolled')
+		RETURNING id`,
+		number, legacyConfigID, customerID, now, nullInt64(treeNodeID), routeID).Scan(&id)
 	if err != nil {
 		return nil, err
 	}
@@ -132,28 +152,56 @@ func (r *DeviceSyncRepository) resolveCustomerID(ctx context.Context, customerNa
 	return id, err
 }
 
-func (r *DeviceSyncRepository) resolveConfiguration(ctx context.Context, key string, customerID int64) (configID, configCustomerID int64, err error) {
+func (r *DeviceSyncRepository) resolveEnrollmentRoute(ctx context.Context, key string, customerID int64) (routeID, legacyConfigID, routeCustomerID int64, err error) {
 	key = strings.TrimSpace(key)
+	if key != "" {
+		err = r.db.QueryRowContext(ctx, `
+			SELECT er.id, COALESCE(er.legacy_configuration_id, er.id), er.customerid
+			FROM enrollment_routes er
+			WHERE er.qrcodekey IS NOT NULL AND lower(er.qrcodekey) = lower($1)`, key).
+			Scan(&routeID, &legacyConfigID, &routeCustomerID)
+		if err == nil {
+			return routeID, legacyConfigID, routeCustomerID, nil
+		}
+		if !errors.Is(err, sql.ErrNoRows) {
+			return 0, 0, 0, err
+		}
+		err = r.db.QueryRowContext(ctx, `
+			SELECT er.id, COALESCE(er.legacy_configuration_id, er.id), er.customerid
+			FROM enrollment_routes er
+			WHERE er.customerid = $1 AND lower(er.name) = lower($2)`,
+			customerID, key).Scan(&routeID, &legacyConfigID, &routeCustomerID)
+		if err == nil {
+			return routeID, legacyConfigID, routeCustomerID, nil
+		}
+		if !errors.Is(err, sql.ErrNoRows) {
+			return 0, 0, 0, err
+		}
+	}
 	if key == "" {
 		err = r.db.QueryRowContext(ctx, `
-			SELECT id, customerid FROM configurations WHERE customerid = $1 ORDER BY id LIMIT 1`, customerID).
-			Scan(&configID, &configCustomerID)
-		return configID, configCustomerID, err
+			SELECT er.id, COALESCE(er.legacy_configuration_id, er.id), er.customerid
+			FROM enrollment_routes er
+			WHERE er.customerid = $1
+			ORDER BY er.id LIMIT 1`, customerID).
+			Scan(&routeID, &legacyConfigID, &routeCustomerID)
+		return routeID, legacyConfigID, routeCustomerID, err
 	}
+	// Legacy fallback before migration backfill
 	err = r.db.QueryRowContext(ctx, `
-		SELECT id, customerid FROM configurations
+		SELECT id, id, customerid FROM configurations
 		WHERE qrcodekey IS NOT NULL AND lower(qrcodekey) = lower($1)`, key).
-		Scan(&configID, &configCustomerID)
+		Scan(&routeID, &legacyConfigID, &routeCustomerID)
 	if err == nil {
-		return configID, configCustomerID, nil
+		return routeID, legacyConfigID, routeCustomerID, nil
 	}
 	if !errors.Is(err, sql.ErrNoRows) {
-		return 0, 0, err
+		return 0, 0, 0, err
 	}
 	err = r.db.QueryRowContext(ctx, `
-		SELECT id, customerid FROM configurations WHERE customerid = $1 AND lower(name) = lower($2)`,
-		customerID, key).Scan(&configID, &configCustomerID)
-	return configID, configCustomerID, err
+		SELECT id, id, customerid FROM configurations WHERE customerid = $1 AND lower(name) = lower($2)`,
+		customerID, key).Scan(&routeID, &legacyConfigID, &routeCustomerID)
+	return routeID, legacyConfigID, routeCustomerID, err
 }
 
 func (r *DeviceSyncRepository) CompleteMigration(ctx context.Context, deviceID int64) error {
@@ -163,14 +211,27 @@ func (r *DeviceSyncRepository) CompleteMigration(ctx context.Context, deviceID i
 
 func (r *DeviceSyncRepository) TouchLastUpdate(ctx context.Context, deviceID int64) error {
 	now := time.Now().UnixMilli()
-	_, err := r.db.ExecContext(ctx, `UPDATE devices SET lastupdate = $1 WHERE id = $2`, now, deviceID)
+	_, err := r.db.ExecContext(ctx, `
+		UPDATE devices SET lastupdate = $1,
+			enrollment_state = CASE WHEN enrollment_state = 'pending' THEN 'enrolled' ELSE 'active' END
+		WHERE id = $2`, now, deviceID)
 	return err
+}
+
+func nullInt64(n sql.NullInt64) any {
+	if n.Valid {
+		return n.Int64
+	}
+	return nil
 }
 
 func (r *DeviceSyncRepository) UpdateInfo(ctx context.Context, deviceID int64, infoJSON, publicIP string) error {
 	_, err := r.db.ExecContext(ctx, `
 		UPDATE devices SET info = $1, publicip = $2, lastupdate = $3 WHERE id = $4`,
 		infoJSON, publicIP, time.Now().UnixMilli(), deviceID)
+	if err == nil {
+		_ = profileapp.RecomputeDeviceRollout(ctx, r.db, deviceID)
+	}
 	return err
 }
 
@@ -246,6 +307,9 @@ func parsePolicyLocks(settingsJSON []byte) map[string]bool {
 }
 
 func (r *DeviceSyncRepository) BuildSyncResponse(ctx context.Context, dev domain.DeviceRecord, baseURL, filesDir, cpuArch, mobileName, vendor string) (*domain.SyncResponse, error) {
+	if resp, ok, err := r.buildSyncFromArtifact(ctx, dev, baseURL, filesDir, cpuArch, mobileName, vendor); ok {
+		return resp, err
+	}
 	var password, bg, fg, bgi sql.NullString
 	var permissive bool
 	var settingsJSON []byte
@@ -409,6 +473,139 @@ func (r *DeviceSyncRepository) BuildSyncResponse(ctx context.Context, dev domain
 		resp.Files = append(resp.Files, f)
 	}
 	return resp, nil
+}
+
+func (r *DeviceSyncRepository) buildSyncFromArtifact(ctx context.Context, dev domain.DeviceRecord, baseURL, filesDir, cpuArch, mobileName, vendor string) (*domain.SyncResponse, bool, error) {
+	resolved, err := profileapp.ResolveEffectiveProfile(ctx, r.db, dev.ID)
+	if err != nil || !resolved.Enabled || resolved.ProfileVersionID <= 0 {
+		if dev.EnrollmentRouteID <= 0 {
+			return nil, false, nil
+		}
+		return r.buildSyncFromRouteArtifact(ctx, dev, baseURL, filesDir, cpuArch, mobileName, vendor)
+	}
+	var raw []byte
+	var hash sql.NullString
+	err = r.db.QueryRowContext(ctx, `
+		SELECT a.artifact_json, a.artifact_hash
+		FROM profile_version_artifacts a
+		WHERE a.profile_version_id = $1`, resolved.ProfileVersionID).Scan(&raw, &hash)
+	if err == sql.ErrNoRows {
+		return nil, false, nil
+	}
+	if err != nil {
+		return nil, false, err
+	}
+	routeID := int64(resolved.RouteID)
+	if routeID <= 0 && dev.EnrollmentRouteID > 0 {
+		routeID = dev.EnrollmentRouteID
+	}
+	profileID := int64(resolved.ProfileID)
+	profileVersionID := int64(resolved.ProfileVersionID)
+	_ = profilepostgres.NewAssignmentRepository(r.db).SetDeviceAppliedVersion(ctx, dev.ID, resolved.ProfileVersionID)
+	_ = profileapp.RecomputeDeviceRollout(ctx, r.db, dev.ID)
+	var artifact profiledomain.ProfileArtifact
+	if err := json.Unmarshal(raw, &artifact); err != nil {
+		return nil, false, err
+	}
+	configID := dev.ConfigurationID
+	if routeID > 0 {
+		configID = routeID
+	}
+	resp := &domain.SyncResponse{
+		DeviceID:        dev.Number,
+		ConfigurationID: configID,
+		Applications:    []domain.SyncApplication{},
+		Files:           []domain.SyncConfigurationFile{},
+	}
+	if artifact.Password != "" {
+		resp.Password = sharedcrypto.MD5UpperHex(artifact.Password)
+	}
+	if mobileName != "" {
+		resp.AppName = &mobileName
+	}
+	if vendor != "" {
+		resp.Vendor = &vendor
+	}
+	if dev.OldNumber != nil {
+		resp.NewNumber = &dev.Number
+	}
+	resp.Custom1 = dev.Custom1
+	resp.Custom2 = dev.Custom2
+	resp.Custom3 = dev.Custom3
+	pid, pvid := profileID, profileVersionID
+	resp.ProfileID = &pid
+	resp.ProfileVersionID = &pvid
+	if hash.Valid && hash.String != "" {
+		rev := hash.String
+		resp.ProfileRevision = &rev
+	}
+	profileapp.ApplyArtifactToSyncResponse(resp, &artifact)
+	_ = baseURL
+	_ = filesDir
+	_ = cpuArch
+	resp.ApplicationSettings = r.mergeApplicationSettings(ctx, dev.ConfigurationID, dev.ID, artifact.SettingsJSON)
+	return resp, true, nil
+}
+
+func (r *DeviceSyncRepository) buildSyncFromRouteArtifact(ctx context.Context, dev domain.DeviceRecord, baseURL, filesDir, cpuArch, mobileName, vendor string) (*domain.SyncResponse, bool, error) {
+	var raw []byte
+	var routeID, profileID, profileVersionID int64
+	var hash sql.NullString
+	err := r.db.QueryRowContext(ctx, `
+		SELECT er.id, p.id, pv.id, a.artifact_json, a.artifact_hash
+		FROM devices d
+		JOIN enrollment_routes er ON er.id = d.enrollment_route_id
+		JOIN profile_versions pv ON pv.id = er.profile_version_id
+		JOIN profiles p ON p.id = pv.profile_id AND COALESCE(p.enabled, true) = true
+		JOIN profile_version_artifacts a ON a.profile_version_id = pv.id
+		WHERE d.id = $1`, dev.ID).Scan(&routeID, &profileID, &profileVersionID, &raw, &hash)
+	if err == sql.ErrNoRows {
+		return nil, false, nil
+	}
+	if err != nil {
+		return nil, false, err
+	}
+	_ = profilepostgres.NewAssignmentRepository(r.db).SetDeviceAppliedVersion(ctx, dev.ID, int(profileVersionID))
+	_ = profileapp.RecomputeDeviceRollout(ctx, r.db, dev.ID)
+	var artifact profiledomain.ProfileArtifact
+	if err := json.Unmarshal(raw, &artifact); err != nil {
+		return nil, false, err
+	}
+	configID := dev.ConfigurationID
+	if routeID > 0 {
+		configID = routeID
+	}
+	resp := &domain.SyncResponse{
+		DeviceID:        dev.Number,
+		ConfigurationID: configID,
+		Applications:    []domain.SyncApplication{},
+		Files:           []domain.SyncConfigurationFile{},
+	}
+	if artifact.Password != "" {
+		resp.Password = sharedcrypto.MD5UpperHex(artifact.Password)
+	}
+	if mobileName != "" {
+		resp.AppName = &mobileName
+	}
+	if vendor != "" {
+		resp.Vendor = &vendor
+	}
+	if dev.OldNumber != nil {
+		resp.NewNumber = &dev.Number
+	}
+	resp.Custom1 = dev.Custom1
+	resp.Custom2 = dev.Custom2
+	resp.Custom3 = dev.Custom3
+	pid, pvid := profileID, profileVersionID
+	resp.ProfileID = &pid
+	resp.ProfileVersionID = &pvid
+	if hash.Valid && hash.String != "" {
+		rev := hash.String
+		resp.ProfileRevision = &rev
+	}
+	profileapp.ApplyArtifactToSyncResponse(resp, &artifact)
+	resp.ApplicationSettings = r.mergeApplicationSettings(ctx, dev.ConfigurationID, dev.ID, artifact.SettingsJSON)
+	return resp, true, nil
 }
 
 type appSettingKey struct {

@@ -63,7 +63,8 @@ func (r *DeviceRepository) Search(ctx context.Context, scope port.UserScope, req
 		OFFSET $%d LIMIT $%d`, deviceAccessJoin, searchJoins(req), where, pageOrder, argN, argN+1)
 	pageArgs := append(append([]any{}, args...), offset, req.PageSize)
 	query := fmt.Sprintf(`
-		SELECT d.id, d.number, d.description, d.lastupdate, d.configurationid, d.imei, d.phone,
+		SELECT d.id, d.number, d.description, d.lastupdate, d.configurationid, d.tree_node_id,
+			d.enrollment_state, d.imei, d.phone,
 			CASE
 				WHEN (EXTRACT(EPOCH FROM NOW()) * 1000 - d.lastupdate) < (2 * 3600 * 1000) THEN 'green'
 				WHEN (EXTRACT(EPOCH FROM NOW()) * 1000 - d.lastupdate) < (4 * 3600 * 1000) THEN 'yellow'
@@ -86,8 +87,9 @@ func (r *DeviceRepository) Search(ctx context.Context, scope port.UserScope, req
 		var v domain.DeviceView
 		var desc, imei, phone, status sql.NullString
 		var lastUpdate sql.NullInt64
-		var configID sql.NullInt64
-		if err := rows.Scan(&v.ID, &v.Number, &desc, &lastUpdate, &configID, &imei, &phone, &status); err != nil {
+		var configID, treeNodeID sql.NullInt64
+		var enrollmentState sql.NullString
+		if err := rows.Scan(&v.ID, &v.Number, &desc, &lastUpdate, &configID, &treeNodeID, &enrollmentState, &imei, &phone, &status); err != nil {
 			return nil, err
 		}
 		if desc.Valid {
@@ -99,6 +101,14 @@ func (r *DeviceRepository) Search(ctx context.Context, scope port.UserScope, req
 		if configID.Valid {
 			cid := int(configID.Int64)
 			v.ConfigurationID = &cid
+		}
+		if treeNodeID.Valid {
+			tid := int(treeNodeID.Int64)
+			v.TreeNodeID = &tid
+		}
+		if enrollmentState.Valid {
+			es := enrollmentState.String
+			v.EnrollmentState = &es
 		}
 		if imei.Valid {
 			v.IMEI = &imei.String
@@ -499,4 +509,21 @@ func ptrStr(p *string) string {
 		return ""
 	}
 	return *p
+}
+
+func (r *DeviceRepository) MoveTreeNode(ctx context.Context, customerID int, deviceID int, treeNodeID int) error {
+	res, err := r.db.ExecContext(ctx, `
+		UPDATE devices d SET tree_node_id = $1
+		FROM device_tree_nodes n
+		WHERE d.id = $2 AND d.customerid = $3
+		  AND n.id = $1 AND n.customerid = $3`,
+		treeNodeID, deviceID, customerID)
+	if err != nil {
+		return err
+	}
+	n, _ := res.RowsAffected()
+	if n == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
 }

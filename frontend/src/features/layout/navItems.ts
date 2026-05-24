@@ -12,6 +12,7 @@ import {
   Lightbulb,
   RefreshCw,
   Radio,
+  Route,
 } from 'lucide-react'
 import type { NavItem } from './types'
 
@@ -23,7 +24,14 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
   { label: 'Devices', path: '/devices', icon: Smartphone },
   { label: 'Applications', path: '/applications', icon: AppWindow, permission: 'applications' },
-  { label: 'Configurations', path: '/configurations', icon: LayoutList, permission: 'configurations' },
+  { labelKey: 'nav.profiles', label: 'Profiles', path: '/profiles', icon: LayoutList, permission: 'configurations' },
+  {
+    labelKey: 'nav.enrollmentRoutes',
+    label: 'Enrollment routes',
+    path: '/enrollment-routes',
+    icon: Route,
+    permission: 'configurations',
+  },
   { label: 'Files', path: '/files', icon: FileArchive, permission: 'files' },
   { label: 'Groups', path: '/groups', icon: FolderOpen, permission: 'settings' },
   { label: 'Users', path: '/users', icon: Users, permission: 'settings' },

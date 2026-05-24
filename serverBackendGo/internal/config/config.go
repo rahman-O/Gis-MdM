@@ -40,6 +40,11 @@ type Config struct {
 	ModuleNotificationsEnabled bool
 	ModuleUpdatesEnabled       bool
 	ModuleQRCodeEnabled        bool
+	ModuleDeviceTreeEnabled    bool
+	ModuleProfilesEnabled      bool
+	ModuleProfileRolloutEnabled bool
+	ModuleEnrollmentRoutesEnabled bool
+	ProfileStalePublishDays       int
 
 	FilesDirectory string
 	HashSecret     string
@@ -107,6 +112,11 @@ func Load() Config {
 		ModuleNotificationsEnabled: getenvBool("MODULE_NOTIFICATIONS_ENABLED", true),
 		ModuleUpdatesEnabled:       getenvBool("MODULE_UPDATES_ENABLED", true),
 		ModuleQRCodeEnabled:        getenvBool("MODULE_QRCODE_ENABLED", true),
+		ModuleDeviceTreeEnabled:    getenvBool("MODULE_DEVICE_TREE_ENABLED", true),
+		ModuleProfilesEnabled:      getenvBool("MODULE_PROFILES_ENABLED", true),
+		ModuleProfileRolloutEnabled: getenvBool("MODULE_PROFILE_ROLLOUT_ENABLED", true),
+		ModuleEnrollmentRoutesEnabled: getenvBool("MODULE_ENROLLMENT_ROUTES_ENABLED", true),
+		ProfileStalePublishDays:       getenvInt("PROFILE_STALE_PUBLISH_DAYS", 30),
 
 		FilesDirectory: getenv("FILES_DIRECTORY", "/var/lib/hmdm/files"),
 		HashSecret:     getenv("HASH_SECRET", "changeme-C3z9vi54"),

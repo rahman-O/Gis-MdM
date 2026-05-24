@@ -9,8 +9,11 @@ import (
 	platformjwt "github.com/gis-mdm/server-backend-go/internal/platform/jwt"
 	"github.com/gis-mdm/server-backend-go/internal/modules/configfiles"
 	"github.com/gis-mdm/server-backend-go/internal/modules/configurations"
+	"github.com/gis-mdm/server-backend-go/internal/modules/profiles"
 	"github.com/gis-mdm/server-backend-go/internal/modules/customers"
+	"github.com/gis-mdm/server-backend-go/internal/modules/device_tree"
 	"github.com/gis-mdm/server-backend-go/internal/modules/devices"
+	"github.com/gis-mdm/server-backend-go/internal/modules/enrollment_routes"
 	"github.com/gis-mdm/server-backend-go/internal/modules/files"
 	"github.com/gis-mdm/server-backend-go/internal/modules/groups"
 	"github.com/gis-mdm/server-backend-go/internal/modules/hints"
@@ -49,8 +52,11 @@ func allModules(jwtProvider *platformjwt.Provider) []module.Module {
 		settings.New(),
 		hints.New(),
 		summary.New(),
+		device_tree.New(),
 		devices.New(),
 		groups.New(),
+		profiles.New(),
+		enrollment_routes.New(),
 		applications.New(),
 		configurations.New(),
 		configfiles.New(),

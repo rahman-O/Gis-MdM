@@ -93,7 +93,9 @@ func (s *Service) EnrollConfiguration(ctx context.Context, deviceID string, opts
 	if s.cfg.PreventDuplicate && dev.LastUpdate > 0 {
 		return nil, ErrDeviceExists
 	}
-	_ = s.repo.TouchLastUpdate(ctx, dev.ID)
+	if err := s.repo.TouchLastUpdate(ctx, dev.ID); err != nil {
+		return nil, err
+	}
 	return s.repo.BuildSyncResponse(ctx, *dev, s.cfg.BaseURL, s.cfg.FilesDirectory, cpuArch, s.cfg.MobileAppName, s.cfg.VendorName)
 }
 

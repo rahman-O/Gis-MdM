@@ -145,6 +145,23 @@ func searchFilters(req domain.SearchRequest, args *[]any, where *string, argN *i
 		*args = append(*args, *req.ConfigurationID)
 		*argN++
 	}
+	if req.TreeNodeID != nil && *req.TreeNodeID > 0 {
+		includeDesc := req.IncludeDescendants != nil && *req.IncludeDescendants
+		if includeDesc {
+			*where += fmt.Sprintf(` AND d.tree_node_id IN (
+				SELECT n.id FROM device_tree_nodes n
+				WHERE n.customerid = $1 AND n.path LIKE (
+					SELECT path || '%%' FROM device_tree_nodes WHERE id = $%d AND customerid = $1
+				)
+			)`, *argN)
+			*args = append(*args, *req.TreeNodeID)
+			*argN++
+		} else {
+			*where += fmt.Sprintf(` AND d.tree_node_id = $%d`, *argN)
+			*args = append(*args, *req.TreeNodeID)
+			*argN++
+		}
+	}
 	if req.Status != nil {
 		appendStatusFilter(*req.Status, args, where, argN)
 	}
