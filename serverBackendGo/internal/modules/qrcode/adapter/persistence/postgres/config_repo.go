@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 
 	"github.com/gis-mdm/server-backend-go/internal/modules/qrcode/port"
 )
@@ -55,6 +56,9 @@ func (r *ConfigRepository) routeByQRKey(ctx context.Context, key string) (*port.
 	if err != nil {
 		return nil, err
 	}
+	_, _ = r.db.ExecContext(ctx, `
+		INSERT INTO domain_events (event_type, aggregate_id, payload)
+		VALUES ('enrollment_route.qr_viewed', $1, '{}')`, fmt.Sprint(cfg.ID))
 	return r.finishQRConfig(ctx, &cfg, mainAppID, settingsJSON, customerName, defaultDeviceIDMode)
 }
 

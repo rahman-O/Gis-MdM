@@ -10,100 +10,88 @@ import (
 )
 
 type fakeRepo struct {
-	publishedOK bool
-	treeOK      bool
-	createdID   int
+	treeOK    bool
+	createdID int
+	kind      string
 }
 
-func (f *fakeRepo) List(context.Context, int) ([]domain.Route, error) { return nil, nil }
-
-func (f *fakeRepo) GetByID(context.Context, int, int) (*domain.RouteDetail, error) {
-	return &domain.RouteDetail{Route: domain.Route{ID: 1, QRCodeKey: "k"}}, nil
+func (f *fakeRepo) ListViews(context.Context, int) ([]domain.EnrollmentRouteView, error) {
+	return nil, nil
 }
 
-func (f *fakeRepo) Create(context.Context, int, domain.CreateRequest, string) (int, error) {
+func (f *fakeRepo) GetViewByID(context.Context, int, int) (*domain.EnrollmentRouteView, error) {
+	return &domain.EnrollmentRouteView{
+		ID:                     1,
+		QRCodeKey:              "k",
+		TargetNodeID:           2,
+		DeviceIdentityMode:     "imei",
+		BootstrapIntent:        domain.BootstrapIntentStable,
+		BootstrapApplicationID: 1,
+		Status:                 "active",
+	}, nil
+}
+
+func (f *fakeRepo) Create(context.Context, int, domain.CreateRequest, string, domain.ResolvedBootstrap, bool) (int, error) {
 	return f.createdID, nil
 }
 
-func (f *fakeRepo) Update(context.Context, int, int, domain.UpdateRequest, *string) error {
+func (f *fakeRepo) Update(context.Context, int, int, domain.UpdateRequest, *domain.ResolvedBootstrap, *bool) error {
 	return nil
 }
 
-func (f *fakeRepo) IsPublishedProfileVersion(context.Context, int, int) (bool, error) {
-	return f.publishedOK, nil
-}
+func (f *fakeRepo) Delete(context.Context, int, int) error { return nil }
 
-func (f *fakeRepo) ListPublishedProfileVersions(context.Context, int) ([]domain.PublishedProfileVersion, error) {
-	return nil, nil
+func (f *fakeRepo) DeleteImpact(context.Context, int, int) (*domain.EnrollmentDeleteImpact, error) {
+	return &domain.EnrollmentDeleteImpact{}, nil
 }
 
 func (f *fakeRepo) TreeNodeBelongsToCustomer(context.Context, int, int) (bool, error) {
 	return f.treeOK, nil
 }
 
+func (f *fakeRepo) NodePlacementKind(context.Context, int, int) (string, error) {
+	if f.kind != "" {
+		return f.kind, nil
+	}
+	return "locked", nil
+}
+
+func (f *fakeRepo) ListTreeNodeOptions(context.Context, int, int) ([]domain.TreeNodeOption, error) {
+	return nil, nil
+}
+
+func (f *fakeRepo) ListBootstrapApps(context.Context, int) ([]domain.BootstrapAppOption, error) {
+	return nil, nil
+}
+
+func (f *fakeRepo) RecordQRViewed(context.Context, int) error { return nil }
+
 func principal() *platformauth.Principal {
 	return &platformauth.Principal{CustomerID: 1, Permissions: []string{"configurations"}}
 }
 
-func intPtr(n int) *int { return &n }
-
-func TestCreate_RequiresPublishedProfileVersion(t *testing.T) {
-	svc := application.NewService(&fakeRepo{publishedOK: false, treeOK: true})
-	main := 1
-	_, err := svc.Create(context.Background(), principal(), domain.CreateRequest{
-		Name:              "R1",
-		ProfileVersionID:  intPtr(10),
-		DefaultTreeNodeID: 2,
-		MainAppID:         &main,
-	})
-	if err != application.ErrPublishedVersionRequired {
-		t.Fatalf("expected published version error, got %v", err)
-	}
-}
-
 func TestCreate_RequiresTreeNode(t *testing.T) {
-	svc := application.NewService(&fakeRepo{publishedOK: true, treeOK: false})
-	main := 1
+	svc := application.NewService(&fakeRepo{treeOK: false}, nil, 500)
 	_, err := svc.Create(context.Background(), principal(), domain.CreateRequest{
-		Name:              "R1",
-		ProfileVersionID:  intPtr(10),
-		DefaultTreeNodeID: 2,
-		MainAppID:         &main,
+		Name:                   "R1",
+		TargetNodeID:           2,
+		BootstrapApplicationID: 1,
+		BootstrapIntent:        domain.BootstrapIntentStable,
 	})
 	if err != application.ErrTreeNodeRequired {
 		t.Fatalf("expected tree node error, got %v", err)
 	}
 }
 
-func TestCreate_SucceedsWhenValid(t *testing.T) {
-	svc := application.NewService(&fakeRepo{publishedOK: true, treeOK: true, createdID: 5})
-	main := 1
-	detail, err := svc.Create(context.Background(), principal(), domain.CreateRequest{
-		Name:              "R1",
-		ProfileVersionID:  intPtr(10),
-		DefaultTreeNodeID: 2,
-		MainAppID:         &main,
+func TestCreate_RequiresContainerAck(t *testing.T) {
+	svc := application.NewService(&fakeRepo{treeOK: true, kind: "inheritable"}, nil, 500)
+	_, err := svc.Create(context.Background(), principal(), domain.CreateRequest{
+		Name:                   "R1",
+		TargetNodeID:           2,
+		BootstrapApplicationID: 1,
+		BootstrapIntent:        domain.BootstrapIntentStable,
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if detail.ID != 1 {
-		t.Fatalf("expected loaded detail id 1, got %d", detail.ID)
-	}
-}
-
-func TestCreate_WithoutProfileVersion(t *testing.T) {
-	svc := application.NewService(&fakeRepo{treeOK: true, createdID: 7})
-	main := 1
-	detail, err := svc.Create(context.Background(), principal(), domain.CreateRequest{
-		Name:              "R2",
-		DefaultTreeNodeID: 2,
-		MainAppID:         &main,
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if detail == nil {
-		t.Fatal("expected detail")
+	if err != application.ErrContainerAckRequired {
+		t.Fatalf("expected container ack error, got %v", err)
 	}
 }

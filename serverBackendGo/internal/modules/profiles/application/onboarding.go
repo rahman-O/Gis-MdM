@@ -46,7 +46,7 @@ func (s *OnboardingService) Status(ctx context.Context, p *platformauth.Principa
 		{ID: "tree", Label: "Create a device folder in the tree", Done: treeBeyond, Path: "/devices"},
 		{ID: "profile", Label: "Create and publish a profile", Done: published, Path: "/profiles"},
 		{ID: "route", Label: "Create an enrollment route", Done: routes, Path: "/enrollment-routes"},
-		{ID: "qr", Label: "Test enrollment QR", Done: routes && published, Path: "/enrollment-routes"},
+		{ID: "qr", Label: "Test enrollment QR", Done: routes, Path: "/enrollment-routes"},
 	}
 	complete := treeBeyond && published && routes
 	return &domain.OnboardingStatus{

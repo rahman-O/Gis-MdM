@@ -25,7 +25,7 @@ func (m *Module) Register(groups module.RouteGroups, deps module.Dependencies) e
 		return fmt.Errorf("enrollment_routes module requires DATABASE_URL")
 	}
 	repo := routepostgres.NewRouteRepository(deps.DB)
-	svc := routeapp.NewService(repo)
+	svc := routeapp.NewService(repo, deps.DB, deps.Config.EnrollmentTreeHeavyDeviceThreshold)
 	routehttp.NewHandler(svc).Register(groups.Private.Group("/enrollment-routes"))
 	deps.Log.Info("module registered", "module", m.Name())
 	return nil

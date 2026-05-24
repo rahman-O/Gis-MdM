@@ -43,8 +43,9 @@ type Config struct {
 	ModuleDeviceTreeEnabled    bool
 	ModuleProfilesEnabled      bool
 	ModuleProfileRolloutEnabled bool
-	ModuleEnrollmentRoutesEnabled bool
-	ProfileStalePublishDays       int
+	ModuleEnrollmentRoutesEnabled     bool
+	ProfileStalePublishDays           int
+	EnrollmentTreeHeavyDeviceThreshold int
 
 	FilesDirectory string
 	HashSecret     string
@@ -115,8 +116,9 @@ func Load() Config {
 		ModuleDeviceTreeEnabled:    getenvBool("MODULE_DEVICE_TREE_ENABLED", true),
 		ModuleProfilesEnabled:      getenvBool("MODULE_PROFILES_ENABLED", true),
 		ModuleProfileRolloutEnabled: getenvBool("MODULE_PROFILE_ROLLOUT_ENABLED", true),
-		ModuleEnrollmentRoutesEnabled: getenvBool("MODULE_ENROLLMENT_ROUTES_ENABLED", true),
-		ProfileStalePublishDays:       getenvInt("PROFILE_STALE_PUBLISH_DAYS", 30),
+		ModuleEnrollmentRoutesEnabled:        getenvBool("MODULE_ENROLLMENT_ROUTES_ENABLED", true),
+		ProfileStalePublishDays:              getenvInt("PROFILE_STALE_PUBLISH_DAYS", 30),
+		EnrollmentTreeHeavyDeviceThreshold:   getenvInt("ENROLLMENT_TREE_HEAVY_DEVICE_THRESHOLD", 500),
 
 		FilesDirectory: getenv("FILES_DIRECTORY", "/var/lib/hmdm/files"),
 		HashSecret:     getenv("HASH_SECRET", "changeme-C3z9vi54"),

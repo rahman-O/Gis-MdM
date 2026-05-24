@@ -5,14 +5,14 @@ interface Props {
   meta: EnrollmentRouteQrMeta
 }
 
-/** QR panel for enrollment routes (policy lives on Profile). */
+/** QR panel for enrollment routes — renders scannable QR code. */
 export function EnrollmentRouteQrPanel({ meta }: Props) {
   return (
     <EnrollmentQrExperience
       qrCodeKey={meta.qrcodekey}
       configuration={{
         qrCodeKey: meta.qrcodekey,
-        mainAppId: meta.mainAppId ?? undefined,
+        mainAppId: meta.resolvedMainAppVersionId ?? undefined,
       }}
     />
   )

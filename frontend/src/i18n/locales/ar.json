@@ -4,8 +4,94 @@
     "enrollmentRoutes": "مسارات التسجيل"
   },
   "enrollmentRoute": {
-    "help": {
-      "profileOnly": "قيود الجهاز والتطبيقات تُضبط في ملف الجهاز (Profile) وليس هنا."
+    "list": {
+      "subtitle": "بوابات التسجيل — رمز QR، مجلد الهدف، وتطبيق الإقلاع.",
+      "name": "الاسم",
+      "folder": "مجلد الهدف",
+      "bootstrap": "تطبيق الإقلاع",
+      "status": "الحالة",
+      "empty": "لا توجد مسارات تسجيل بعد."
+    },
+    "status": {
+      "draft": "مسودة",
+      "active": "نشط",
+      "unsaved": "تغييرات غير محفوظة"
+    },
+    "qr": {
+      "pending": "QR معلّق",
+      "active": "QR نشط",
+      "saveToActivate": "احفظ المسار لتفعيل رمز QR قابل للمسح.",
+      "pendingWatermark": "معلّق",
+      "previewEmpty": "أكمل الحقول المطلوبة لمعاينة عقد التسجيل.",
+      "pendingHint": "معاينة فقط — غير صالحة للتسجيل الفعلي حتى الحفظ.",
+      "activeHint": "يستخدم هذا الرمز مفتاح المسار المحفوظ ويطابق التسجيل في الإنتاج.",
+      "loading": "جاري تحميل QR…",
+      "copyContract": "نسخ JSON العقد",
+      "lastActiveHint": "يبقى آخر QR نشط قابلاً للمسح أثناء التعديل دون حفظ."
+    },
+    "form": {
+      "name": "الاسم",
+      "description": "الوصف",
+      "targetFolder": "مجلد الهدف",
+      "selectFolder": "اختر المجلد",
+      "heavilyLoaded": "حمّل ثقيل",
+      "containerWarning": "هذا المجلد قابل للوراثة (حاوية). قد يتلقى الجهاز إعدادات من المجلدات الأعلى.",
+      "deviceIdentity": "وضع هوية الجهاز",
+      "serial": "الرقم التسلسلي",
+      "request": "طلب من الجهاز",
+      "bootstrapApp": "تطبيق الإقلاع",
+      "selectApp": "اختر التطبيق",
+      "bootstrapIntent": "قناة الإصدار",
+      "intentStable": "مستقر (موصى به)",
+      "intentLatest": "الأحدث",
+      "intentSpecific": "إصدار محدد",
+      "version": "الإصدار",
+      "selectVersion": "اختر الإصدار",
+      "containerAck": "أفهم وضع الحاوية لهذا المجلد القابل للوراثة."
+    },
+    "bootstrap": {
+      "stableDesc": "يستخدم الإصدار الموصى به من كتالوج التطبيقات",
+      "latestDesc": "يستخدم أحدث إصدار متاح",
+      "specificDesc": "تثبيت على إصدار محدد تختاره"
+    },
+    "tree": {
+      "containerWarning": "حاوية (قابل للوراثة)",
+      "heavilyLoaded": "حمّل ثقيل",
+      "noResults": "لا توجد مجلدات تطابق بحثك.",
+      "empty": "لا توجد مجلدات متاحة."
+    },
+    "validation": {
+      "nameRequired": "الاسم مطلوب.",
+      "folderRequired": "مجلد الهدف مطلوب.",
+      "appRequired": "تطبيق الإقلاع مطلوب.",
+      "versionRequired": "اختر إصداراً لقناة محددة."
+    },
+    "dialog": {
+      "createTitle": "مسار تسجيل جديد",
+      "routeTitle": "مسار التسجيل",
+      "loading": "جاري التحميل…"
+    },
+    "actions": {
+      "new": "مسار جديد",
+      "open": "فتح",
+      "close": "إغلاق",
+      "edit": "تعديل",
+      "delete": "حذف",
+      "save": "حفظ",
+      "cancel": "إلغاء",
+      "back": "رجوع",
+      "confirm": "تأكيد",
+      "continueDelete": "متابعة",
+      "confirmDelete": "حذف المسار"
+    },
+    "delete": {
+      "loading": "جاري تحميل الأثر…",
+      "summary": "حذف «{{name}}»؟ راجع الأثر أدناه.",
+      "metricEnrolling": "أجهزة تسجّل الآن: {{count}}",
+      "metricHistorical": "سجّلت عبر هذا المسار سابقاً: {{count}}",
+      "metricScans": "مسح QR (آخر 7 أيام): {{count}}",
+      "typeName": "اكتب اسم المسار للتأكيد",
+      "nameMismatch": "الاسم غير متطابق."
     }
   },
   "onboarding": {

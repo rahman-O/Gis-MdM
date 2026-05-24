@@ -22,9 +22,13 @@ func NewHandler(svc *routeapp.Service) *Handler {
 func (h *Handler) Register(g *gin.RouterGroup) {
 	g.GET("", h.List)
 	g.GET("/options/published-profile-versions", h.ListPublishedProfileVersions)
+	g.GET("/options/tree-nodes", h.ListTreeNodeOptions)
+	g.GET("/options/bootstrap-apps", h.ListBootstrapApps)
 	g.POST("", h.Create)
 	g.GET("/:id", h.GetByID)
 	g.PUT("/:id", h.Update)
+	g.DELETE("/:id", h.Delete)
+	g.GET("/:id/impact", h.Impact)
 	g.GET("/:id/qr", h.QRMeta)
 }
 
@@ -45,12 +49,14 @@ func mapErr(c *gin.Context, err error) {
 		response.ErrorEnvelope(c, "error.notfound.enrollment_route")
 	case errors.Is(err, routeapp.ErrDuplicateRoute):
 		response.DuplicateEntity(c, "error.duplicate.enrollment_route")
-	case errors.Is(err, routeapp.ErrPublishedVersionRequired):
-		response.ErrorEnvelope(c, "error.enrollment_route.published_version_required")
 	case errors.Is(err, routeapp.ErrTreeNodeRequired):
 		response.ErrorEnvelope(c, "error.enrollment_route.tree_node_required")
 	case errors.Is(err, routeapp.ErrMainAppRequired):
 		response.ErrorEnvelope(c, "error.enrollment_route.main_app_required")
+	case errors.Is(err, routeapp.ErrStableVersionMissing):
+		response.ErrorEnvelope(c, "error.enrollment_route.stable_version_missing")
+	case errors.Is(err, routeapp.ErrContainerAckRequired):
+		response.ErrorEnvelope(c, "error.enrollment_route.container_ack_required")
 	default:
 		response.ErrorEnvelope(c, "error.internal.server")
 	}
@@ -75,6 +81,32 @@ func (h *Handler) ListPublishedProfileVersions(c *gin.Context) {
 		return
 	}
 	data, err := h.svc.ListPublishedProfileVersions(c.Request.Context(), p)
+	if err != nil {
+		mapErr(c, err)
+		return
+	}
+	response.OK(c, data)
+}
+
+func (h *Handler) ListTreeNodeOptions(c *gin.Context) {
+	p, ok := principal(c)
+	if !ok {
+		return
+	}
+	data, err := h.svc.ListTreeNodeOptions(c.Request.Context(), p)
+	if err != nil {
+		mapErr(c, err)
+		return
+	}
+	response.OK(c, data)
+}
+
+func (h *Handler) ListBootstrapApps(c *gin.Context) {
+	p, ok := principal(c)
+	if !ok {
+		return
+	}
+	data, err := h.svc.ListBootstrapApps(c.Request.Context(), p)
 	if err != nil {
 		mapErr(c, err)
 		return
@@ -134,6 +166,41 @@ func (h *Handler) Update(c *gin.Context) {
 		return
 	}
 	data, err := h.svc.Update(c.Request.Context(), p, id, req)
+	if err != nil {
+		mapErr(c, err)
+		return
+	}
+	response.OK(c, data)
+}
+
+func (h *Handler) Delete(c *gin.Context) {
+	p, ok := principal(c)
+	if !ok {
+		return
+	}
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil || id <= 0 {
+		response.ErrorEnvelope(c, "error.invalid.request")
+		return
+	}
+	if err := h.svc.Delete(c.Request.Context(), p, id); err != nil {
+		mapErr(c, err)
+		return
+	}
+	response.OK(c, gin.H{"deleted": true})
+}
+
+func (h *Handler) Impact(c *gin.Context) {
+	p, ok := principal(c)
+	if !ok {
+		return
+	}
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil || id <= 0 {
+		response.ErrorEnvelope(c, "error.invalid.request")
+		return
+	}
+	data, err := h.svc.Impact(c.Request.Context(), p, id)
 	if err != nil {
 		mapErr(c, err)
 		return

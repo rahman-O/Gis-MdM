@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -277,6 +278,9 @@ func (r *DeviceSyncRepository) policyLocksForDevice(ctx context.Context, deviceI
 		JOIN configurations c ON c.id = d.configurationid
 		WHERE d.id = $1`, deviceID).Scan(&settingsJSON)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return make(map[string]bool), nil
+		}
 		return nil, err
 	}
 	return parsePolicyLocks(settingsJSON), nil
@@ -308,7 +312,11 @@ func parsePolicyLocks(settingsJSON []byte) map[string]bool {
 
 func (r *DeviceSyncRepository) BuildSyncResponse(ctx context.Context, dev domain.DeviceRecord, baseURL, filesDir, cpuArch, mobileName, vendor string) (*domain.SyncResponse, error) {
 	if resp, ok, err := r.buildSyncFromArtifact(ctx, dev, baseURL, filesDir, cpuArch, mobileName, vendor); ok {
-		return resp, err
+		if err != nil {
+			slog.Warn("sync: artifact path failed, falling through", "deviceId", dev.Number, "err", err)
+		} else {
+			return resp, nil
+		}
 	}
 	var password, bg, fg, bgi sql.NullString
 	var permissive bool
@@ -318,6 +326,11 @@ func (r *DeviceSyncRepository) BuildSyncResponse(ctx context.Context, dev domain
 		FROM configurations WHERE id = $1`, dev.ConfigurationID).
 		Scan(&password, &bg, &fg, &bgi, &permissive, &settingsJSON)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			slog.Info("sync: no legacy configuration, using enrollment route fallback", "deviceId", dev.Number, "configId", dev.ConfigurationID, "routeId", dev.EnrollmentRouteID)
+			return r.buildSyncFromEnrollmentRoute(ctx, dev, baseURL, filesDir, cpuArch, mobileName, vendor)
+		}
+		slog.Error("sync: failed to read configuration", "deviceId", dev.Number, "configId", dev.ConfigurationID, "err", err)
 		return nil, err
 	}
 	resp := &domain.SyncResponse{
@@ -606,6 +619,74 @@ func (r *DeviceSyncRepository) buildSyncFromRouteArtifact(ctx context.Context, d
 	profileapp.ApplyArtifactToSyncResponse(resp, &artifact)
 	resp.ApplicationSettings = r.mergeApplicationSettings(ctx, dev.ConfigurationID, dev.ID, artifact.SettingsJSON)
 	return resp, true, nil
+}
+
+// buildSyncFromEnrollmentRoute builds a minimal sync response directly from the enrollment route's
+// bootstrap app when no legacy configuration row exists and no profile artifact is available.
+// This allows enrollment routes created without a legacy_configuration_id to still complete
+// the device enrollment flow successfully.
+func (r *DeviceSyncRepository) buildSyncFromEnrollmentRoute(ctx context.Context, dev domain.DeviceRecord, baseURL, filesDir, cpuArch, mobileName, vendor string) (*domain.SyncResponse, error) {
+	resp := &domain.SyncResponse{
+		DeviceID:        dev.Number,
+		ConfigurationID: dev.ConfigurationID,
+		Applications:    []domain.SyncApplication{},
+		Files:           []domain.SyncConfigurationFile{},
+	}
+	if mobileName != "" {
+		resp.AppName = &mobileName
+	}
+	if vendor != "" {
+		resp.Vendor = &vendor
+	}
+	if dev.OldNumber != nil {
+		resp.NewNumber = &dev.Number
+	}
+	resp.Custom1 = dev.Custom1
+	resp.Custom2 = dev.Custom2
+	resp.Custom3 = dev.Custom3
+	perm := true
+	resp.Permissive = &perm
+
+	// Load the bootstrap app from the enrollment route's mainappid
+	if dev.EnrollmentRouteID > 0 {
+		var mainAppID sql.NullInt64
+		_ = r.db.QueryRowContext(ctx, `
+			SELECT mainappid FROM enrollment_routes WHERE id = $1`, dev.EnrollmentRouteID).Scan(&mainAppID)
+		if mainAppID.Valid && mainAppID.Int64 > 0 {
+			var app domain.SyncApplication
+			var urlArm64, urlArm sql.NullString
+			var split bool
+			var verCode sql.NullInt64
+			err := r.db.QueryRowContext(ctx, `
+				SELECT a.id, a.name, a.pkg, COALESCE(av.version, ''), COALESCE(av.url, ''),
+				       COALESCE(a.type, 'app'), COALESCE(av.urlarm64, ''), COALESCE(av.urlarmeabi, ''),
+				       COALESCE(av.split, false), av.versioncode
+				FROM applicationversions av
+				JOIN applications a ON a.id = av.applicationid
+				WHERE av.id = $1`, mainAppID.Int64).
+				Scan(&app.ID, &app.Name, &app.Pkg, &app.Version, &app.URL, &app.Type,
+					&urlArm64, &urlArm, &split, &verCode)
+			if err == nil {
+				if split {
+					if strings.HasPrefix(cpuArch, "arm64") && urlArm64.Valid && urlArm64.String != "" {
+						app.URL = urlArm64.String
+					} else if urlArm.Valid && urlArm.String != "" {
+						app.URL = urlArm.String
+					}
+				}
+				if verCode.Valid && verCode.Int64 > 0 {
+					c := int(verCode.Int64)
+					app.Code = &c
+				}
+				showIcon := true
+				app.ShowIcon = &showIcon
+				order := 1
+				app.ScreenOrder = &order
+				resp.Applications = append(resp.Applications, app)
+			}
+		}
+	}
+	return resp, nil
 }
 
 type appSettingKey struct {

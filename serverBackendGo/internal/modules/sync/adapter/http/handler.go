@@ -2,6 +2,7 @@ package http
 
 import (
 	"errors"
+	"log/slog"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -69,8 +70,10 @@ func (h *Handler) PostConfiguration(c *gin.Context) {
 	deviceID := c.Param("deviceId")
 	var opts domain.DeviceCreateOptions
 	_ = c.ShouldBindJSON(&opts)
+	slog.Info("sync: PostConfiguration called", "deviceId", deviceID, "config", opts.Configuration, "customer", opts.Customer)
 	resp, err := h.svc.EnrollConfiguration(c.Request.Context(), deviceID, opts, c.GetHeader("X-Request-Signature"), c.GetHeader("X-CPU-Arch"))
 	if err != nil {
+		slog.Error("sync: PostConfiguration failed", "deviceId", deviceID, "err", err)
 		mapErr(c, err)
 		return
 	}

@@ -4,8 +4,94 @@
     "enrollmentRoutes": "Enrollment routes"
   },
   "enrollmentRoute": {
-    "help": {
-      "profileOnly": "Device restrictions and apps are configured in the Profile, not here."
+    "list": {
+      "subtitle": "Onboarding gateways — QR enrollment, target folder, and bootstrap app.",
+      "name": "Name",
+      "folder": "Target folder",
+      "bootstrap": "Bootstrap app",
+      "status": "Status",
+      "empty": "No enrollment routes yet."
+    },
+    "status": {
+      "draft": "Draft",
+      "active": "Active",
+      "unsaved": "Unsaved changes"
+    },
+    "qr": {
+      "pending": "Pending QR",
+      "active": "Active QR",
+      "saveToActivate": "Save the route to activate a scannable QR code.",
+      "pendingWatermark": "Pending",
+      "previewEmpty": "Complete required fields to preview the enrollment contract.",
+      "pendingHint": "Preview only — not valid for production enrollment until saved.",
+      "activeHint": "This QR uses the saved route key and matches production enrollment.",
+      "loading": "Loading QR…",
+      "copyContract": "Copy contract JSON",
+      "lastActiveHint": "The last saved Active QR remains scannable while you edit unsaved changes."
+    },
+    "form": {
+      "name": "Name",
+      "description": "Description",
+      "targetFolder": "Target folder",
+      "selectFolder": "Select folder",
+      "heavilyLoaded": "heavily loaded",
+      "containerWarning": "This folder is inheritable (container). Devices may receive settings from parent folders.",
+      "deviceIdentity": "Device identity mode",
+      "serial": "Serial number",
+      "request": "Request from device",
+      "bootstrapApp": "Bootstrap application",
+      "selectApp": "Select application",
+      "bootstrapIntent": "Version channel",
+      "intentStable": "Stable (recommended)",
+      "intentLatest": "Latest",
+      "intentSpecific": "Specific version",
+      "version": "Version",
+      "selectVersion": "Select version",
+      "containerAck": "I understand container placement for this inheritable folder."
+    },
+    "bootstrap": {
+      "stableDesc": "Uses the recommended version from the app catalog",
+      "latestDesc": "Uses the newest available version",
+      "specificDesc": "Pin to an exact version you choose"
+    },
+    "tree": {
+      "containerWarning": "Container (inheritable)",
+      "heavilyLoaded": "Heavily loaded",
+      "noResults": "No folders match your search.",
+      "empty": "No folders available."
+    },
+    "validation": {
+      "nameRequired": "Name is required.",
+      "folderRequired": "Target folder is required.",
+      "appRequired": "Bootstrap application is required.",
+      "versionRequired": "Select a version for Specific channel."
+    },
+    "dialog": {
+      "createTitle": "New enrollment route",
+      "routeTitle": "Enrollment route",
+      "loading": "Loading…"
+    },
+    "actions": {
+      "new": "New route",
+      "open": "Open",
+      "close": "Close",
+      "edit": "Edit",
+      "delete": "Delete",
+      "save": "Save",
+      "cancel": "Cancel",
+      "back": "Back",
+      "confirm": "Confirm",
+      "continueDelete": "Continue",
+      "confirmDelete": "Delete route"
+    },
+    "delete": {
+      "loading": "Loading impact…",
+      "summary": "Delete “{{name}}”? Review impact below.",
+      "metricEnrolling": "Devices enrolling now: {{count}}",
+      "metricHistorical": "Historically enrolled via this route: {{count}}",
+      "metricScans": "QR scans (last 7 days): {{count}}",
+      "typeName": "Type the route name to confirm",
+      "nameMismatch": "Name does not match."
     }
   },
   "onboarding": {

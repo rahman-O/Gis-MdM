@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { AlertCircle } from 'lucide-react'
+import { EnrollmentRouteDialog } from '@/features/enrollment-routes/EnrollmentRouteDialog'
+import type { EnrollmentRouteDialogStateId } from '@/features/enrollment-routes/enrollmentRouteDialogState'
+import * as routeService from '@/features/enrollment-routes/enrollmentRouteService'
+import { hasPermission } from '@/features/auth/permissions'
 import { Button } from '@/shared/ui/button'
 import { Skeleton } from '@/shared/ui/skeleton'
 import {
@@ -11,15 +15,15 @@ import {
   TableHeader,
   TableRow,
 } from '@/shared/ui/table'
-import * as routeService from '@/features/enrollment-routes/enrollmentRouteService'
-import { getOnboardingStatus } from '@/features/onboarding/onboardingService'
-import { hasPermission } from '@/features/auth/permissions'
 
 export function EnrollmentRouteListPage() {
-  const navigate = useNavigate()
-  const [routes, setRoutes] = useState<routeService.EnrollmentRouteListItem[]>([])
+  const { t } = useTranslation()
+  const [routes, setRoutes] = useState<routeService.EnrollmentRouteView[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [dialogState, setDialogState] = useState<EnrollmentRouteDialogStateId>('LIST')
+  const [dialogRouteId, setDialogRouteId] = useState(0)
   const canAdd = hasPermission('add_config')
 
   const loadList = useCallback(async () => {
@@ -39,32 +43,34 @@ export function EnrollmentRouteListPage() {
     void loadList()
   }, [loadList])
 
-  const handleNewRoute = useCallback(async () => {
-    try {
-      const status = await getOnboardingStatus()
-      if (!status.hasPublishedProfile) {
-        navigate('/profiles', {
-          state: { onboardingHint: 'Publish a profile before creating an enrollment route.' },
-        })
-        return
-      }
-    } catch {
-      /* proceed if status check fails */
-    }
-    navigate('/enrollment-routes/new')
-  }, [navigate])
+  const openDialog = (state: EnrollmentRouteDialogStateId, routeId = 0) => {
+    setDialogState(state)
+    setDialogRouteId(routeId)
+    setDialogOpen(true)
+  }
+
+  const closeDialog = () => {
+    setDialogOpen(false)
+    setDialogState('LIST')
+    setDialogRouteId(0)
+  }
+
+  const handleDialogStateChange = (state: EnrollmentRouteDialogStateId, routeId?: number) => {
+    setDialogState(state)
+    if (routeId !== undefined) setDialogRouteId(routeId)
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Enrollment routes</h1>
-          <p className="text-sm text-muted-foreground">
-            مسار التسجيل — binds QR, default folder, and a published profile version.
-          </p>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {t('nav.enrollmentRoutes')}
+          </h1>
+          <p className="text-sm text-muted-foreground">{t('enrollmentRoute.list.subtitle')}</p>
         </div>
         {canAdd ? (
-          <Button onClick={() => void handleNewRoute()}>New route</Button>
+          <Button onClick={() => openDialog('DIALOG_CREATE')}>{t('enrollmentRoute.actions.new')}</Button>
         ) : null}
       </div>
 
@@ -81,10 +87,10 @@ export function EnrollmentRouteListPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Profile</TableHead>
-              <TableHead>Version</TableHead>
-              <TableHead>Folder</TableHead>
+              <TableHead>{t('enrollmentRoute.list.name')}</TableHead>
+              <TableHead>{t('enrollmentRoute.list.folder')}</TableHead>
+              <TableHead>{t('enrollmentRoute.list.bootstrap')}</TableHead>
+              <TableHead>{t('enrollmentRoute.list.status')}</TableHead>
               <TableHead className="w-[100px]" />
             </TableRow>
           </TableHeader>
@@ -92,19 +98,26 @@ export function EnrollmentRouteListPage() {
             {routes.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="text-muted-foreground">
-                  No enrollment routes yet.
+                  {t('enrollmentRoute.list.empty')}
                 </TableCell>
               </TableRow>
             ) : (
               routes.map((r) => (
                 <TableRow key={r.id}>
                   <TableCell className="font-medium">{r.name}</TableCell>
-                  <TableCell>{r.profileId ?? '—'}</TableCell>
-                  <TableCell>{r.profileVersionNumber ?? '—'}</TableCell>
-                  <TableCell>{r.defaultTreeNodeName || '—'}</TableCell>
+                  <TableCell>{r.targetNodePath || r.targetNodeName || '—'}</TableCell>
                   <TableCell>
-                    <Button variant="outline" size="sm" onClick={() => navigate(`/enrollment-routes/${r.id}`)}>
-                      Edit
+                    {r.bootstrapApplicationName || '—'}
+                    {r.resolvedVersionLabel ? ` (${r.resolvedVersionLabel})` : ''}
+                  </TableCell>
+                  <TableCell>{r.status}</TableCell>
+                  <TableCell>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openDialog('DIALOG_OVERVIEW', r.id)}
+                    >
+                      {t('enrollmentRoute.actions.open')}
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -113,6 +126,15 @@ export function EnrollmentRouteListPage() {
           </TableBody>
         </Table>
       )}
+
+      <EnrollmentRouteDialog
+        open={dialogOpen}
+        state={dialogState}
+        routeId={dialogRouteId}
+        onStateChange={handleDialogStateChange}
+        onClose={closeDialog}
+        onSaved={() => void loadList()}
+      />
     </div>
   )
 }

@@ -2,86 +2,121 @@ import apiClient from '@/services/apiClient'
 import type { HmdmEnvelope } from '@/services/hmdmEnvelope'
 import { assertHmdmOk, unwrapHmdmData, unwrapHmdmList } from '@/services/hmdmEnvelope'
 
-export interface EnrollmentRouteListItem {
+export type BootstrapIntent = 'stable' | 'specific' | 'latest'
+
+export interface EnrollmentRouteView {
   id: number
   name: string
   description?: string
   qrcodekey?: string
-  profileId?: number
-  profileVersionId?: number
-  profileVersionNumber?: number | null
-  defaultTreeNodeId?: number
-  defaultTreeNodeName?: string
-  defaultDeviceIdMode: string
-  mainAppId?: number | null
-}
-
-export interface EnrollmentRouteDetail extends EnrollmentRouteListItem {
+  targetNodeId: number
+  targetNodeName?: string
+  targetNodePath?: string
+  targetPlacementKind?: 'locked' | 'inheritable'
+  containerPlacementAcknowledged?: boolean
+  deviceIdentityMode: string
+  bootstrapIntent: BootstrapIntent
+  bootstrapApplicationId: number
+  bootstrapApplicationName?: string
+  bootstrapVersionId?: number | null
+  resolvedMainAppVersionId?: number | null
+  resolvedVersionLabel?: string
+  resolvedPackage?: string
+  status: 'draft' | 'active' | string
   type?: number
 }
 
-export interface PublishedProfileVersionOption {
-  profileVersionId: number
-  profileId: number
-  profileName: string
-  versionNumber: number
-  profileEnabled?: boolean
-  mainAppId?: number | null
-}
-
-export interface CreateEnrollmentRoutePayload {
+export interface TreeNodeOption {
+  id: number
   name: string
-  description?: string | null
-  profileVersionId?: number | null
-  defaultTreeNodeId: number
-  defaultDeviceIdMode?: string
-  mainAppId?: number | null
+  path: string
+  parentId?: number | null
+  placementKind: 'locked' | 'inheritable'
+  deviceCount: number
+  heavilyLoaded: boolean
 }
 
-export interface UpdateEnrollmentRoutePayload {
-  name?: string
-  description?: string | null
-  profileVersionId?: number
-  defaultTreeNodeId?: number
-  defaultDeviceIdMode?: string
-  mainAppId?: number | null
+export interface BootstrapAppVersionOption {
+  versionId: number
+  version: string
+  versionCode: number
+  isRecommended: boolean
+  isLatest: boolean
+}
+
+export interface BootstrapAppOption {
+  applicationId: number
+  name: string
+  package: string
+  versions: BootstrapAppVersionOption[]
 }
 
 export interface EnrollmentRouteQrMeta {
   qrcodekey: string
   defaultDeviceIdMode: string
-  mainAppId?: number | null
+  resolvedMainAppVersionId?: number | null
+  mainAppPackage?: string
+  mainAppVersion?: string
+  mainAppVersionCode?: number
+  targetNodeId?: number
+  contract?: Record<string, unknown>
 }
+
+export interface EnrollmentDeleteImpact {
+  enrollingNowCount: number
+  historicalEnrolledCount: number
+  activeQrScans7d: number
+}
+
+export interface CreateEnrollmentRoutePayload {
+  name: string
+  description?: string | null
+  targetNodeId: number
+  deviceIdentityMode?: string
+  bootstrapIntent: BootstrapIntent
+  bootstrapApplicationId: number
+  bootstrapVersionId?: number | null
+  acknowledgeContainerPlacement?: boolean
+}
+
+export type UpdateEnrollmentRoutePayload = Partial<CreateEnrollmentRoutePayload>
 
 function unwrap<T>(response: { data: HmdmEnvelope<T> }, msg: string): T {
   return unwrapHmdmData(response.data, msg)
 }
 
-export async function listEnrollmentRoutes(): Promise<EnrollmentRouteListItem[]> {
-  const response = await apiClient.get<HmdmEnvelope<EnrollmentRouteListItem[]>>(
+export async function listEnrollmentRoutes(): Promise<EnrollmentRouteView[]> {
+  const response = await apiClient.get<HmdmEnvelope<EnrollmentRouteView[]>>(
     '/private/enrollment-routes'
   )
   return unwrapHmdmList(response.data, 'Failed to load enrollment routes.')
 }
 
-export async function getEnrollmentRoute(id: number): Promise<EnrollmentRouteDetail> {
-  const response = await apiClient.get<HmdmEnvelope<EnrollmentRouteDetail>>(
+export async function getEnrollmentRoute(id: number): Promise<EnrollmentRouteView> {
+  const response = await apiClient.get<HmdmEnvelope<EnrollmentRouteView>>(
     `/private/enrollment-routes/${id}`
   )
   return unwrap(response, 'Failed to load enrollment route.')
 }
 
-export async function listPublishedProfileVersions(): Promise<PublishedProfileVersionOption[]> {
-  const response = await apiClient.get<HmdmEnvelope<PublishedProfileVersionOption[]>>(
-    '/private/enrollment-routes/options/published-profile-versions'
+export async function listTreeNodeOptions(): Promise<TreeNodeOption[]> {
+  const response = await apiClient.get<HmdmEnvelope<TreeNodeOption[]>>(
+    '/private/enrollment-routes/options/tree-nodes'
   )
-  return unwrapHmdmList(response.data, 'Failed to load published profile versions.')
+  return unwrapHmdmList(response.data, 'Failed to load tree folders.')
+}
+
+export async function listBootstrapApps(): Promise<BootstrapAppOption[]> {
+  const response = await apiClient.get<HmdmEnvelope<BootstrapAppOption[]>>(
+    '/private/enrollment-routes/options/bootstrap-apps'
+  )
+  return unwrapHmdmList(response.data, 'Failed to load bootstrap applications.')
 }
 
 export async function createEnrollmentRoute(
   payload: CreateEnrollmentRoutePayload
-): Promise<EnrollmentRouteDetail> {
-  const response = await apiClient.post<HmdmEnvelope<EnrollmentRouteDetail>>(
+): Promise<EnrollmentRouteView> {
+  const response = await apiClient.post<HmdmEnvelope<EnrollmentRouteView>>(
     '/private/enrollment-routes',
     payload
   )
@@ -91,8 +126,8 @@ export async function createEnrollmentRoute(
 export async function updateEnrollmentRoute(
   id: number,
   payload: UpdateEnrollmentRoutePayload
-): Promise<EnrollmentRouteDetail> {
-  const response = await apiClient.put<HmdmEnvelope<EnrollmentRouteDetail>>(
+): Promise<EnrollmentRouteView> {
+  const response = await apiClient.put<HmdmEnvelope<EnrollmentRouteView>>(
     `/private/enrollment-routes/${id}`,
     payload
   )
@@ -106,6 +141,16 @@ export async function getEnrollmentRouteQrMeta(id: number): Promise<EnrollmentRo
   return unwrap(response, 'Failed to load QR metadata.')
 }
 
-export async function deleteEnrollmentRoute(_id: number): Promise<void> {
-  assertHmdmOk({ status: 'OK' } as HmdmEnvelope<unknown>, '')
+export async function getEnrollmentRouteImpact(id: number): Promise<EnrollmentDeleteImpact> {
+  const response = await apiClient.get<HmdmEnvelope<EnrollmentDeleteImpact>>(
+    `/private/enrollment-routes/${id}/impact`
+  )
+  return unwrap(response, 'Failed to load delete impact.')
+}
+
+export async function deleteEnrollmentRoute(id: number): Promise<void> {
+  const response = await apiClient.delete<HmdmEnvelope<unknown>>(
+    `/private/enrollment-routes/${id}`
+  )
+  assertHmdmOk(response.data, 'Failed to delete enrollment route.')
 }

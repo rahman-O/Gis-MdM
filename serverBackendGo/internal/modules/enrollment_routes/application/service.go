@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"strings"
 
@@ -13,20 +14,25 @@ import (
 )
 
 type Service struct {
-	repo port.RouteRepository
+	repo           port.RouteRepository
+	db             *sql.DB
+	heavyThreshold int
 }
 
-func NewService(repo port.RouteRepository) *Service {
-	return &Service{repo: repo}
+func NewService(repo port.RouteRepository, db *sql.DB, heavyThreshold int) *Service {
+	if heavyThreshold <= 0 {
+		heavyThreshold = 500
+	}
+	return &Service{repo: repo, db: db, heavyThreshold: heavyThreshold}
 }
 
 var (
 	ErrPermissionDenied       = errors.New("error.permission.denied")
 	ErrRouteNotFound          = errors.New("error.notfound.enrollment_route")
 	ErrDuplicateRoute         = errors.New("error.duplicate.enrollment_route")
-	ErrPublishedVersionRequired = errors.New("error.enrollment_route.published_version_required")
 	ErrTreeNodeRequired       = errors.New("error.enrollment_route.tree_node_required")
 	ErrMainAppRequired        = errors.New("error.enrollment_route.main_app_required")
+	ErrContainerAckRequired   = errors.New("error.enrollment_route.container_ack_required")
 )
 
 func customerID(p *platformauth.Principal) int {
@@ -43,61 +49,56 @@ func (s *Service) requirePerm(p *platformauth.Principal) error {
 	return nil
 }
 
-func (s *Service) List(ctx context.Context, p *platformauth.Principal) ([]domain.Route, error) {
+func (s *Service) List(ctx context.Context, p *platformauth.Principal) ([]domain.EnrollmentRouteView, error) {
 	if err := s.requirePerm(p); err != nil {
 		return nil, err
 	}
-	items, err := s.repo.List(ctx, customerID(p))
+	items, err := s.repo.ListViews(ctx, customerID(p))
 	if err != nil {
 		return nil, err
 	}
 	if items == nil {
-		items = []domain.Route{}
+		items = []domain.EnrollmentRouteView{}
 	}
 	return items, nil
 }
 
-func (s *Service) GetByID(ctx context.Context, p *platformauth.Principal, id int) (*domain.RouteDetail, error) {
+func (s *Service) GetByID(ctx context.Context, p *platformauth.Principal, id int) (*domain.EnrollmentRouteView, error) {
 	if err := s.requirePerm(p); err != nil {
 		return nil, err
 	}
-	detail, err := s.repo.GetByID(ctx, customerID(p), id)
+	view, err := s.repo.GetViewByID(ctx, customerID(p), id)
 	if err != nil {
 		return nil, err
 	}
-	if detail == nil {
+	if view == nil {
 		return nil, ErrRouteNotFound
 	}
-	return detail, nil
+	return view, nil
 }
 
-func (s *Service) ListPublishedProfileVersions(ctx context.Context, p *platformauth.Principal) ([]domain.PublishedProfileVersion, error) {
+func (s *Service) ListPublishedProfileVersions(ctx context.Context, p *platformauth.Principal) ([]interface{}, error) {
 	if err := s.requirePerm(p); err != nil {
 		return nil, err
 	}
-	items, err := s.repo.ListPublishedProfileVersions(ctx, customerID(p))
+	return []interface{}{}, nil
+}
+
+func (s *Service) Create(ctx context.Context, p *platformauth.Principal, req domain.CreateRequest) (*domain.EnrollmentRouteView, error) {
+	if err := s.requirePerm(p); err != nil {
+		return nil, err
+	}
+	cid := customerID(p)
+	normalizeCreateRequest(&req)
+	if err := s.validateCreate(ctx, cid, req); err != nil {
+		return nil, err
+	}
+	resolved, err := ResolveBootstrapIntent(ctx, s.db, cid, req.BootstrapApplicationID, req.BootstrapIntent, req.BootstrapVersionID)
 	if err != nil {
-		return nil, err
-	}
-	if items == nil {
-		items = []domain.PublishedProfileVersion{}
-	}
-	return items, nil
-}
-
-func (s *Service) Create(ctx context.Context, p *platformauth.Principal, req domain.CreateRequest) (*domain.RouteDetail, error) {
-	if err := s.requirePerm(p); err != nil {
-		return nil, err
-	}
-	pvID := 0
-	if req.ProfileVersionID != nil {
-		pvID = *req.ProfileVersionID
-	}
-	if err := s.validateBinding(ctx, customerID(p), pvID, req.DefaultTreeNodeID, req.MainAppID); err != nil {
 		return nil, err
 	}
 	key := cfgdomain.NewQRCodeKey()
-	id, err := s.repo.Create(ctx, customerID(p), req, key)
+	id, err := s.repo.Create(ctx, cid, req, key, resolved, req.AcknowledgeContainerPlacement)
 	if err != nil {
 		if errors.Is(err, postgres.ErrDuplicateName) {
 			return nil, ErrDuplicateRoute
@@ -107,33 +108,28 @@ func (s *Service) Create(ctx context.Context, p *platformauth.Principal, req dom
 	return s.GetByID(ctx, p, id)
 }
 
-func (s *Service) Update(ctx context.Context, p *platformauth.Principal, id int, req domain.UpdateRequest) (*domain.RouteDetail, error) {
+func (s *Service) Update(ctx context.Context, p *platformauth.Principal, id int, req domain.UpdateRequest) (*domain.EnrollmentRouteView, error) {
 	if err := s.requirePerm(p); err != nil {
 		return nil, err
 	}
-	cur, err := s.repo.GetByID(ctx, customerID(p), id)
+	cid := customerID(p)
+	cur, err := s.repo.GetViewByID(ctx, cid, id)
 	if err != nil {
 		return nil, err
 	}
 	if cur == nil {
 		return nil, ErrRouteNotFound
 	}
-	pvID := cur.ProfileVersionID
-	if req.ProfileVersionID != nil {
-		pvID = *req.ProfileVersionID
-	}
-	treeID := cur.DefaultTreeNodeID
-	if req.DefaultTreeNodeID != nil {
-		treeID = *req.DefaultTreeNodeID
-	}
-	mainApp := cur.MainAppID
-	if req.MainAppID != nil {
-		mainApp = req.MainAppID
-	}
-	if err := s.validateBinding(ctx, customerID(p), pvID, treeID, mainApp); err != nil {
+	merged := mergeUpdate(cur, req)
+	if err := s.validateUpdate(ctx, cid, merged); err != nil {
 		return nil, err
 	}
-	if err := s.repo.Update(ctx, customerID(p), id, req, nil); err != nil {
+	resolved, err := ResolveBootstrapIntent(ctx, s.db, cid, merged.BootstrapApplicationID, merged.BootstrapIntent, merged.BootstrapVersionID)
+	if err != nil {
+		return nil, err
+	}
+	ack := merged.AcknowledgeContainerPlacement
+	if err := s.repo.Update(ctx, cid, id, toUpdateRequest(merged), &resolved, &ack); err != nil {
 		if errors.Is(err, postgres.ErrNotFound) {
 			return nil, ErrRouteNotFound
 		}
@@ -149,46 +145,161 @@ func (s *Service) QRMeta(ctx context.Context, p *platformauth.Principal, id int)
 	if err := s.requirePerm(p); err != nil {
 		return nil, err
 	}
-	detail, err := s.repo.GetByID(ctx, customerID(p), id)
+	view, err := s.repo.GetViewByID(ctx, customerID(p), id)
 	if err != nil {
 		return nil, err
 	}
-	if detail == nil {
+	if view == nil {
 		return nil, ErrRouteNotFound
 	}
-	mode := strings.TrimSpace(detail.DefaultDeviceIDMode)
+	mode := strings.TrimSpace(view.DeviceIdentityMode)
 	if mode == "" {
 		mode = "imei"
 	}
-	return &domain.QRMeta{
-		QRCodeKey:           detail.QRCodeKey,
-		DefaultDeviceIDMode: mode,
-		MainAppID:           detail.MainAppID,
-	}, nil
+	meta := &domain.QRMeta{
+		QRCodeKey:                view.QRCodeKey,
+		DefaultDeviceIDMode:      mode,
+		ResolvedMainAppVersionID: view.ResolvedMainAppVersionID,
+		MainAppPackage:           view.ResolvedPackage,
+		MainAppVersion:           view.ResolvedVersionLabel,
+		TargetNodeID:             view.TargetNodeID,
+		Contract: map[string]interface{}{
+			"routeId":            view.ID,
+			"targetNodeId":       view.TargetNodeID,
+			"mainAppPackage":     view.ResolvedPackage,
+			"mainAppVersion":     view.ResolvedVersionLabel,
+			"deviceIdentityMode": mode,
+			"bootstrapFlags":     map[string]bool{"create": true},
+		},
+	}
+	return meta, nil
 }
 
-func (s *Service) validateBinding(ctx context.Context, customerID, profileVersionID, treeNodeID int, mainAppID *int) error {
-	if profileVersionID > 0 {
-		ok, err := s.repo.IsPublishedProfileVersion(ctx, customerID, profileVersionID)
-		if err != nil {
-			return err
-		}
-		if !ok {
-			return ErrPublishedVersionRequired
-		}
+func normalizeCreateRequest(req *domain.CreateRequest) {
+	if req.TargetNodeID <= 0 && req.DefaultTreeNodeID > 0 {
+		req.TargetNodeID = req.DefaultTreeNodeID
 	}
-	if treeNodeID <= 0 {
+	if req.DeviceIdentityMode == nil && req.DefaultDeviceIDMode != nil {
+		req.DeviceIdentityMode = req.DefaultDeviceIDMode
+	}
+	if strings.TrimSpace(req.BootstrapIntent) == "" {
+		req.BootstrapIntent = domain.BootstrapIntentStable
+	}
+}
+
+type mergedRoute struct {
+	Name                          string
+	Description                   string
+	TargetNodeID                  int
+	DeviceIdentityMode            string
+	BootstrapIntent               string
+	BootstrapApplicationID        int
+	BootstrapVersionID            *int
+	AcknowledgeContainerPlacement bool
+}
+
+func mergeUpdate(cur *domain.EnrollmentRouteView, req domain.UpdateRequest) mergedRoute {
+	m := mergedRoute{
+		Name:                          cur.Name,
+		Description:                   cur.Description,
+		TargetNodeID:                  cur.TargetNodeID,
+		DeviceIdentityMode:            cur.DeviceIdentityMode,
+		BootstrapIntent:               cur.BootstrapIntent,
+		BootstrapApplicationID:        cur.BootstrapApplicationID,
+		BootstrapVersionID:            cur.BootstrapVersionID,
+		AcknowledgeContainerPlacement: cur.ContainerPlacementAcknowledged,
+	}
+	if req.Name != nil {
+		m.Name = strings.TrimSpace(*req.Name)
+	}
+	if req.Description != nil {
+		m.Description = *req.Description
+	}
+	if req.TargetNodeID != nil {
+		m.TargetNodeID = *req.TargetNodeID
+	} else if req.DefaultTreeNodeID != nil {
+		m.TargetNodeID = *req.DefaultTreeNodeID
+	}
+	if req.DeviceIdentityMode != nil {
+		m.DeviceIdentityMode = strings.TrimSpace(*req.DeviceIdentityMode)
+	} else if req.DefaultDeviceIDMode != nil {
+		m.DeviceIdentityMode = strings.TrimSpace(*req.DefaultDeviceIDMode)
+	}
+	if req.BootstrapIntent != nil {
+		m.BootstrapIntent = strings.TrimSpace(*req.BootstrapIntent)
+	}
+	if req.BootstrapApplicationID != nil {
+		m.BootstrapApplicationID = *req.BootstrapApplicationID
+	}
+	if req.BootstrapVersionID != nil {
+		m.BootstrapVersionID = req.BootstrapVersionID
+	}
+	if req.AcknowledgeContainerPlacement != nil {
+		m.AcknowledgeContainerPlacement = *req.AcknowledgeContainerPlacement
+	}
+	return m
+}
+
+func toUpdateRequest(m mergedRoute) domain.UpdateRequest {
+	name := m.Name
+	desc := m.Description
+	tid := m.TargetNodeID
+	mode := m.DeviceIdentityMode
+	intent := m.BootstrapIntent
+	appID := m.BootstrapApplicationID
+	ack := m.AcknowledgeContainerPlacement
+	return domain.UpdateRequest{
+		Name:                          &name,
+		Description:                   &desc,
+		TargetNodeID:                  &tid,
+		DeviceIdentityMode:            &mode,
+		BootstrapIntent:               &intent,
+		BootstrapApplicationID:        &appID,
+		BootstrapVersionID:            m.BootstrapVersionID,
+		AcknowledgeContainerPlacement: &ack,
+	}
+}
+
+func (s *Service) validateCreate(ctx context.Context, customerID int, req domain.CreateRequest) error {
+	if strings.TrimSpace(req.Name) == "" {
 		return ErrTreeNodeRequired
 	}
-	ok, err := s.repo.TreeNodeBelongsToCustomer(ctx, customerID, treeNodeID)
+	if req.TargetNodeID <= 0 {
+		return ErrTreeNodeRequired
+	}
+	if req.BootstrapApplicationID <= 0 {
+		return ErrMainAppRequired
+	}
+	return s.validateNode(ctx, customerID, req.TargetNodeID, req.AcknowledgeContainerPlacement)
+}
+
+func (s *Service) validateUpdate(ctx context.Context, customerID int, m mergedRoute) error {
+	if strings.TrimSpace(m.Name) == "" {
+		return ErrTreeNodeRequired
+	}
+	if m.TargetNodeID <= 0 {
+		return ErrTreeNodeRequired
+	}
+	if m.BootstrapApplicationID <= 0 {
+		return ErrMainAppRequired
+	}
+	return s.validateNode(ctx, customerID, m.TargetNodeID, m.AcknowledgeContainerPlacement)
+}
+
+func (s *Service) validateNode(ctx context.Context, customerID, nodeID int, ack bool) error {
+	ok, err := s.repo.TreeNodeBelongsToCustomer(ctx, customerID, nodeID)
 	if err != nil {
 		return err
 	}
 	if !ok {
 		return ErrTreeNodeRequired
 	}
-	if mainAppID == nil || *mainAppID <= 0 {
-		return ErrMainAppRequired
+	kind, err := s.repo.NodePlacementKind(ctx, customerID, nodeID)
+	if err != nil {
+		return err
+	}
+	if kind == "inheritable" && !ack {
+		return ErrContainerAckRequired
 	}
 	return nil
 }

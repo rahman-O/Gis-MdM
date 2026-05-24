@@ -8,11 +8,15 @@ import (
 
 // RouteRepository persists enrollment routes.
 type RouteRepository interface {
-	List(ctx context.Context, customerID int) ([]domain.Route, error)
-	GetByID(ctx context.Context, customerID, id int) (*domain.RouteDetail, error)
-	Create(ctx context.Context, customerID int, req domain.CreateRequest, qrcodeKey string) (int, error)
-	Update(ctx context.Context, customerID, id int, req domain.UpdateRequest, qrcodeKey *string) error
-	IsPublishedProfileVersion(ctx context.Context, customerID, profileVersionID int) (bool, error)
-	ListPublishedProfileVersions(ctx context.Context, customerID int) ([]domain.PublishedProfileVersion, error)
+	ListViews(ctx context.Context, customerID int) ([]domain.EnrollmentRouteView, error)
+	GetViewByID(ctx context.Context, customerID, id int) (*domain.EnrollmentRouteView, error)
+	Create(ctx context.Context, customerID int, req domain.CreateRequest, qrcodeKey string, resolved domain.ResolvedBootstrap, containerAck bool) (int, error)
+	Update(ctx context.Context, customerID, id int, req domain.UpdateRequest, resolved *domain.ResolvedBootstrap, containerAck *bool) error
+	Delete(ctx context.Context, customerID, id int) error
+	DeleteImpact(ctx context.Context, customerID, routeID int) (*domain.EnrollmentDeleteImpact, error)
 	TreeNodeBelongsToCustomer(ctx context.Context, customerID, nodeID int) (bool, error)
+	NodePlacementKind(ctx context.Context, customerID, nodeID int) (string, error)
+	ListTreeNodeOptions(ctx context.Context, customerID, heavyThreshold int) ([]domain.TreeNodeOption, error)
+	ListBootstrapApps(ctx context.Context, customerID int) ([]domain.BootstrapAppOption, error)
+	RecordQRViewed(ctx context.Context, routeID int) error
 }

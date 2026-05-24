@@ -13,7 +13,6 @@ import { SettingsPage } from '@/features/settings/SettingsPage'
 import { ProfilesPage } from '@/features/profiles/ProfilesPage'
 import { ProfileEditRedirect } from '@/features/profiles/ProfileEditRedirect'
 import { EnrollmentRouteListPage } from '@/features/enrollment-routes/EnrollmentRouteListPage'
-import { EnrollmentRouteEditorPage } from '@/features/enrollment-routes/EnrollmentRouteEditorPage'
 import { OnboardingWizardPage } from '@/features/onboarding/OnboardingWizardPage'
 import { ConfigurationEditorPage } from '@/features/configurations/ConfigurationEditorPage'
 import { EnrollmentQrPage } from '@/features/devices/EnrollmentQrPage'
@@ -78,8 +77,7 @@ export function App() {
         <Route path="/profiles/:profileId/edit" element={<ProfileEditRedirect />} />
         <Route path="/profiles/:profileId/versions/:versionId/edit" element={<ProfileEditRedirect />} />
         <Route path="/enrollment-routes" element={<EnrollmentRouteListPage />} />
-        <Route path="/enrollment-routes/new" element={<EnrollmentRouteEditorPage />} />
-        <Route path="/enrollment-routes/:id" element={<EnrollmentRouteEditorPage />} />
+        <Route path="/enrollment-routes/*" element={<EnrollmentRouteListPage />} />
         <Route path="/configurations" element={<Navigate to="/profiles" replace />} />
         <Route path="/configurations/:id/edit" element={<ConfigurationEditorPage />} />
         <Route path="/qr/:qrCodeKey/:deviceId" element={<EnrollmentQrPage />} />

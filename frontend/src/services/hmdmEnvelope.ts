@@ -15,6 +15,14 @@ const KNOWN_SERVER_MESSAGE_KEYS: Record<string, string> = {
     'This version is still assigned to a folder. Remove the assignment first.',
   'error.profile.version.delete.devicesTarget':
     'Devices are still targeting this version.',
+  'error.enrollment_route.tree_node_required': 'Select a target folder in the device tree.',
+  'error.enrollment_route.main_app_required': 'Select a bootstrap application.',
+  'error.enrollment_route.stable_version_missing':
+    'No recommended (stable) version is set for this application. Mark a version as recommended or choose Latest or Specific.',
+  'error.enrollment_route.container_ack_required':
+    'Acknowledge container placement before saving to an inheritable folder.',
+  'error.duplicate.enrollment_route': 'An enrollment route with this name already exists.',
+  'error.notfound.enrollment_route': 'Enrollment route not found.',
 }
 
 function resolveEnvelopeMessage(raw: string | null | undefined, fallback: string): string {

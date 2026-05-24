@@ -32,3 +32,6 @@ Thumbs.db
 
 # Bundled local Maven (install separately on other machines)
 .tools/
+.kiro/
+.vscode/
+specs

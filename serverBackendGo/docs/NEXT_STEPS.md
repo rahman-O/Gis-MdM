@@ -50,6 +50,23 @@ Spec: [`specs/018-profile-rollout-ops/`](../specs/018-profile-rollout-ops/) · P
 
 ---
 
+## 021 — Enrollment Routes UX (2026-06-01)
+
+| Area | Status |
+|------|--------|
+| Dialog-based enrollment route CRUD | **منجز** |
+| Bootstrap intent resolution (stable/specific/latest) | **منجز** |
+| Target node picker with placement kind | **منجز** |
+| Delete with multi-dimensional impact | **منجز** |
+| Dual-column QR preview (Pending/Active) | **منجز** |
+| Profile-free enrollment (no profile prerequisite) | **منجز** |
+
+Spec: [`specs/021-enrollment-routes-ux/`](../specs/021-enrollment-routes-ux/) · Parity: [`parity/enrollment-routes-ux.md`](parity/enrollment-routes-ux.md)
+
+**Deploy:** `make migrate` through `000030`, `MODULE_ENROLLMENT_ROUTES_ENABLED=true` (with 017 flags).
+
+---
+
 ## منجز
 
 | المرحلة | الوحدات | الحالة |
