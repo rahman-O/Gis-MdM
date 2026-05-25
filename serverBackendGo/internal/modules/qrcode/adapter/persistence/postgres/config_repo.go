@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/gis-mdm/server-backend-go/internal/modules/qrcode/port"
 )
@@ -43,23 +44,57 @@ func (r *ConfigRepository) routeByQRKey(ctx context.Context, key string) (*port.
 	var settingsJSON []byte
 	var customerName sql.NullString
 	var defaultDeviceIDMode string
+	var wifiSSID, wifiPassword, wifiSecurityType, qrParameters, adminExtras sql.NullString
+	var mobileEnrollment, encryptDevice bool
 	err := r.db.QueryRowContext(ctx, `
 		SELECT er.id, er.name, COALESCE(er.qrcodekey, ''), er.customerid,
 		       COALESCE(cu.filesdir, ''), COALESCE(cu.name, ''),
 		       COALESCE(er.mainappid, pv.mainappid), pv.settingsjson,
-		       COALESCE(NULLIF(TRIM(er.default_device_id_mode), ''), 'imei')
+		       COALESCE(NULLIF(TRIM(er.default_device_id_mode), ''), 'imei'),
+		       er.wifi_ssid, er.wifi_password, er.wifi_security_type,
+		       er.qr_parameters, er.admin_extras,
+		       COALESCE(er.mobile_enrollment, false), COALESCE(er.encrypt_device, false)
 		FROM enrollment_routes er
 		JOIN customers cu ON cu.id = er.customerid
 		LEFT JOIN profile_versions pv ON pv.id = er.profile_version_id
 		WHERE er.qrcodekey IS NOT NULL AND lower(er.qrcodekey) = lower($1)`, key).
-		Scan(&cfg.ID, &cfg.Name, &cfg.QRCodeKey, &cfg.CustomerID, &cfg.FilesDir, &customerName, &mainAppID, &settingsJSON, &defaultDeviceIDMode)
+		Scan(&cfg.ID, &cfg.Name, &cfg.QRCodeKey, &cfg.CustomerID, &cfg.FilesDir, &customerName, &mainAppID, &settingsJSON, &defaultDeviceIDMode,
+			&wifiSSID, &wifiPassword, &wifiSecurityType,
+			&qrParameters, &adminExtras,
+			&mobileEnrollment, &encryptDevice)
 	if err != nil {
 		return nil, err
 	}
 	_, _ = r.db.ExecContext(ctx, `
 		INSERT INTO domain_events (event_type, aggregate_id, payload)
 		VALUES ('enrollment_route.qr_viewed', $1, '{}')`, fmt.Sprint(cfg.ID))
-	return r.finishQRConfig(ctx, &cfg, mainAppID, settingsJSON, customerName, defaultDeviceIDMode)
+	result, err := r.finishQRConfig(ctx, &cfg, mainAppID, settingsJSON, customerName, defaultDeviceIDMode)
+	if err != nil {
+		return nil, err
+	}
+	// Override with route-level provisioning (route wins if non-empty)
+	if wifiSSID.Valid && strings.TrimSpace(wifiSSID.String) != "" {
+		result.WifiSSID = wifiSSID.String
+	}
+	if wifiPassword.Valid && strings.TrimSpace(wifiPassword.String) != "" {
+		result.WifiPassword = wifiPassword.String
+	}
+	if wifiSecurityType.Valid && strings.TrimSpace(wifiSecurityType.String) != "" {
+		result.WifiSecurityType = wifiSecurityType.String
+	}
+	if qrParameters.Valid && strings.TrimSpace(qrParameters.String) != "" {
+		result.QRParameters = qrParameters.String
+	}
+	if adminExtras.Valid && strings.TrimSpace(adminExtras.String) != "" {
+		result.AdminExtras = adminExtras.String
+	}
+	if mobileEnrollment {
+		result.MobileEnrollment = true
+	}
+	if encryptDevice {
+		result.EncryptDevice = true
+	}
+	return result, nil
 }
 
 func (r *ConfigRepository) configurationByQRKeyLegacy(ctx context.Context, key string) (*port.QRConfig, error) {

@@ -92,6 +92,21 @@
       "metricScans": "مسح QR (آخر 7 أيام): {{count}}",
       "typeName": "اكتب اسم المسار للتأكيد",
       "nameMismatch": "الاسم غير متطابق."
+    },
+    "provisioning": {
+      "wifiTitle": "إعدادات Wi-Fi للتسجيل",
+      "wifiSsid": "اسم الشبكة (SSID)",
+      "wifiPassword": "كلمة مرور Wi-Fi",
+      "wifiSecurityType": "نوع الأمان",
+      "advancedTitle": "معاملات QR المتقدمة",
+      "qrParameters": "معاملات QR",
+      "qrParametersHint": "أزواج مفتاح-قيمة مخصصة للتسجيل (بصيغة JSON)",
+      "adminExtras": "بيانات إضافية",
+      "adminExtrasHint": "بيانات JSON إضافية تُدمج في حزمة QR",
+      "adminExtrasInvalid": "صيغة JSON غير صالحة",
+      "flagsTitle": "خيارات التسجيل",
+      "mobileEnrollment": "تفضيل بيانات الجوال أثناء التسجيل",
+      "encryptDevice": "تشفير الجهاز أثناء الإعداد"
     }
   },
   "onboarding": {

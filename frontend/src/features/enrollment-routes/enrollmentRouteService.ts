@@ -24,6 +24,13 @@ export interface EnrollmentRouteView {
   resolvedPackage?: string
   status: 'draft' | 'active' | string
   type?: number
+  wifiSsid?: string
+  wifiPassword?: string
+  wifiSecurityType?: string
+  qrParameters?: string
+  adminExtras?: string
+  mobileEnrollment?: boolean
+  encryptDevice?: boolean
 }
 
 export interface TreeNodeOption {
@@ -77,6 +84,13 @@ export interface CreateEnrollmentRoutePayload {
   bootstrapApplicationId: number
   bootstrapVersionId?: number | null
   acknowledgeContainerPlacement?: boolean
+  wifiSsid?: string
+  wifiPassword?: string
+  wifiSecurityType?: string
+  qrParameters?: string
+  adminExtras?: string
+  mobileEnrollment?: boolean
+  encryptDevice?: boolean
 }
 
 export type UpdateEnrollmentRoutePayload = Partial<CreateEnrollmentRoutePayload>

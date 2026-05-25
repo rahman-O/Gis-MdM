@@ -24,6 +24,14 @@ type EnrollmentRouteView struct {
 	Status                        string     `json:"status"`
 	Type                          int        `json:"type,omitempty"`
 	ContainerPlacementAckAt       *time.Time `json:"-"`
+	// Provisioning settings (used in QR code generation)
+	WifiSSID         string `json:"wifiSsid,omitempty"`
+	WifiPassword     string `json:"wifiPassword,omitempty"`
+	WifiSecurityType string `json:"wifiSecurityType,omitempty"`
+	QRParameters     string `json:"qrParameters,omitempty"`
+	AdminExtras      string `json:"adminExtras,omitempty"`
+	MobileEnrollment bool   `json:"mobileEnrollment"`
+	EncryptDevice    bool   `json:"encryptDevice"`
 }
 
 // CreateRequest is POST /enrollment-routes body.
@@ -39,6 +47,14 @@ type CreateRequest struct {
 	BootstrapVersionID            *int    `json:"bootstrapVersionId,omitempty"`
 	AcknowledgeContainerPlacement bool    `json:"acknowledgeContainerPlacement"`
 	Type                          *int    `json:"type,omitempty"`
+	// Provisioning settings
+	WifiSSID         *string `json:"wifiSsid,omitempty"`
+	WifiPassword     *string `json:"wifiPassword,omitempty"`
+	WifiSecurityType *string `json:"wifiSecurityType,omitempty"`
+	QRParameters     *string `json:"qrParameters,omitempty"`
+	AdminExtras      *string `json:"adminExtras,omitempty"`
+	MobileEnrollment *bool   `json:"mobileEnrollment,omitempty"`
+	EncryptDevice    *bool   `json:"encryptDevice,omitempty"`
 }
 
 // UpdateRequest is PUT /enrollment-routes/:id body.
@@ -53,6 +69,14 @@ type UpdateRequest struct {
 	BootstrapApplicationID        *int    `json:"bootstrapApplicationId,omitempty"`
 	BootstrapVersionID            *int    `json:"bootstrapVersionId,omitempty"`
 	AcknowledgeContainerPlacement *bool   `json:"acknowledgeContainerPlacement,omitempty"`
+	// Provisioning settings
+	WifiSSID         *string `json:"wifiSsid,omitempty"`
+	WifiPassword     *string `json:"wifiPassword,omitempty"`
+	WifiSecurityType *string `json:"wifiSecurityType,omitempty"`
+	QRParameters     *string `json:"qrParameters,omitempty"`
+	AdminExtras      *string `json:"adminExtras,omitempty"`
+	MobileEnrollment *bool   `json:"mobileEnrollment,omitempty"`
+	EncryptDevice    *bool   `json:"encryptDevice,omitempty"`
 }
 
 // TreeNodeOption is GET /options/tree-nodes item.

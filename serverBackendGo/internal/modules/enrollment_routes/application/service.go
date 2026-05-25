@@ -90,6 +90,9 @@ func (s *Service) Create(ctx context.Context, p *platformauth.Principal, req dom
 	}
 	cid := customerID(p)
 	normalizeCreateRequest(&req)
+	if err := ValidateProvisioningFields(req.WifiSSID, req.WifiPassword, req.WifiSecurityType, req.QRParameters, req.AdminExtras); err != nil {
+		return nil, err
+	}
 	if err := s.validateCreate(ctx, cid, req); err != nil {
 		return nil, err
 	}
@@ -121,6 +124,9 @@ func (s *Service) Update(ctx context.Context, p *platformauth.Principal, id int,
 		return nil, ErrRouteNotFound
 	}
 	merged := mergeUpdate(cur, req)
+	if err := ValidateProvisioningFields(req.WifiSSID, req.WifiPassword, req.WifiSecurityType, req.QRParameters, req.AdminExtras); err != nil {
+		return nil, err
+	}
 	if err := s.validateUpdate(ctx, cid, merged); err != nil {
 		return nil, err
 	}

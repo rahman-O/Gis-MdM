@@ -17,6 +17,7 @@ import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
 import { Button } from '@/shared/ui/button'
 import { Checkbox } from '@/shared/ui/checkbox'
+import { Textarea } from '@/shared/ui/textarea'
 import {
   Select,
   SelectContent,
@@ -219,6 +220,109 @@ export function EnrollmentRouteForm({ values, onChange, readOnly = false, saveEr
           </Label>
         </div>
       ) : null}
+
+      {/* Wi-Fi Provisioning card */}
+      <div className="rounded-md border p-4 space-y-3">
+        <Label className="text-sm font-semibold">{t('enrollmentRoute.provisioning.wifiTitle')}</Label>
+        <div className="space-y-2">
+          <Label htmlFor="wifi-ssid">{t('enrollmentRoute.provisioning.wifiSsid')}</Label>
+          <Input
+            id="wifi-ssid"
+            maxLength={32}
+            value={values.wifiSsid}
+            disabled={readOnly}
+            onChange={(e) => patch({ wifiSsid: e.target.value })}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="wifi-password">{t('enrollmentRoute.provisioning.wifiPassword')}</Label>
+          <Input
+            id="wifi-password"
+            maxLength={63}
+            value={values.wifiPassword}
+            disabled={readOnly}
+            onChange={(e) => patch({ wifiPassword: e.target.value })}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="wifi-security">{t('enrollmentRoute.provisioning.wifiSecurityType')}</Label>
+          <Select
+            disabled={readOnly}
+            value={values.wifiSecurityType}
+            onValueChange={(v) => patch({ wifiSecurityType: v })}
+          >
+            <SelectTrigger id="wifi-security">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="NONE">NONE</SelectItem>
+              <SelectItem value="WPA">WPA</SelectItem>
+              <SelectItem value="WPA2">WPA2</SelectItem>
+              <SelectItem value="WEP">WEP</SelectItem>
+              <SelectItem value="WPA3">WPA3</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Advanced QR Parameters card */}
+      <div className="rounded-md border p-4 space-y-3">
+        <Label className="text-sm font-semibold">{t('enrollmentRoute.provisioning.advancedTitle')}</Label>
+        <div className="space-y-2">
+          <Label htmlFor="qr-parameters">{t('enrollmentRoute.provisioning.qrParameters')}</Label>
+          <Textarea
+            id="qr-parameters"
+            rows={3}
+            placeholder={t('enrollmentRoute.provisioning.qrParametersHint')}
+            value={values.qrParameters}
+            disabled={readOnly}
+            onChange={(e) => patch({ qrParameters: e.target.value })}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="admin-extras">{t('enrollmentRoute.provisioning.adminExtras')}</Label>
+          <Textarea
+            id="admin-extras"
+            rows={3}
+            placeholder={t('enrollmentRoute.provisioning.adminExtrasHint')}
+            value={values.adminExtras}
+            disabled={readOnly}
+            onChange={(e) => patch({ adminExtras: e.target.value })}
+          />
+          {values.adminExtras.trim() !== '' && (() => {
+            try { JSON.parse(values.adminExtras); return false } catch { return true }
+          })() && (
+            <p className="text-sm text-destructive">{t('enrollmentRoute.provisioning.adminExtrasInvalid')}</p>
+          )}
+        </div>
+      </div>
+
+      {/* Enrollment Flags card */}
+      <div className="rounded-md border p-4 space-y-3">
+        <Label className="text-sm font-semibold">{t('enrollmentRoute.provisioning.flagsTitle')}</Label>
+        <div className="flex items-start gap-2">
+          <Checkbox
+            id="mobile-enrollment"
+            checked={values.mobileEnrollment}
+            disabled={readOnly}
+            onCheckedChange={(c) => patch({ mobileEnrollment: c === true })}
+          />
+          <Label htmlFor="mobile-enrollment" className="text-sm font-normal leading-snug">
+            {t('enrollmentRoute.provisioning.mobileEnrollment')}
+          </Label>
+        </div>
+        <div className="flex items-start gap-2">
+          <Checkbox
+            id="encrypt-device"
+            checked={values.encryptDevice}
+            disabled={readOnly}
+            onCheckedChange={(c) => patch({ encryptDevice: c === true })}
+          />
+          <Label htmlFor="encrypt-device" className="text-sm font-normal leading-snug">
+            {t('enrollmentRoute.provisioning.encryptDevice')}
+          </Label>
+        </div>
+      </div>
     </div>
   )
 }

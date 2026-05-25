@@ -19,6 +19,13 @@ export interface EnrollmentRouteFormValues {
   bootstrapApplicationId: number | ''
   bootstrapVersionId: number | ''
   acknowledgeContainerPlacement: boolean
+  wifiSsid: string
+  wifiPassword: string
+  wifiSecurityType: string
+  qrParameters: string
+  adminExtras: string
+  mobileEnrollment: boolean
+  encryptDevice: boolean
 }
 
 export function emptyFormValues(): EnrollmentRouteFormValues {
@@ -31,6 +38,13 @@ export function emptyFormValues(): EnrollmentRouteFormValues {
     bootstrapApplicationId: '',
     bootstrapVersionId: '',
     acknowledgeContainerPlacement: false,
+    wifiSsid: '',
+    wifiPassword: '',
+    wifiSecurityType: '',
+    qrParameters: '',
+    adminExtras: '',
+    mobileEnrollment: false,
+    encryptDevice: false,
   }
 }
 
@@ -44,6 +58,13 @@ export function formValuesFromRoute(route: EnrollmentRouteView): EnrollmentRoute
     bootstrapApplicationId: route.bootstrapApplicationId,
     bootstrapVersionId: route.bootstrapVersionId ?? '',
     acknowledgeContainerPlacement: route.containerPlacementAcknowledged ?? false,
+    wifiSsid: route.wifiSsid ?? '',
+    wifiPassword: route.wifiPassword ?? '',
+    wifiSecurityType: route.wifiSecurityType ?? '',
+    qrParameters: route.qrParameters ?? '',
+    adminExtras: route.adminExtras ?? '',
+    mobileEnrollment: route.mobileEnrollment ?? false,
+    encryptDevice: route.encryptDevice ?? false,
   }
 }
 

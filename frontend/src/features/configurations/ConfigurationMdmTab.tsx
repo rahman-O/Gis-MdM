@@ -162,24 +162,6 @@ export function ConfigurationMdmTab({
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="flex items-center space-x-2.5 rounded-md border p-3 hover:bg-muted/20 transition-all duration-200">
                 <Checkbox
-                  id="mobileEnrollment"
-                  checked={Boolean(configuration.mobileEnrollment)}
-                  onCheckedChange={(checked) => onChange({ ...configuration, mobileEnrollment: checked === true })}
-                />
-                <Label htmlFor="mobileEnrollment" className="cursor-pointer text-xs font-bold uppercase tracking-wider text-muted-foreground flex-1">Mobile enrollment</Label>
-              </div>
-
-              <div className="flex items-center space-x-2.5 rounded-md border p-3 hover:bg-muted/20 transition-all duration-200">
-                <Checkbox
-                  id="encryptDevice"
-                  checked={Boolean(configuration.encryptDevice)}
-                  onCheckedChange={(checked) => onChange({ ...configuration, encryptDevice: checked === true })}
-                />
-                <Label htmlFor="encryptDevice" className="cursor-pointer text-xs font-bold uppercase tracking-wider text-muted-foreground flex-1">Encrypt device</Label>
-              </div>
-
-              <div className="flex items-center space-x-2.5 rounded-md border p-3 hover:bg-muted/20 transition-all duration-200">
-                <Checkbox
                   id="permissive"
                   checked={Boolean(configuration.permissive)}
                   disabled={Boolean(configuration.kioskMode)}
@@ -214,80 +196,8 @@ export function ConfigurationMdmTab({
         </Card>
       </div>
 
-      {/* COLUMN 2: Network & Advanced Customizations */}
+      {/* COLUMN 2: Kiosk Customizations */}
       <div className="space-y-6">
-        {/* CARD 3: Network Provisioning (Wi-Fi) */}
-        <Card className="shadow-sm border">
-          <CardHeader className="bg-muted/15 border-b py-3 px-4">
-            <CardTitle className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Network Provisioning</CardTitle>
-            <CardDescription className="text-xs mt-0.5">Preset Wi-Fi network credentials used during device setup.</CardDescription>
-          </CardHeader>
-          <CardContent className="p-4 grid gap-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="wifiSSID" className="text-xs font-semibold text-muted-foreground uppercase">Wi-Fi SSID</Label>
-              <Input
-                id="wifiSSID"
-                placeholder="MyCorporateWiFi"
-                value={toText(configuration.wifiSSID)}
-                onChange={(event) => onChange({ ...configuration, wifiSSID: event.target.value })}
-              />
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="wifiPassword" className="text-xs font-semibold text-muted-foreground uppercase">Wi-Fi Password</Label>
-                <Input
-                  id="wifiPassword"
-                  placeholder="Enter Wi-Fi password"
-                  value={toText(configuration.wifiPassword)}
-                  onChange={(event) => onChange({ ...configuration, wifiPassword: event.target.value })}
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="wifiSecurityType" className="text-xs font-semibold text-muted-foreground uppercase">Wi-Fi Security Type</Label>
-                <Input
-                  id="wifiSecurityType"
-                  placeholder="WPA/WPA2"
-                  value={toText(configuration.wifiSecurityType)}
-                  onChange={(event) => onChange({ ...configuration, wifiSecurityType: event.target.value })}
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* CARD 4: Advanced Parameters */}
-        <Card className="shadow-sm border">
-          <CardHeader className="bg-muted/15 border-b py-3 px-4">
-            <CardTitle className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Advanced Parameters</CardTitle>
-            <CardDescription className="text-xs mt-0.5">Parameters encoded in the provisioning QR code and intent payloads.</CardDescription>
-          </CardHeader>
-          <CardContent className="p-4 grid gap-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="qrParameters" className="text-xs font-semibold text-muted-foreground uppercase">QR Code Custom Parameters</Label>
-              <Textarea
-                id="qrParameters"
-                rows={3}
-                placeholder="android.app.extra.PROVISIONING_LEAVE_ALL_SYSTEM_APPS_ENABLED=true"
-                value={toText(configuration.qrParameters)}
-                onChange={(event) => onChange({ ...configuration, qrParameters: event.target.value })}
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="adminExtras" className="text-xs font-semibold text-muted-foreground uppercase">Admin Extras (JSON/Key-Value)</Label>
-              <Textarea
-                id="adminExtras"
-                rows={3}
-                placeholder='{"serverUrl": "https://example.com"}'
-                value={toText(configuration.adminExtras)}
-                onChange={(event) => onChange({ ...configuration, adminExtras: event.target.value })}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
         {/* CARD 5: Kiosk Mode Options (Only if Kiosk is enabled in Common tab) */}
         {Boolean(configuration.kioskMode) ? (
           <Card className="shadow-sm border border-primary/20 bg-primary/5">

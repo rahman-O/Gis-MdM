@@ -40,7 +40,10 @@ func (r *RouteRepository) ListViews(ctx context.Context, customerID int) ([]doma
 		       COALESCE(av.version, ''),
 		       COALESCE(a.pkg, ''),
 		       er.container_placement_ack_at,
-		       er.type
+		       er.type,
+		       er.wifi_ssid, er.wifi_password, er.wifi_security_type,
+		       er.qr_parameters, er.admin_extras,
+		       er.mobile_enrollment, er.encrypt_device
 		FROM enrollment_routes er
 		LEFT JOIN device_tree_nodes n ON n.id = er.default_tree_node_id
 		LEFT JOIN applications a ON a.id = er.bootstrap_application_id
@@ -78,7 +81,10 @@ func (r *RouteRepository) GetViewByID(ctx context.Context, customerID, id int) (
 		       COALESCE(av.version, ''),
 		       COALESCE(a.pkg, ''),
 		       er.container_placement_ack_at,
-		       er.type
+		       er.type,
+		       er.wifi_ssid, er.wifi_password, er.wifi_security_type,
+		       er.qr_parameters, er.admin_extras,
+		       er.mobile_enrollment, er.encrypt_device
 		FROM enrollment_routes er
 		LEFT JOIN device_tree_nodes n ON n.id = er.default_tree_node_id
 		LEFT JOIN applications a ON a.id = er.bootstrap_application_id
@@ -107,6 +113,8 @@ func scanView(row scannable) (domain.EnrollmentRouteView, error) {
 	var bootAppID sql.NullInt64
 	var bootVerID, mainApp sql.NullInt64
 	var ackAt sql.NullTime
+	var wifiSSID, wifiPassword, wifiSecurityType, qrParameters, adminExtras sql.NullString
+	var mobileEnrollment, encryptDevice sql.NullBool
 	if err := row.Scan(
 		&v.ID, &v.Name, &v.Description, &v.QRCodeKey,
 		&treeID, &v.TargetNodeName, &v.TargetNodePath,
@@ -114,8 +122,32 @@ func scanView(row scannable) (domain.EnrollmentRouteView, error) {
 		&v.BootstrapIntent, &bootAppID, &v.BootstrapApplicationName,
 		&bootVerID, &mainApp, &v.ResolvedVersionLabel, &v.ResolvedPackage,
 		&ackAt, &v.Type,
+		&wifiSSID, &wifiPassword, &wifiSecurityType,
+		&qrParameters, &adminExtras,
+		&mobileEnrollment, &encryptDevice,
 	); err != nil {
 		return v, err
+	}
+	if wifiSSID.Valid {
+		v.WifiSSID = wifiSSID.String
+	}
+	if wifiPassword.Valid {
+		v.WifiPassword = wifiPassword.String
+	}
+	if wifiSecurityType.Valid {
+		v.WifiSecurityType = wifiSecurityType.String
+	}
+	if qrParameters.Valid {
+		v.QRParameters = qrParameters.String
+	}
+	if adminExtras.Valid {
+		v.AdminExtras = adminExtras.String
+	}
+	if mobileEnrollment.Valid {
+		v.MobileEnrollment = mobileEnrollment.Bool
+	}
+	if encryptDevice.Valid {
+		v.EncryptDevice = encryptDevice.Bool
 	}
 	if treeID.Valid {
 		v.TargetNodeID = int(treeID.Int64)
@@ -170,12 +202,17 @@ func (r *RouteRepository) Create(ctx context.Context, customerID int, req domain
 		INSERT INTO enrollment_routes (
 			customerid, name, description, qrcodekey, mainappid,
 			profile_version_id, default_tree_node_id, default_device_id_mode, type,
-			bootstrap_intent, bootstrap_application_id, bootstrap_version_id, container_placement_ack_at
-		) VALUES ($1,$2,$3,$4,$5,NULL,$6,$7,$8,$9,$10,$11,$12)
+			bootstrap_intent, bootstrap_application_id, bootstrap_version_id, container_placement_ack_at,
+			wifi_ssid, wifi_password, wifi_security_type, qr_parameters, admin_extras,
+			mobile_enrollment, encrypt_device
+		) VALUES ($1,$2,$3,$4,$5,NULL,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
 		RETURNING id`,
 		customerID, strings.TrimSpace(req.Name), nullStr(req.Description), qrcodeKey, resolved.VersionID,
 		req.TargetNodeID, mode, typ,
 		req.BootstrapIntent, req.BootstrapApplicationID, nullIntPtr(req.BootstrapVersionID), ack,
+		nullStr(req.WifiSSID), nullStr(req.WifiPassword), nullStr(req.WifiSecurityType),
+		nullStr(req.QRParameters), nullStr(req.AdminExtras),
+		nullBoolPtr(req.MobileEnrollment), nullBoolPtr(req.EncryptDevice),
 	).Scan(&id)
 	if err != nil && strings.Contains(err.Error(), "enrollment_routes_name_customer_uidx") {
 		return 0, ErrDuplicateName
@@ -256,15 +293,49 @@ func (r *RouteRepository) Update(ctx context.Context, customerID, id int, req do
 			ackAt = nil
 		}
 	}
+	wifiSSID := cur.WifiSSID
+	if req.WifiSSID != nil {
+		wifiSSID = *req.WifiSSID
+	}
+	wifiPassword := cur.WifiPassword
+	if req.WifiPassword != nil {
+		wifiPassword = *req.WifiPassword
+	}
+	wifiSecurityType := cur.WifiSecurityType
+	if req.WifiSecurityType != nil {
+		wifiSecurityType = *req.WifiSecurityType
+	}
+	qrParameters := cur.QRParameters
+	if req.QRParameters != nil {
+		qrParameters = *req.QRParameters
+	}
+	adminExtras := cur.AdminExtras
+	if req.AdminExtras != nil {
+		adminExtras = *req.AdminExtras
+	}
+	mobileEnrollment := cur.MobileEnrollment
+	if req.MobileEnrollment != nil {
+		mobileEnrollment = *req.MobileEnrollment
+	}
+	encryptDevice := cur.EncryptDevice
+	if req.EncryptDevice != nil {
+		encryptDevice = *req.EncryptDevice
+	}
 	res, err := r.db.ExecContext(ctx, `
 		UPDATE enrollment_routes SET
 			name=$1, description=$2, mainappid=$3,
 			default_tree_node_id=$4, default_device_id_mode=$5,
 			bootstrap_intent=$6, bootstrap_application_id=$7, bootstrap_version_id=$8,
-			container_placement_ack_at=$9
-		WHERE id=$10 AND customerid=$11`,
+			container_placement_ack_at=$9,
+			wifi_ssid=$10, wifi_password=$11, wifi_security_type=$12,
+			qr_parameters=$13, admin_extras=$14,
+			mobile_enrollment=$15, encrypt_device=$16
+		WHERE id=$17 AND customerid=$18`,
 		name, desc, nullInt(mainApp), treeID, mode,
 		intent, appID, nullIntPtr(bootVer), nullTime(ackAt),
+		nullString(wifiSSID), nullString(wifiPassword), nullString(wifiSecurityType),
+		nullString(qrParameters), nullString(adminExtras),
+		mobileEnrollment, encryptDevice,
 		id, customerID,
 	)
 	if err != nil {
@@ -480,4 +551,18 @@ func nullTime(t *time.Time) any {
 		return nil
 	}
 	return *t
+}
+
+func nullBoolPtr(b *bool) any {
+	if b == nil {
+		return nil
+	}
+	return *b
+}
+
+func nullString(s string) any {
+	if s == "" {
+		return nil
+	}
+	return s
 }

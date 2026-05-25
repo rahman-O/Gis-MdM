@@ -57,6 +57,20 @@ func mapErr(c *gin.Context, err error) {
 		response.ErrorEnvelope(c, "error.enrollment_route.stable_version_missing")
 	case errors.Is(err, routeapp.ErrContainerAckRequired):
 		response.ErrorEnvelope(c, "error.enrollment_route.container_ack_required")
+	case errors.Is(err, routeapp.ErrWifiSsidTooLong):
+		response.ErrorEnvelope(c, "error.enrollment_route.wifi_ssid_too_long")
+	case errors.Is(err, routeapp.ErrWifiPasswordTooLong):
+		response.ErrorEnvelope(c, "error.enrollment_route.wifi_password_too_long")
+	case errors.Is(err, routeapp.ErrInvalidSecurityType):
+		response.ErrorEnvelope(c, "error.enrollment_route.invalid_security_type")
+	case errors.Is(err, routeapp.ErrQrParamsInvalidJSON):
+		response.ErrorEnvelope(c, "error.enrollment_route.qr_parameters_invalid_json")
+	case errors.Is(err, routeapp.ErrQrParamsTooLong):
+		response.ErrorEnvelope(c, "error.enrollment_route.qr_parameters_too_long")
+	case errors.Is(err, routeapp.ErrAdminExtrasInvalidJSON):
+		response.ErrorEnvelope(c, "error.enrollment_route.admin_extras_invalid_json")
+	case errors.Is(err, routeapp.ErrAdminExtrasTooLong):
+		response.ErrorEnvelope(c, "error.enrollment_route.admin_extras_too_long")
 	default:
 		response.ErrorEnvelope(c, "error.internal.server")
 	}

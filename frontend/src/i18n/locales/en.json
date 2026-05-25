@@ -92,6 +92,21 @@
       "metricScans": "QR scans (last 7 days): {{count}}",
       "typeName": "Type the route name to confirm",
       "nameMismatch": "Name does not match."
+    },
+    "provisioning": {
+      "wifiTitle": "Wi-Fi Provisioning",
+      "wifiSsid": "Wi-Fi SSID",
+      "wifiPassword": "Wi-Fi Password",
+      "wifiSecurityType": "Security Type",
+      "advancedTitle": "Advanced QR Parameters",
+      "qrParameters": "QR Parameters",
+      "qrParametersHint": "Custom provisioning key-value pairs (JSON format)",
+      "adminExtras": "Admin Extras",
+      "adminExtrasHint": "Additional JSON data embedded in the QR extras bundle",
+      "adminExtrasInvalid": "Invalid JSON format",
+      "flagsTitle": "Enrollment Flags",
+      "mobileEnrollment": "Prefer mobile data during provisioning",
+      "encryptDevice": "Encrypt device during setup"
     }
   },
   "onboarding": {
