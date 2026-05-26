@@ -27,13 +27,21 @@
       "activeHint": "يستخدم هذا الرمز مفتاح المسار المحفوظ ويطابق التسجيل في الإنتاج.",
       "loading": "جاري تحميل QR…",
       "copyContract": "نسخ JSON العقد",
-      "lastActiveHint": "يبقى آخر QR نشط قابلاً للمسح أثناء التعديل دون حفظ."
+      "lastActiveHint": "يبقى آخر QR نشط قابلاً للمسح أثناء التعديل دون حفظ.",
+      "showNamesInPreview": "إظهار الأسماء بدلاً من الأرقام في المعاينة"
+    },
+    "tabs": {
+      "general": "عام",
+      "bootstrap": "تطبيق الإقلاع",
+      "wifi": "شبكة Wi-Fi",
+      "advanced": "خيارات متقدمة"
     },
     "form": {
       "name": "الاسم",
       "description": "الوصف",
       "targetFolder": "مجلد الهدف",
       "selectFolder": "اختر المجلد",
+      "showFolderNames": "إظهار أسماء المجلدات",
       "heavilyLoaded": "حمّل ثقيل",
       "containerWarning": "هذا المجلد قابل للوراثة (حاوية). قد يتلقى الجهاز إعدادات من المجلدات الأعلى.",
       "deviceIdentity": "وضع هوية الجهاز",

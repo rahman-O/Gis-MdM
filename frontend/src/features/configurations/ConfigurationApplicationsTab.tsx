@@ -1,15 +1,24 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Button } from '@/shared/ui/button'
 import { Checkbox } from '@/shared/ui/checkbox'
-import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select'
 import type { Configuration, ConfigurationApplication } from '@/features/configurations/types'
+import apiClient from '@/services/apiClient'
+import type { HmdmEnvelope } from '@/services/hmdmEnvelope'
+import { unwrapHmdmList } from '@/services/hmdmEnvelope'
+
+interface AppVersion {
+  id: number
+  version: string
+  versionCode: number
+}
 
 interface AppOption {
   id: number
   name: string
   latestVersionId?: number | null
+  versions?: AppVersion[]
 }
 
 interface Props {
@@ -28,7 +37,44 @@ export function ConfigurationApplicationsTab({
   onUpgrade,
 }: Props) {
   const [newAppId, setNewAppId] = useState<number | null>(null)
+  const [versionsMap, setVersionsMap] = useState<Map<number, AppVersion[]>>(new Map())
   const linked = Array.isArray(configuration.applications) ? configuration.applications : []
+
+  // Stable key for the linked app IDs so the effect doesn't re-run on every render.
+  const linkedAppIdsKey = useMemo(() => {
+    const ids = linked.map(app => (app as Record<string, unknown>).applicationId as number ?? app.id).filter((id): id is number => id != null && id > 0)
+    return [...new Set(ids)].sort((a, b) => a - b).join(',')
+  }, [linked])
+
+  useEffect(() => {
+    if (!linkedAppIdsKey) return
+    const uniqueIds = linkedAppIdsKey.split(',').map(Number)
+
+    void Promise.all(
+      uniqueIds.map(async (appId) => {
+        try {
+          const res = await apiClient.get<HmdmEnvelope<unknown[]>>(`/private/applications/${appId}/versions`)
+          const versions = unwrapHmdmList(res.data, '').map((v: unknown) => {
+            const rec = v as Record<string, unknown>
+            return {
+              id: Number(rec.id),
+              version: String(rec.version ?? ''),
+              versionCode: Number(rec.versionCode ?? 0),
+            }
+          })
+          return [appId, versions] as const
+        } catch {
+          return [appId, []] as const
+        }
+      })
+    ).then((results) => {
+      const map = new Map<number, AppVersion[]>()
+      for (const [id, versions] of results) {
+        map.set(id, versions)
+      }
+      setVersionsMap(map)
+    })
+  }, [linkedAppIdsKey])
 
   const selectableApps = useMemo(() => {
     const linkedIds = new Set(linked.map((app) => Number(app.id ?? 0)))
@@ -138,10 +184,28 @@ export function ConfigurationApplicationsTab({
               </div>
               <div className="space-y-2">
                 <Label>Version</Label>
-                <Input
-                  value={String(app.version ?? '')}
-                  onChange={(e) => updateApp(index, { version: e.target.value })}
-                />
+                <Select
+                  value={String((app as Record<string, unknown>).usedVersionId ?? '')}
+                  onValueChange={(value) => {
+                    const versionId = Number(value)
+                    const versions = versionsMap.get((app as Record<string, unknown>).applicationId as number ?? app.id ?? 0) ?? []
+                    const selected = versions.find(v => v.id === versionId)
+                    updateApp(index, {
+                      usedVersionId: versionId > 0 ? versionId : null,
+                      version: selected?.version ?? null,
+                    } as Partial<ConfigurationApplication>)
+                  }}
+                >
+                  <SelectTrigger><SelectValue placeholder="Select version" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">Latest</SelectItem>
+                    {(versionsMap.get((app as Record<string, unknown>).applicationId as number ?? app.id ?? 0) ?? []).map((ver) => (
+                      <SelectItem key={ver.id} value={String(ver.id)}>
+                        {ver.version} (code: {ver.versionCode})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div className="mt-3 flex flex-wrap gap-4">

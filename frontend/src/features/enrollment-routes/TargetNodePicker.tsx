@@ -243,37 +243,31 @@ export function TargetNodePicker({ selectedNodeId, onSelect, onCancel, open }: P
   const visibleRoots = visibleIds ? roots.filter((r) => visibleIds.has(r.id)) : roots
 
   return (
-    <div className="flex flex-col gap-3 rounded-md border bg-background p-3">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-medium">{t('enrollmentRoute.form.targetFolder')}</span>
-      </div>
-
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+    <div className="flex flex-col gap-2.5 rounded-xl border bg-background/80 shadow-sm">
+      {/* Search bar */}
+      <div className="relative px-3 pt-3">
+        <Search className="absolute left-5.5 top-5.5 h-3.5 w-3.5 text-muted-foreground" />
         <Input
-          placeholder={t('enrollmentRoute.form.selectFolder')}
+          placeholder={t('enrollmentRoute.form.searchFolder')}
           value={searchQuery}
           onChange={(e) => {
             setSearchQuery(e.target.value)
-            // Auto-expand all when searching
             if (e.target.value.trim()) {
               setExpanded(new Set(nodes.map((n) => n.id)))
             }
           }}
-          className="pl-9"
+          className="pl-8 h-8 text-sm"
         />
       </div>
 
       {/* Error state */}
       {error ? (
-        <p className="text-sm text-destructive">{error}</p>
+        <p className="px-3 text-xs text-destructive">{error}</p>
       ) : null}
 
       {/* Loading state */}
       {loading ? (
-        <p className="text-sm text-muted-foreground">{t('enrollmentRoute.dialog.loading')}</p>
+        <p className="px-3 pb-2 text-xs text-muted-foreground">{t('enrollmentRoute.dialog.loading')}</p>
       ) : null}
 
       {/* Tree list */}
@@ -281,10 +275,10 @@ export function TargetNodePicker({ selectedNodeId, onSelect, onCancel, open }: P
         <div
           role="tree"
           aria-label={t('enrollmentRoute.form.targetFolder')}
-          className="max-h-[240px] overflow-y-auto"
+          className="max-h-[220px] overflow-y-auto px-2 pb-1"
         >
           {visibleRoots.length === 0 ? (
-            <p className="py-4 text-center text-sm text-muted-foreground">
+            <p className="py-6 text-center text-xs text-muted-foreground">
               {searchQuery ? t('enrollmentRoute.tree.noResults') : t('enrollmentRoute.tree.empty')}
             </p>
           ) : (
@@ -293,36 +287,36 @@ export function TargetNodePicker({ selectedNodeId, onSelect, onCancel, open }: P
         </div>
       ) : null}
 
-      {/* Context preview: selected node path + warnings */}
+      {/* Context preview */}
       {highlightedNode ? (
-        <div className="space-y-1 border-t pt-2">
-          <p className="text-xs text-muted-foreground">{highlightedNode.path}</p>
-          <div className="flex flex-wrap items-center gap-1.5">
-            {highlightedNode.placementKind === 'inheritable' ? (
-              <Badge variant="outline" className="text-amber-700 border-amber-300 dark:text-amber-400 dark:border-amber-700">
-                {t('enrollmentRoute.tree.containerWarning')}
-              </Badge>
-            ) : null}
-            {highlightedNode.heavilyLoaded ? (
-              <Badge variant="outline" className="text-amber-700 border-amber-300 dark:text-amber-400 dark:border-amber-700">
-                {t('enrollmentRoute.tree.heavilyLoaded')}
-              </Badge>
-            ) : null}
-            <span className="text-xs text-muted-foreground">
-              {highlightedNode.deviceCount} {highlightedNode.deviceCount === 1 ? 'device' : 'devices'}
-            </span>
-          </div>
+        <div className="mx-3 mb-1 flex flex-wrap items-center gap-1.5 rounded-lg bg-muted/50 px-2.5 py-1.5">
+          <Folder className="h-3 w-3 shrink-0 text-primary" />
+          <span className="text-xs text-muted-foreground truncate flex-1">{highlightedNode.name}</span>
+          {highlightedNode.placementKind === 'inheritable' ? (
+            <Badge variant="outline" className="text-[10px] py-0 text-amber-700 border-amber-300 dark:text-amber-400 dark:border-amber-700">
+              {t('enrollmentRoute.tree.containerWarning')}
+            </Badge>
+          ) : null}
+          {highlightedNode.heavilyLoaded ? (
+            <Badge variant="outline" className="text-[10px] py-0 text-amber-700 border-amber-300 dark:text-amber-400 dark:border-amber-700">
+              {t('enrollmentRoute.tree.heavilyLoaded')}
+            </Badge>
+          ) : null}
+          <span className="text-[10px] text-muted-foreground ml-auto">
+            {highlightedNode.deviceCount} {highlightedNode.deviceCount === 1 ? 'device' : 'devices'}
+          </span>
         </div>
       ) : null}
 
       {/* Actions */}
-      <div className="flex justify-end gap-2 border-t pt-2">
-        <Button type="button" variant="outline" size="sm" onClick={onCancel}>
+      <div className="flex justify-end gap-2 border-t px-3 py-2">
+        <Button type="button" variant="outline" size="sm" className="h-7 text-xs" onClick={onCancel}>
           {t('enrollmentRoute.actions.cancel')}
         </Button>
         <Button
           type="button"
           size="sm"
+          className="h-7 text-xs"
           disabled={!highlightedNode}
           onClick={handleConfirm}
         >

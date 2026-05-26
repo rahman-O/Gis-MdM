@@ -27,13 +27,21 @@
       "activeHint": "This QR uses the saved route key and matches production enrollment.",
       "loading": "Loading QR…",
       "copyContract": "Copy contract JSON",
-      "lastActiveHint": "The last saved Active QR remains scannable while you edit unsaved changes."
+      "lastActiveHint": "The last saved Active QR remains scannable while you edit unsaved changes.",
+      "showNamesInPreview": "Show names in preview"
+    },
+    "tabs": {
+      "general": "General",
+      "bootstrap": "Bootstrap App",
+      "wifi": "Wi-Fi Setup",
+      "advanced": "Advanced"
     },
     "form": {
       "name": "Name",
       "description": "Description",
       "targetFolder": "Target folder",
       "selectFolder": "Select folder",
+      "showFolderNames": "Show folder names",
       "heavilyLoaded": "heavily loaded",
       "containerWarning": "This folder is inheritable (container). Devices may receive settings from parent folders.",
       "deviceIdentity": "Device identity mode",

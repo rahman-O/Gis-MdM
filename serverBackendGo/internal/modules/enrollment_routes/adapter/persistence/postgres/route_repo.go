@@ -212,7 +212,7 @@ func (r *RouteRepository) Create(ctx context.Context, customerID int, req domain
 		req.BootstrapIntent, req.BootstrapApplicationID, nullIntPtr(req.BootstrapVersionID), ack,
 		nullStr(req.WifiSSID), nullStr(req.WifiPassword), nullStr(req.WifiSecurityType),
 		nullStr(req.QRParameters), nullStr(req.AdminExtras),
-		nullBoolPtr(req.MobileEnrollment), nullBoolPtr(req.EncryptDevice),
+		boolOrFalse(req.MobileEnrollment), boolOrFalse(req.EncryptDevice),
 	).Scan(&id)
 	if err != nil && strings.Contains(err.Error(), "enrollment_routes_name_customer_uidx") {
 		return 0, ErrDuplicateName
@@ -556,6 +556,13 @@ func nullTime(t *time.Time) any {
 func nullBoolPtr(b *bool) any {
 	if b == nil {
 		return nil
+	}
+	return *b
+}
+
+func boolOrFalse(b *bool) bool {
+	if b == nil {
+		return false
 	}
 	return *b
 }

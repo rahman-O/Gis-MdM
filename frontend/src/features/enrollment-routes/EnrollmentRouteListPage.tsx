@@ -19,6 +19,7 @@ import {
 export function EnrollmentRouteListPage() {
   const { t } = useTranslation()
   const [routes, setRoutes] = useState<routeService.EnrollmentRouteView[]>([])
+  const [treeNodes, setTreeNodes] = useState<routeService.TreeNodeOption[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -30,8 +31,12 @@ export function EnrollmentRouteListPage() {
     setLoading(true)
     setError(null)
     try {
-      const list = await routeService.listEnrollmentRoutes()
+      const [list, nodes] = await Promise.all([
+        routeService.listEnrollmentRoutes(),
+        routeService.listTreeNodeOptions(),
+      ])
       setRoutes(Array.isArray(list) ? list : [])
+      setTreeNodes(Array.isArray(nodes) ? nodes : [])
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load enrollment routes.')
     } finally {
@@ -58,6 +63,20 @@ export function EnrollmentRouteListPage() {
   const handleDialogStateChange = (state: EnrollmentRouteDialogStateId, routeId?: number) => {
     setDialogState(state)
     if (routeId !== undefined) setDialogRouteId(routeId)
+  }
+
+  const formatNodePath = (path?: string) => {
+    if (!path) return '—'
+    const segments = path.split('/').filter(Boolean)
+    const resolvedSegments = segments.map((segment) => {
+      const id = Number(segment)
+      if (!isNaN(id)) {
+        const node = treeNodes.find((n) => n.id === id)
+        return node ? node.name : segment
+      }
+      return segment
+    })
+    return resolvedSegments.join(' / ')
   }
 
   return (
@@ -105,7 +124,7 @@ export function EnrollmentRouteListPage() {
               routes.map((r) => (
                 <TableRow key={r.id}>
                   <TableCell className="font-medium">{r.name}</TableCell>
-                  <TableCell>{r.targetNodePath || r.targetNodeName || '—'}</TableCell>
+                  <TableCell>{formatNodePath(r.targetNodePath || r.targetNodeName)}</TableCell>
                   <TableCell>
                     {r.bootstrapApplicationName || '—'}
                     {r.resolvedVersionLabel ? ` (${r.resolvedVersionLabel})` : ''}

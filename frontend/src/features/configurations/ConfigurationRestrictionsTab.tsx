@@ -1,84 +1,84 @@
+import { Cpu, Monitor, Smartphone, Shield, Package, Wifi, ShieldCheck } from 'lucide-react'
 import type { Configuration } from '@/features/configurations/types'
-import { FieldLockToggle } from '@/features/configurations/FieldLockToggle'
-import { isPolicyLocked, togglePolicyLock } from '@/features/configurations/configurationPolicyLocks'
-import { Checkbox } from '@/shared/ui/checkbox'
-import { Label } from '@/shared/ui/label'
-import { Textarea } from '@/shared/ui/textarea'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card'
+import { MdmHardwareCard } from '@/features/configurations/mdm/MdmHardwareCard'
+import { MdmDisplayAudioCard } from '@/features/configurations/mdm/MdmDisplayAudioCard'
+import { MdmKioskCard } from '@/features/configurations/mdm/MdmKioskCard'
+import { MdmSecurityCard } from '@/features/configurations/mdm/MdmSecurityCard'
+import { MdmAppsUpdatesCard } from '@/features/configurations/mdm/MdmAppsUpdatesCard'
+import { MdmNetworkCard } from '@/features/configurations/mdm/MdmNetworkCard'
+import { RestrictionsPickerCard } from '@/features/configurations/mdm/RestrictionsPickerCard'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/shared/ui/tabs'
 
 interface ConfigurationRestrictionsTabProps {
   configuration: Configuration
   onChange: (configuration: Configuration) => void
 }
 
-function toText(value: unknown): string {
-  return value == null ? '' : String(value)
-}
-
 export function ConfigurationRestrictionsTab({ configuration, onChange }: ConfigurationRestrictionsTabProps) {
-  const setLock = (fieldKey: string, locked: boolean) => {
-    onChange(togglePolicyLock(configuration, fieldKey, locked))
-  }
-
-  const boolField = (fieldKey: keyof Configuration & string, label: string) => (
-    <div className="flex items-center space-x-2.5 rounded-md border p-3 hover:bg-muted/20 transition-all duration-200 justify-between">
-      <div className="flex items-center space-x-2.5 flex-1">
-        <Checkbox
-          id={fieldKey}
-          checked={Boolean(configuration[fieldKey])}
-          disabled={isPolicyLocked(configuration, fieldKey)}
-          onCheckedChange={(checked) =>
-            onChange({ ...configuration, [fieldKey]: checked === true })
-          }
-        />
-        <Label htmlFor={fieldKey} className="cursor-pointer text-xs font-bold uppercase tracking-wider text-muted-foreground flex-1">
-          {label}
-        </Label>
-      </div>
-      <FieldLockToggle
-        fieldKey={fieldKey}
-        locked={isPolicyLocked(configuration, fieldKey)}
-        onToggle={setLock}
-      />
-    </div>
-  )
-
   return (
-    <Card className="shadow-sm border">
-      <CardHeader className="bg-muted/15 border-b py-3 px-4">
-        <CardTitle className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Device Restrictions Policy</CardTitle>
-        <CardDescription className="text-xs mt-0.5">Enforce standard Android device-level policies via UserManager.</CardDescription>
-      </CardHeader>
-      <CardContent className="p-4 space-y-4">
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="restrictions" className="text-xs font-semibold text-muted-foreground uppercase">Custom UserManager Restrictions</Label>
-            <FieldLockToggle
-              fieldKey="restrictions"
-              locked={isPolicyLocked(configuration, 'restrictions')}
-              onToggle={setLock}
-            />
-          </div>
-          <Textarea
-            id="restrictions"
-            rows={4}
-            placeholder="e.g. no_config_bluetooth, no_safe_boot, no_sms"
-            value={toText(configuration.restrictions)}
-            disabled={Boolean(configuration.permissive) || isPolicyLocked(configuration, 'restrictions')}
-            onChange={(event) => onChange({ ...configuration, restrictions: event.target.value })}
-          />
-        </div>
+    <Tabs defaultValue="hardware" className="w-full">
+      <TabsList className="flex flex-wrap h-auto gap-1 bg-muted/50 p-1.5 rounded-lg">
+        <TabsTrigger value="hardware" className="flex items-center gap-1.5 text-xs">
+          <Cpu className="h-3.5 w-3.5 text-muted-foreground" />
+          Hardware
+        </TabsTrigger>
+        <TabsTrigger value="display" className="flex items-center gap-1.5 text-xs">
+          <Monitor className="h-3.5 w-3.5 text-muted-foreground" />
+          Display & Audio
+        </TabsTrigger>
+        {configuration.kioskMode ? (
+          <TabsTrigger value="kiosk" className="flex items-center gap-1.5 text-xs">
+            <Smartphone className="h-3.5 w-3.5 text-muted-foreground" />
+            Kiosk
+          </TabsTrigger>
+        ) : null}
+        <TabsTrigger value="security" className="flex items-center gap-1.5 text-xs">
+          <Shield className="h-3.5 w-3.5 text-muted-foreground" />
+          Security
+        </TabsTrigger>
+        <TabsTrigger value="apps" className="flex items-center gap-1.5 text-xs">
+          <Package className="h-3.5 w-3.5 text-muted-foreground" />
+          Apps & Updates
+        </TabsTrigger>
+        <TabsTrigger value="network" className="flex items-center gap-1.5 text-xs">
+          <Wifi className="h-3.5 w-3.5 text-muted-foreground" />
+          Network
+        </TabsTrigger>
+        <TabsTrigger value="all" className="flex items-center gap-1.5 text-xs">
+          <ShieldCheck className="h-3.5 w-3.5 text-muted-foreground" />
+          All Restrictions
+        </TabsTrigger>
+      </TabsList>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          {boolField('gps', 'GPS')}
-          {boolField('bluetooth', 'Bluetooth')}
-          {boolField('wifi', 'Wi-Fi')}
-          {boolField('mobileData', 'Mobile data')}
-          {boolField('usbStorage', 'USB storage')}
-          {boolField('disableScreenshots', 'Disable screenshots')}
-        </div>
-      </CardContent>
-    </Card>
+      <TabsContent value="hardware">
+        <MdmHardwareCard configuration={configuration} onChange={onChange} />
+      </TabsContent>
+
+      <TabsContent value="display">
+        <MdmDisplayAudioCard configuration={configuration} onChange={onChange} />
+      </TabsContent>
+
+      {configuration.kioskMode ? (
+        <TabsContent value="kiosk">
+          <MdmKioskCard configuration={configuration} onChange={onChange} />
+        </TabsContent>
+      ) : null}
+
+      <TabsContent value="security">
+        <MdmSecurityCard configuration={configuration} onChange={onChange} />
+      </TabsContent>
+
+      <TabsContent value="apps">
+        <MdmAppsUpdatesCard configuration={configuration} onChange={onChange} />
+      </TabsContent>
+
+      <TabsContent value="network">
+        <MdmNetworkCard configuration={configuration} onChange={onChange} />
+      </TabsContent>
+
+      <TabsContent value="all">
+        <RestrictionsPickerCard configuration={configuration} onChange={onChange} />
+      </TabsContent>
+    </Tabs>
   )
 }
-

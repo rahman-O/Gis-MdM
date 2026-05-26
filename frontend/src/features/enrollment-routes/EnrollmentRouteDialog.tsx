@@ -18,6 +18,7 @@ import type {
   BootstrapAppOption,
   EnrollmentRouteQrMeta,
   EnrollmentRouteView,
+  TreeNodeOption,
 } from '@/features/enrollment-routes/enrollmentRouteService'
 import {
   createEnrollmentRoute,
@@ -26,6 +27,7 @@ import {
   getEnrollmentRouteImpact,
   getEnrollmentRouteQrMeta,
   listBootstrapApps,
+  listTreeNodeOptions,
   updateEnrollmentRoute,
 } from '@/features/enrollment-routes/enrollmentRouteService'
 import { Button } from '@/shared/ui/button'
@@ -66,6 +68,7 @@ export function EnrollmentRouteDialog({
   const [form, setForm] = useState<EnrollmentRouteFormValues>(emptyFormValues())
   const [savedSnapshot, setSavedSnapshot] = useState<EnrollmentRouteFormValues | null>(null)
   const [bootstrapApps, setBootstrapApps] = useState<BootstrapAppOption[]>([])
+  const [treeNodes, setTreeNodes] = useState<TreeNodeOption[]>([])
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
@@ -76,6 +79,7 @@ export function EnrollmentRouteDialog({
 
   useEffect(() => {
     void listBootstrapApps().then(setBootstrapApps).catch(() => setBootstrapApps([]))
+    void listTreeNodeOptions().then(setTreeNodes).catch(() => setTreeNodes([]))
   }, [])
 
   const loadRoute = useCallback(async (id: number) => {
@@ -262,14 +266,26 @@ export function EnrollmentRouteDialog({
             onChange={setForm}
             readOnly={readOnlyForm}
             saveError={saveError}
+            treeNodes={treeNodes}
           />
         )}
       </div>
       <div>
         {usesPendingQr(state) ? (
-          <EnrollmentRouteQrColumn mode="pending" preview={pendingPreview} />
+          <EnrollmentRouteQrColumn
+            mode="pending"
+            preview={pendingPreview}
+            treeNodes={treeNodes}
+            bootstrapApps={bootstrapApps}
+          />
         ) : qrMeta ? (
-          <EnrollmentRouteQrColumn mode="active" meta={qrMeta} dimmed={isDeleteFlow} />
+          <EnrollmentRouteQrColumn
+            mode="active"
+            meta={qrMeta}
+            dimmed={isDeleteFlow}
+            treeNodes={treeNodes}
+            bootstrapApps={bootstrapApps}
+          />
         ) : null}
       </div>
     </div>
@@ -344,11 +360,13 @@ export function EnrollmentRouteDialog({
   if (isDesktop) {
     return (
       <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-        <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
-          <DialogHeader>{headerContent}</DialogHeader>
-          {bodyContent}
-          {hintContent}
-          <DialogFooter className="flex flex-wrap gap-2">{footerContent}</DialogFooter>
+        <DialogContent className="flex h-[85vh] max-w-4xl flex-col gap-0 overflow-hidden p-0">
+          <DialogHeader className="shrink-0 border-b px-6 py-4">{headerContent}</DialogHeader>
+          <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
+            {bodyContent}
+            {hintContent}
+          </div>
+          <DialogFooter className="shrink-0 flex flex-wrap gap-2 border-t px-6 py-4">{footerContent}</DialogFooter>
         </DialogContent>
       </Dialog>
     )
