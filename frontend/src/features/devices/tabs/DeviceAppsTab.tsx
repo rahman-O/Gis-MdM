@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Search } from 'lucide-react'
+import { Search, Package } from 'lucide-react'
 import { Badge } from '@/shared/ui/badge'
 import { Input } from '@/shared/ui/input'
 import type { DeviceView } from '@/features/devices/types'
@@ -10,7 +10,21 @@ interface DeviceAppsTabProps {
 
 export function DeviceAppsTab({ device }: DeviceAppsTabProps) {
   const [filter, setFilter] = useState('')
-  const applications = device.info?.applications ?? []
+  const applications = device.info?.applications
+
+  if (!applications || applications.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-2 py-12">
+        <Package className="text-muted-foreground h-8 w-8" />
+        <p className="text-muted-foreground text-sm">
+          No application data available.
+        </p>
+        <p className="text-muted-foreground text-xs">
+          The device will report installed apps on next sync.
+        </p>
+      </div>
+    )
+  }
 
   const filtered = filter.trim()
     ? applications.filter(
@@ -36,7 +50,7 @@ export function DeviceAppsTab({ device }: DeviceAppsTabProps) {
       {/* App list */}
       {filtered.length === 0 ? (
         <p className="text-muted-foreground py-4 text-center text-xs">
-          {applications.length === 0 ? 'No applications reported.' : 'No apps match the filter.'}
+          No apps match the filter.
         </p>
       ) : (
         <div className="max-h-[50vh] space-y-1 overflow-y-auto">

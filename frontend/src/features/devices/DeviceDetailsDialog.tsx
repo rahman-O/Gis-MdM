@@ -43,7 +43,7 @@ export function DeviceDetailsDialog({ device, configurationName, onClose }: Devi
 
   return (
     <Dialog open={device != null} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="flex max-h-[90vh] max-w-4xl flex-col overflow-y-auto p-0">
+      <DialogContent className="flex max-h-[92vh] min-h-[70vh] w-[95vw] max-w-5xl flex-col overflow-hidden p-0">
         {/* Header */}
         <div className="flex items-center justify-between border-b p-3">
           <div className="flex items-center gap-2">
@@ -93,8 +93,8 @@ export function DeviceDetailsDialog({ device, configurationName, onClose }: Devi
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="info" className="flex-1 px-3 pb-3">
-          <TabsList className="mb-2">
+        <Tabs defaultValue="info" className="flex flex-1 flex-col overflow-hidden px-4 pb-4">
+          <TabsList className="mb-3 shrink-0">
             <TabsTrigger value="info" className="text-xs">
               <Smartphone className="mr-1 h-3 w-3" />
               Info
@@ -113,19 +113,19 @@ export function DeviceDetailsDialog({ device, configurationName, onClose }: Devi
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="info">
+          <TabsContent value="info" className="flex-1 overflow-y-auto">
             <DeviceInfoTab device={device} />
           </TabsContent>
-          <TabsContent value="profile">
+          <TabsContent value="profile" className="flex-1 overflow-y-auto">
             <DeviceProfileTab device={device} configurationName={configurationName} />
           </TabsContent>
-          <TabsContent value="location">
+          <TabsContent value="location" className="flex-1 overflow-y-auto">
             <DeviceLocationTab device={device} />
           </TabsContent>
-          <TabsContent value="apps">
+          <TabsContent value="apps" className="flex-1 overflow-y-auto">
             <DeviceAppsTab device={device} />
           </TabsContent>
-          <TabsContent value="logs">
+          <TabsContent value="logs" className="flex-1 overflow-y-auto">
             <DeviceLogsTab device={device} />
           </TabsContent>
         </Tabs>
