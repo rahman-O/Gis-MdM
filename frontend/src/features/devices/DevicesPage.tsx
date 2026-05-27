@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { AlertCircle, MoreHorizontal, Plus, QrCode, Search, Settings2 } from 'lucide-react'
+import { AlertCircle, Search, Settings2, Smartphone } from 'lucide-react'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
 import { Skeleton } from '@/shared/ui/skeleton'
@@ -17,10 +17,9 @@ import { getConfigurationQrEligibility } from '@/features/configurations/configu
 import { canEnrollDevicesViaQr } from '@/features/auth/permissions'
 import { EnrollmentQrExperience } from '@/features/devices/EnrollmentQrExperience'
 import type { ConfigurationOption, ConfigurationView, DeviceFilters, DeviceSearchRequest, DeviceView, LookupItem } from '@/features/devices/types'
-import { StatusBadge } from '@/features/devices/StatusBadge'
 import { formatLastSeen } from '@/features/devices/deviceFormat'
 import { DeleteDialog } from '@/features/devices/DeleteDialog'
-import { DeviceDetailPanel } from '@/features/devices/DeviceDetailPanel'
+import { DeviceDetailsDialog } from '@/features/devices/DeviceDetailsDialog'
 import { DeviceForm } from '@/features/devices/DeviceForm'
 import { FilterPanel } from '@/features/devices/FilterPanel'
 import { BulkActionBar } from '@/features/devices/BulkActionBar'
@@ -279,10 +278,6 @@ export function DevicesPage() {
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button onClick={() => { setFormMode('create'); setDeviceToEdit(null) }}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Device
-          </Button>
         </div>
       </div>
 
@@ -328,7 +323,6 @@ export function DevicesPage() {
               {columnVisibility.android ? <TableHead>Android</TableHead> : null}
               {columnVisibility.serial ? <TableHead>Serial</TableHead> : null}
               {columnVisibility.description ? <TableHead>Description</TableHead> : null}
-              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -353,7 +347,9 @@ export function DevicesPage() {
                     }}
                   />
                 </TableCell>
-                <TableCell><StatusBadge statusCode={device.statusCode} lastUpdate={device.lastUpdate} /></TableCell>
+                <TableCell>
+                  <Smartphone className={`h-4 w-4 ${Date.now() - (device.lastUpdate ?? 0) < 5 * 60 * 1000 ? 'text-green-500' : 'text-muted-foreground'}`} />
+                </TableCell>
                 <TableCell>{formatLastSeen(device.lastUpdate)}</TableCell>
                 <TableCell className="font-medium">{device.number || '—'}</TableCell>
                 <TableCell>{device.configurationId != null ? configurationsMap[device.configurationId]?.name?.trim() || `Configuration #${device.configurationId}` : '—'}</TableCell>
@@ -366,29 +362,6 @@ export function DevicesPage() {
                 {columnVisibility.android ? <TableCell>{device.androidVersion || '—'}</TableCell> : null}
                 {columnVisibility.serial ? <TableCell>{device.serial || '—'}</TableCell> : null}
                 {columnVisibility.description ? <TableCell>{device.description || '—'}</TableCell> : null}
-                <TableCell className="text-right" onClick={(event) => event.stopPropagation()}>
-                  <div className="inline-flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      disabled={!canEnrollDevicesViaQr() || qrLoadingId === device.id}
-                      title="Open enrollment QR"
-                      onClick={() => void openDeviceQr(device)}
-                    >
-                      <QrCode className="h-4 w-4" />
-                    </Button>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onSelect={() => setSelectedDevice(device)}>View Details</DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => { setDeviceToEdit(device); setFormMode('edit') }}>Edit</DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={() => setDeviceToDelete(device)}>Delete</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -407,7 +380,11 @@ export function DevicesPage() {
         </Pagination>
       ) : null}
 
-      <DeviceDetailPanel deviceNumber={selectedDevice?.number ?? null} onClose={() => setSelectedDevice(null)} />
+      <DeviceDetailsDialog
+        device={selectedDevice}
+        configurationName={selectedDevice?.configurationId != null ? configurationsMap[selectedDevice.configurationId]?.name?.trim() || null : null}
+        onClose={() => setSelectedDevice(null)}
+      />
       <DeleteDialog
         device={deviceToDelete}
         onConfirm={async () => {
