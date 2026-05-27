@@ -45,9 +45,19 @@ class _MdmAgentAppState extends State<MdmAgentApp> {
   @override
   void initState() {
     super.initState();
-    _heartbeat = HeartbeatService(_api, 'device-001');
+    _initAgent();
+  }
+
+  Future<void> _initAgent() async {
+    // Get real device ID (IMEI) — for now use the known IMEI
+    // In production this would come from device_info_plus or platform channel
+    const deviceId = '351906200367061';
+    _heartbeat = HeartbeatService(_api, deviceId);
+    _deviceId = deviceId;
     _startServices();
   }
+
+  String _deviceId = '351906200367061';
 
   Future<void> _startServices() async {
     // Configure API (use stored server URL or default to hardcoded)
@@ -80,7 +90,7 @@ class _MdmAgentAppState extends State<MdmAgentApp> {
 
   Future<void> _collectTelemetry() async {
     try {
-      final data = await _telemetry.collect('device-001');
+      final data = await _telemetry.collect(_deviceId);
       _telemetryCount++;
       setState(() {
         _lastTelemetry = data;
@@ -89,13 +99,13 @@ class _MdmAgentAppState extends State<MdmAgentApp> {
 
       // Send to server if configured
       if (_api.isConfigured) {
-        await _telemetry.sendToServer(_api, 'device-001', data);
+        await _telemetry.sendToServer(_api, _deviceId, data);
         _addLog('📤 Telemetry sent to server');
 
         // Also send location to dedicated location endpoint
         if (data.location != null) {
           try {
-            await _locationSender.send(_api, 'device-001', data.location!);
+            await _locationSender.send(_api, _deviceId, data.location!);
             _addLog('📍 Location sent to server');
           } catch (e) {
             _addLog('⚠️ Location send failed: $e');
