@@ -73,7 +73,7 @@ class TelemetryService {
     TelemetryData data,
   ) async {
     try {
-      await api.post(
+      await api.put(
         Endpoints.deviceInfo(deviceId),
         data: data.toJson(),
       );
