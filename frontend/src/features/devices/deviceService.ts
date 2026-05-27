@@ -134,3 +134,29 @@ export async function autocomplete(value: string): Promise<string[]> {
   const items = unwrapEnvelope(response, 'Failed to fetch autocomplete.')
   return items.map((item) => item.value ?? item.number ?? '').filter(Boolean)
 }
+
+// --- Location tracking ---
+
+export interface LocationPoint {
+  latitude: number
+  longitude: number
+  accuracy: number
+  speed: number
+  timestamp: number
+}
+
+export async function getDeviceLocations(
+  deviceId: number,
+  from?: number,
+  to?: number,
+  limit?: number
+): Promise<LocationPoint[]> {
+  const params = new URLSearchParams()
+  if (from) params.set('from', String(from))
+  if (to) params.set('to', String(to))
+  if (limit) params.set('limit', String(limit))
+  const response = await apiClient.get<HmdmEnvelope<LocationPoint[]>>(
+    `/private/devices/${deviceId}/locations?${params}`
+  )
+  return unwrapEnvelope(response, 'Failed to load locations.')
+}

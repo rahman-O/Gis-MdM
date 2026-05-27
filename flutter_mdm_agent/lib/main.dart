@@ -8,6 +8,7 @@ import 'core/utils/logger.dart';
 import 'modules/heartbeat/heartbeat_service.dart';
 import 'modules/telemetry/telemetry_service.dart';
 import 'modules/telemetry/telemetry_data.dart';
+import 'modules/telemetry/location_sender.dart';
 
 /// MDM Agent entry point.
 void main() async {
@@ -29,6 +30,7 @@ class MdmAgentApp extends StatefulWidget {
 class _MdmAgentAppState extends State<MdmAgentApp> {
   final ApiClient _api = ApiClient();
   final TelemetryService _telemetry = TelemetryService();
+  final LocationSender _locationSender = LocationSender();
   late HeartbeatService _heartbeat;
 
   Timer? _telemetryTimer;
@@ -48,10 +50,12 @@ class _MdmAgentAppState extends State<MdmAgentApp> {
   }
 
   Future<void> _startServices() async {
-    // Configure API (use stored server URL or default)
+    // Configure API (use stored server URL or default to hardcoded)
     final serverUrl = await SecureStorage.getServerUrl();
     if (serverUrl != null && serverUrl.isNotEmpty) {
       _api.configure(baseUrl: serverUrl);
+    } else {
+      _api.configure(baseUrl: 'https://mdm.studhub.app');
     }
 
     _addLog('Services starting...');
@@ -87,6 +91,16 @@ class _MdmAgentAppState extends State<MdmAgentApp> {
       if (_api.isConfigured) {
         await _telemetry.sendToServer(_api, 'device-001', data);
         _addLog('📤 Telemetry sent to server');
+
+        // Also send location to dedicated location endpoint
+        if (data.location != null) {
+          try {
+            await _locationSender.send(_api, 'device-001', data.location!);
+            _addLog('📍 Location sent to server');
+          } catch (e) {
+            _addLog('⚠️ Location send failed: $e');
+          }
+        }
       }
     } catch (e) {
       _addLog('❌ Telemetry error: $e');

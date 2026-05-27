@@ -30,6 +30,12 @@ func (m *Module) Register(groups module.RouteGroups, deps module.Dependencies) e
 	}
 	svc := devapp.NewService(repo, push)
 	devhttp.NewHandler(svc).Register(groups.Private.Group("/devices"))
+
+	// Location tracking endpoints
+	locHandler := devhttp.NewLocationHandler(deps.DB)
+	locHandler.RegisterPublic(groups.Public)
+	locHandler.RegisterPrivate(groups.Private)
+
 	deps.Log.Info("module registered", "module", m.Name())
 	return nil
 }

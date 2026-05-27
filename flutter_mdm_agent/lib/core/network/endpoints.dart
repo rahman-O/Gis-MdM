@@ -16,6 +16,9 @@ class Endpoints {
   // Device Log Plugin (public)
   static String deviceLog(String deviceNumber) => '/rest/plugins/devicelog/log/list/$deviceNumber';
 
+  // Device Location (public — agent sends batch locations)
+  static String deviceLocations(String deviceId) => '/rest/public/device-locations/$deviceId';
+
   // Public
   static const String publicName = '/rest/public/name';
 }
