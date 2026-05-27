@@ -42,6 +42,13 @@ export async function deleteTreeNode(id: number, targetNodeId: number): Promise<
   assertHmdmOk(response.data, 'Failed to delete folder.')
 }
 
+export async function renameTreeNode(id: number, name: string): Promise<TreeNode> {
+  const response = await apiClient.put<HmdmEnvelope<TreeNode>>(`/private/device-tree/nodes/${id}`, {
+    name,
+  })
+  return unwrap(response, 'Failed to rename folder.')
+}
+
 export async function moveDeviceToTree(deviceId: number, treeNodeId: number): Promise<void> {
   const response = await apiClient.post<HmdmEnvelope<unknown>>(`/private/devices/${deviceId}/move-tree`, {
     treeNodeId,

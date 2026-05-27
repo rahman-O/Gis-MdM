@@ -6,10 +6,16 @@ import { Header } from './Header'
 
 export function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true)
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background">
-      <Sidebar mobileOpen={mobileOpen} onMobileClose={() => setMobileOpen(false)} />
+      <Sidebar
+        mobileOpen={mobileOpen}
+        collapsed={sidebarCollapsed}
+        onMobileClose={() => setMobileOpen(false)}
+        onToggleCollapse={() => setSidebarCollapsed((prev) => !prev)}
+      />
 
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header onMenuClick={() => setMobileOpen(true)} />
