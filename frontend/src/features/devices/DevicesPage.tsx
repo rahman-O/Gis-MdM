@@ -1,29 +1,26 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { AlertCircle, Search, Settings2, Smartphone } from 'lucide-react'
+import { AlertCircle, Search, Settings2 } from 'lucide-react'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
 import { Skeleton } from '@/shared/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table'
-import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/shared/ui/dropdown-menu'
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '@/shared/ui/dropdown-menu'
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/shared/ui/pagination'
 import { Checkbox } from '@/shared/ui/checkbox'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/ui/dialog'
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/shared/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select'
 import { useDebounce } from '@/shared/hooks/useDebounce'
 import * as deviceService from '@/features/devices/deviceService'
-import * as configurationService from '@/features/configurations/configurationService'
-import type { Configuration } from '@/features/configurations/types'
-import { getConfigurationQrEligibility } from '@/features/configurations/configurationQr'
-import { canEnrollDevicesViaQr } from '@/features/auth/permissions'
-import { EnrollmentQrExperience } from '@/features/devices/EnrollmentQrExperience'
 import type { ConfigurationOption, ConfigurationView, DeviceFilters, DeviceSearchRequest, DeviceView, LookupItem } from '@/features/devices/types'
 import { formatLastSeen } from '@/features/devices/deviceFormat'
+import { StatusBadge } from '@/features/devices/StatusBadge'
 import { DeleteDialog } from '@/features/devices/DeleteDialog'
 import { DeviceDetailsDialog } from '@/features/devices/DeviceDetailsDialog'
 import { DeviceForm } from '@/features/devices/DeviceForm'
 import { FilterPanel } from '@/features/devices/FilterPanel'
 import { BulkActionBar } from '@/features/devices/BulkActionBar'
 import { DeviceTreeSidebar } from '@/features/device-tree/DeviceTreeSidebar'
+
 const PAGE_SIZE = 20
 const EMPTY_FILTERS: DeviceFilters = {
   groupId: null,
@@ -44,9 +41,17 @@ const EMPTY_FILTERS: DeviceFilters = {
   sortDir: null,
 }
 
-function groupsCell(groups: DeviceView['groups']): string {
-  if (!groups?.length) return '—'
-  return groups.map((g) => g.name ?? `#${g.id}`).join(', ')
+function renderGroups(groups: DeviceView['groups']) {
+  if (!groups?.length) return <span className="text-muted-foreground/60">—</span>
+  return (
+    <div className="flex flex-wrap gap-1 max-w-[240px]">
+      {groups.map((g) => (
+        <span key={g.id} className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-secondary/70 text-secondary-foreground border border-border/30">
+          {g.name ?? `#${g.id}`}
+        </span>
+      ))}
+    </div>
+  )
 }
 
 function areFiltersEqual(a: DeviceFilters, b: DeviceFilters): boolean {
@@ -70,17 +75,11 @@ export function DevicesPage() {
   const [deviceToDelete, setDeviceToDelete] = useState<DeviceView | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
   const [formMode, setFormMode] = useState<'create' | 'edit' | null>(null)
-  const [deviceToEdit, setDeviceToEdit] = useState<DeviceView | null>(null)
+  const [deviceToEdit, _setDeviceToEdit] = useState<DeviceView | null>(null)
   const [bulkAction, setBulkAction] = useState<'delete' | 'configuration' | 'group' | null>(null)
   const [bulkConfigurationId, setBulkConfigurationId] = useState<number | null>(null)
   const [bulkGroupId, setBulkGroupId] = useState<number | null>(null)
   const [bulkError, setBulkError] = useState<string | null>(null)
-  const [qrLoadingId, setQrLoadingId] = useState<number | null>(null)
-  const [qrEnrollmentContext, setQrEnrollmentContext] = useState<{
-    qrCodeKey: string
-    deviceNumber: string
-    configuration: Configuration | null
-  } | null>(null)
   const [selectedTreeNodeId, setSelectedTreeNodeId] = useState<number | null>(null)
   const [columnVisibility, setColumnVisibility] = useState({
     imei: false,
@@ -195,178 +194,155 @@ export function DevicesPage() {
     }
   }
 
-  const getQrCodeKey = (device: DeviceView): string | null => {
-    if (device.configurationId == null) return null
-    const config = configurationsMap[device.configurationId]
-    const qrCodeKey = config?.qrCodeKey?.trim()
-    return qrCodeKey || null
-  }
-
-  const openDeviceQr = async (device: DeviceView) => {
-    if (!canEnrollDevicesViaQr()) {
-      setError('You do not have permission to enroll devices via QR.')
-      return
-    }
-
-    const deviceNumber = device.number?.trim()
-    if (!deviceNumber) {
-      setError('Device number is missing.')
-      return
-    }
-    if (device.configurationId == null) {
-      setError('This device has no configuration assigned.')
-      return
-    }
-
-    setQrLoadingId(device.id)
-    let qrCodeKey: string | null = getQrCodeKey(device)
-    let fullConfiguration: Configuration | null = null
-
-    try {
-      fullConfiguration = await configurationService.getConfiguration(device.configurationId)
-      const resolvedKey = String(fullConfiguration.qrCodeKey ?? '').trim()
-      if (resolvedKey) qrCodeKey = resolvedKey
-    } catch {
-      // ignore load error; qrCodeKey may still come from list map
-    } finally {
-      setQrLoadingId(null)
-    }
-
-    if (!qrCodeKey?.trim()) {
-      const eligibility = getConfigurationQrEligibility(fullConfiguration)
-      setError(eligibility.reason ?? 'QR is not available for this device configuration.')
-      return
-    }
-
-    setQrEnrollmentContext({
-      qrCodeKey: qrCodeKey.trim(),
-      deviceNumber,
-      configuration: fullConfiguration,
-    })
-  }
-
   return (
-    <div className="flex gap-4">
+    <div className="flex gap-6 p-2 max-w-[1600px] mx-auto">
       <DeviceTreeSidebar
         selectedNodeId={selectedTreeNodeId}
         onSelectNode={setSelectedTreeNodeId}
         onTreeChanged={() => void fetchDevices(true)}
       />
-      <div className="min-w-0 flex-1 space-y-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight">Devices</h1>
-          <p className="text-muted-foreground text-sm">Manage enrolled devices.</p>
+      <div className="min-w-0 flex-1 space-y-5">
+        {/* Title Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/40 pb-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground/90">Devices</h1>
+            <p className="text-muted-foreground text-sm mt-1">Monitor, filter, and manage all your MDM enrolled devices in one place.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-9 rounded-lg border-border/80 shadow-xs hover:bg-accent/60">
+                  <Settings2 className="mr-2 h-4 w-4 text-muted-foreground" />
+                  Columns
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48 p-1 border border-border/80 shadow-md rounded-lg">
+                {allColumns.map((column) => (
+                  <DropdownMenuCheckboxItem
+                    key={column.key}
+                    checked={columnVisibility[column.key]}
+                    onCheckedChange={(checked) => setColumnVisibility((current) => ({ ...current, [column.key]: checked === true }))}
+                    className="text-xs"
+                  >
+                    {column.label}
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Settings2 className="mr-2 h-4 w-4" />
-                Columns
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {allColumns.map((column) => (
-                <DropdownMenuCheckboxItem
-                  key={column.key}
-                  checked={columnVisibility[column.key]}
-                  onCheckedChange={(checked) => setColumnVisibility((current) => ({ ...current, [column.key]: checked === true }))}
-                >
-                  {column.label}
-                </DropdownMenuCheckboxItem>
+
+        {/* Search & Filters Container */}
+        <div className="bg-card border border-border/50 rounded-xl p-4 space-y-4 shadow-xs">
+          <div className="flex flex-col sm:flex-row items-center gap-3">
+            <div className="relative flex-1 w-full">
+              <Search className="text-muted-foreground/70 absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
+              <Input 
+                className="pl-9 h-9 text-sm rounded-lg border-border/80 focus-visible:ring-1 focus-visible:ring-primary/45 focus-visible:ring-offset-0" 
+                placeholder="Search devices by number, configuration, description..." 
+                aria-label="Search devices" 
+                value={search} 
+                onChange={(event) => setSearch(event.target.value)} 
+              />
+            </div>
+            <Button variant="default" className="h-9 rounded-lg px-4 shadow-sm w-full sm:w-auto" onClick={() => { setPage(1); void fetchDevices(true) }}>
+              Search
+            </Button>
+          </div>
+
+          <FilterPanel filters={filters} groups={groups} configurations={configurations} onChange={handleFiltersChange} />
+        </div>
+
+        {selectedCount > 0 ? (
+          <BulkActionBar selectedCount={selectedCount} onDeleteSelected={() => setBulkAction('delete')} onSetConfiguration={() => setBulkAction('configuration')} onSetGroup={() => setBulkAction('group')} />
+        ) : null}
+
+        {error ? (
+          <div className="flex flex-wrap items-center gap-2 rounded-lg border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm" role="alert">
+            <AlertCircle className="h-4 w-4 shrink-0 text-destructive" />
+            <span className="flex-1">{error}</span>
+            <Button type="button" variant="outline" size="sm" onClick={() => void fetchDevices(true)}>Retry</Button>
+          </div>
+        ) : null}
+
+        {/* Table Wrapper */}
+        <div className="rounded-xl border border-border/60 bg-card overflow-hidden shadow-xs">
+          <Table>
+            <TableHeader className="bg-muted/40">
+              <TableRow className="hover:bg-transparent border-b border-border/55">
+                <TableHead className="w-10">
+                  <Checkbox checked={isAllSelected} onCheckedChange={(checked) => setSelectedIds(checked ? new Set(devices.map((d) => d.id)) : new Set())} className="rounded" />
+                </TableHead>
+                <TableHead className="font-semibold text-foreground/80">Status</TableHead>
+                <TableHead className="font-semibold text-foreground/80">Last Seen</TableHead>
+                <TableHead className="font-semibold text-foreground/80">Number</TableHead>
+                <TableHead className="font-semibold text-foreground/80">Configuration</TableHead>
+                <TableHead className="font-semibold text-foreground/80">Enrollment</TableHead>
+                <TableHead className="font-semibold text-foreground/80">Groups</TableHead>
+                {columnVisibility.imei ? <TableHead className="font-semibold text-foreground/80">IMEI</TableHead> : null}
+                {columnVisibility.phone ? <TableHead className="font-semibold text-foreground/80">Phone</TableHead> : null}
+                {columnVisibility.model ? <TableHead className="font-semibold text-foreground/80">Model</TableHead> : null}
+                {columnVisibility.battery ? <TableHead className="font-semibold text-foreground/80">Battery</TableHead> : null}
+                {columnVisibility.android ? <TableHead className="font-semibold text-foreground/80">Android</TableHead> : null}
+                {columnVisibility.serial ? <TableHead className="font-semibold text-foreground/80">Serial</TableHead> : null}
+                {columnVisibility.description ? <TableHead className="font-semibold text-foreground/80">Description</TableHead> : null}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading ? Array.from({ length: 5 }).map((_, index) => (
+                <TableRow key={index}><TableCell colSpan={15} className="py-4"><Skeleton className="h-9 w-full rounded-md" /></TableCell></TableRow>
+              )) : devices.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={15} className="h-32 text-center text-muted-foreground">
+                    {debouncedSearch.trim() ? `No devices found for '${debouncedSearch.trim()}'.` : 'No devices yet.'}
+                  </TableCell>
+                </TableRow>
+              ) : devices.map((device) => (
+                <TableRow key={device.id} className="hover:bg-secondary/25 transition-colors duration-150 cursor-pointer border-b border-border/40" onClick={() => setSelectedDevice(device)}>
+                  <TableCell onClick={(event) => event.stopPropagation()} className="py-3">
+                    <Checkbox
+                      checked={selectedIds.has(device.id)}
+                      onCheckedChange={(checked) => {
+                        const next = new Set(selectedIds)
+                        if (checked) next.add(device.id)
+                        else next.delete(device.id)
+                        setSelectedIds(next)
+                      }}
+                      className="rounded"
+                    />
+                  </TableCell>
+                  <TableCell className="py-3">
+                    <StatusBadge statusCode={device.statusCode ?? (Date.now() - (device.lastUpdate ?? 0) < 5 * 60 * 1000 ? 'green' : 'red')} lastUpdate={device.lastUpdate} />
+                  </TableCell>
+                  <TableCell className="py-3 text-xs text-muted-foreground">{formatLastSeen(device.lastUpdate)}</TableCell>
+                  <TableCell className="py-3 font-mono text-[13px] font-semibold text-foreground/85">{device.number || '—'}</TableCell>
+                  <TableCell className="py-3 text-sm">{device.configurationId != null ? configurationsMap[device.configurationId]?.name?.trim() || `Configuration #${device.configurationId}` : '—'}</TableCell>
+                  <TableCell className="py-3">
+                    <span className="capitalize px-2 py-0.5 rounded-full text-[10px] font-medium bg-muted text-muted-foreground/85">
+                      {device.enrollmentState ?? '—'}
+                    </span>
+                  </TableCell>
+                  <TableCell className="py-3 max-w-[240px] truncate">{renderGroups(device.groups)}</TableCell>
+                  {columnVisibility.imei ? <TableCell className="py-3 text-xs font-mono">{device.imei || device.info?.imei || '—'}</TableCell> : null}
+                  {columnVisibility.phone ? <TableCell className="py-3 text-xs font-mono">{device.phone || device.info?.phone || '—'}</TableCell> : null}
+                  {columnVisibility.model ? <TableCell className="py-3 text-xs">{device.model || device.info?.model || '—'}</TableCell> : null}
+                  {columnVisibility.battery ? (
+                    <TableCell className="py-3">
+                      {(device.batteryLevel ?? device.info?.batteryLevel) != null ? (
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold">
+                          {(device.batteryLevel ?? device.info?.batteryLevel)}%
+                        </span>
+                      ) : '—'}
+                    </TableCell>
+                  ) : null}
+                  {columnVisibility.android ? <TableCell className="py-3 text-xs">{device.androidVersion || device.info?.androidVersion || '—'}</TableCell> : null}
+                  {columnVisibility.serial ? <TableCell className="py-3 text-xs font-mono">{device.serial || device.info?.serial || '—'}</TableCell> : null}
+                  {columnVisibility.description ? <TableCell className="py-3 text-xs text-muted-foreground max-w-[200px] truncate">{device.description || '—'}</TableCell> : null}
+                </TableRow>
               ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+            </TableBody>
+          </Table>
         </div>
-      </div>
-
-      <div className="flex max-w-xl items-center gap-2">
-        <div className="relative flex-1">
-          <Search className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
-          <Input className="pl-9" placeholder="Search devices..." aria-label="Search devices" value={search} onChange={(event) => setSearch(event.target.value)} />
-        </div>
-        <Button variant="outline" onClick={() => { setPage(1); void fetchDevices(true) }}>Search</Button>
-      </div>
-
-      <FilterPanel filters={filters} groups={groups} configurations={configurations} onChange={handleFiltersChange} />
-
-      {selectedCount > 0 ? (
-        <BulkActionBar selectedCount={selectedCount} onDeleteSelected={() => setBulkAction('delete')} onSetConfiguration={() => setBulkAction('configuration')} onSetGroup={() => setBulkAction('group')} />
-      ) : null}
-
-      {error ? (
-        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm" role="alert">
-          <AlertCircle className="h-4 w-4 shrink-0 text-destructive" />
-          <span className="flex-1">{error}</span>
-          <Button type="button" variant="outline" size="sm" onClick={() => void fetchDevices(true)}>Retry</Button>
-        </div>
-      ) : null}
-
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-8">
-                <Checkbox checked={isAllSelected} onCheckedChange={(checked) => setSelectedIds(checked ? new Set(devices.map((d) => d.id)) : new Set())} />
-              </TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Last Seen</TableHead>
-              <TableHead>Number</TableHead>
-              <TableHead>Configuration</TableHead>
-              <TableHead>Enrollment</TableHead>
-              <TableHead>Groups</TableHead>
-              {columnVisibility.imei ? <TableHead>IMEI</TableHead> : null}
-              {columnVisibility.phone ? <TableHead>Phone</TableHead> : null}
-              {columnVisibility.model ? <TableHead>Model</TableHead> : null}
-              {columnVisibility.battery ? <TableHead>Battery</TableHead> : null}
-              {columnVisibility.android ? <TableHead>Android</TableHead> : null}
-              {columnVisibility.serial ? <TableHead>Serial</TableHead> : null}
-              {columnVisibility.description ? <TableHead>Description</TableHead> : null}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? Array.from({ length: 5 }).map((_, index) => (
-              <TableRow key={index}><TableCell colSpan={15}><Skeleton className="h-9 w-full" /></TableCell></TableRow>
-            )) : devices.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={15} className="h-24 text-center text-muted-foreground">
-                  {debouncedSearch.trim() ? `No devices found for '${debouncedSearch.trim()}'.` : 'No devices yet.'}
-                </TableCell>
-              </TableRow>
-            ) : devices.map((device) => (
-              <TableRow key={device.id} className="cursor-pointer" onClick={() => setSelectedDevice(device)}>
-                <TableCell onClick={(event) => event.stopPropagation()}>
-                  <Checkbox
-                    checked={selectedIds.has(device.id)}
-                    onCheckedChange={(checked) => {
-                      const next = new Set(selectedIds)
-                      if (checked) next.add(device.id)
-                      else next.delete(device.id)
-                      setSelectedIds(next)
-                    }}
-                  />
-                </TableCell>
-                <TableCell>
-                  <Smartphone className={`h-4 w-4 ${Date.now() - (device.lastUpdate ?? 0) < 5 * 60 * 1000 ? 'text-green-500' : 'text-muted-foreground'}`} />
-                </TableCell>
-                <TableCell>{formatLastSeen(device.lastUpdate)}</TableCell>
-                <TableCell className="font-medium">{device.number || '—'}</TableCell>
-                <TableCell>{device.configurationId != null ? configurationsMap[device.configurationId]?.name?.trim() || `Configuration #${device.configurationId}` : '—'}</TableCell>
-                <TableCell className="capitalize text-muted-foreground text-xs">{device.enrollmentState ?? '—'}</TableCell>
-                <TableCell className="max-w-[240px] truncate">{groupsCell(device.groups)}</TableCell>
-                {columnVisibility.imei ? <TableCell>{device.imei || '—'}</TableCell> : null}
-                {columnVisibility.phone ? <TableCell>{device.phone || '—'}</TableCell> : null}
-                {columnVisibility.model ? <TableCell>{device.model || '—'}</TableCell> : null}
-                {columnVisibility.battery ? <TableCell>{device.batteryLevel != null ? `${device.batteryLevel}%` : '—'}</TableCell> : null}
-                {columnVisibility.android ? <TableCell>{device.androidVersion || '—'}</TableCell> : null}
-                {columnVisibility.serial ? <TableCell>{device.serial || '—'}</TableCell> : null}
-                {columnVisibility.description ? <TableCell>{device.description || '—'}</TableCell> : null}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
 
       {showPagination ? (
         <Pagination className="mx-0 w-full justify-end">
@@ -396,33 +372,7 @@ export function DevicesPage() {
       />
       {formMode ? <DeviceForm mode={formMode} initialData={deviceToEdit} onSuccess={async () => { await fetchDevices(true) }} onClose={() => setFormMode(null)} /> : null}
 
-      <Dialog
-        open={qrEnrollmentContext != null}
-        onOpenChange={(open) => {
-          if (!open) setQrEnrollmentContext(null)
-        }}
-      >
-        <DialogContent className="flex max-h-[90vh] max-w-3xl flex-col overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Device enrollment QR</DialogTitle>
-            <DialogDescription>Adjust device id / provisioning options; the QR updates automatically (same as legacy UI).</DialogDescription>
-          </DialogHeader>
-          {qrEnrollmentContext ? (
-            <EnrollmentQrExperience
-              key={`${qrEnrollmentContext.qrCodeKey}-${qrEnrollmentContext.deviceNumber}`}
-              qrCodeKey={qrEnrollmentContext.qrCodeKey}
-              initialDeviceId={qrEnrollmentContext.deviceNumber}
-              configuration={qrEnrollmentContext.configuration}
-              groups={groups}
-              footer={
-                <Button type="button" variant="outline" onClick={() => setQrEnrollmentContext(null)}>
-                  Close
-                </Button>
-              }
-            />
-          ) : null}
-        </DialogContent>
-      </Dialog>
+
 
       <Dialog open={bulkAction != null} onOpenChange={(open) => !open && setBulkAction(null)}>
         <DialogContent>

@@ -67,6 +67,11 @@ type DeviceView struct {
 	EnrollmentState *string      `json:"enrollmentState,omitempty"`
 	IMEI            *string      `json:"imei"`
 	Phone           *string      `json:"phone"`
+	Model           *string      `json:"model"`
+	BatteryLevel    *int         `json:"batteryLevel"`
+	AndroidVersion  *string      `json:"androidVersion"`
+	Serial          *string      `json:"serial"`
+	LauncherVersion *string      `json:"launcherVersion"`
 	StatusCode      *string      `json:"statusCode"`
 	Groups          []LookupItem `json:"groups"`
 	Custom1         *string      `json:"custom1"`

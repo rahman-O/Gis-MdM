@@ -69,7 +69,12 @@ func (r *DeviceRepository) Search(ctx context.Context, scope port.UserScope, req
 				WHEN (EXTRACT(EPOCH FROM NOW()) * 1000 - d.lastupdate) < (2 * 3600 * 1000) THEN 'green'
 				WHEN (EXTRACT(EPOCH FROM NOW()) * 1000 - d.lastupdate) < (4 * 3600 * 1000) THEN 'yellow'
 				ELSE 'red'
-			END AS statuscode
+			END AS statuscode,
+			d.infojson->>'model' AS model,
+			d.infojson->>'androidVersion' AS android_version,
+			d.infojson->>'serial' AS serial,
+			d.infojson->>'launcherVersion' AS launcher_version,
+			CASE WHEN d.infojson->>'batteryLevel' ~ '^\d+$' THEN (d.infojson->>'batteryLevel')::INT ELSE NULL END AS battery_level
 		FROM devices d
 		INNER JOIN (%s) page ON page.id = d.id
 		ORDER BY %s`, pageSQL, order)
@@ -86,10 +91,12 @@ func (r *DeviceRepository) Search(ctx context.Context, scope port.UserScope, req
 	for rows.Next() {
 		var v domain.DeviceView
 		var desc, imei, phone, status sql.NullString
+		var model, androidVersion, serial, launcherVersion sql.NullString
+		var batteryLevel sql.NullInt64
 		var lastUpdate sql.NullInt64
 		var configID, treeNodeID sql.NullInt64
 		var enrollmentState sql.NullString
-		if err := rows.Scan(&v.ID, &v.Number, &desc, &lastUpdate, &configID, &treeNodeID, &enrollmentState, &imei, &phone, &status); err != nil {
+		if err := rows.Scan(&v.ID, &v.Number, &desc, &lastUpdate, &configID, &treeNodeID, &enrollmentState, &imei, &phone, &status, &model, &androidVersion, &serial, &launcherVersion, &batteryLevel); err != nil {
 			return nil, err
 		}
 		if desc.Valid {
@@ -118,6 +125,22 @@ func (r *DeviceRepository) Search(ctx context.Context, scope port.UserScope, req
 		}
 		if status.Valid {
 			v.StatusCode = &status.String
+		}
+		if model.Valid {
+			v.Model = &model.String
+		}
+		if androidVersion.Valid {
+			v.AndroidVersion = &androidVersion.String
+		}
+		if serial.Valid {
+			v.Serial = &serial.String
+		}
+		if launcherVersion.Valid {
+			v.LauncherVersion = &launcherVersion.String
+		}
+		if batteryLevel.Valid {
+			bl := int(batteryLevel.Int64)
+			v.BatteryLevel = &bl
 		}
 		v.Groups = []domain.LookupItem{}
 		items = append(items, v)

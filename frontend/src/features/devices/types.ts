@@ -43,12 +43,16 @@ export interface ConfigurationOption {
 
 export interface DeviceInfoView {
   batteryLevel: number | null
+  batteryHealth: string | null
+  batteryTemperature: number | null
+  chargingState: string | null
   model: string | null
+  manufacturer: string | null
   androidVersion: string | null
   serial: string | null
   imei: string | null
   phone: string | null
-  location: string | null
+  location: string | { lat: number; lon: number; accuracy?: number; ts?: number } | null
   permissions: DevicePermissions | null
   applications: DeviceApplication[] | null
   files: DeviceFile[] | null
@@ -56,8 +60,20 @@ export interface DeviceInfoView {
   mdmMode: boolean | null
   kioskMode: boolean | null
   enrollTime: number | null
+  lastSyncTime: number | null
+  enrollmentState: string | null
   publicIp: string | null
+  ipAddress: string | null
+  wifiSsid: string | null
+  networkType: string | null
+  signalStrength: number | null
+  ramUsed: number | null
+  ramTotal: number | null
+  storageUsed: number | null
+  storageFree: number | null
+  cpuUsage: number | null
   launcherVersion: string | null
+  lastHeartbeat: number | null
 }
 
 export interface DeviceView {
@@ -160,3 +176,94 @@ export interface GroupBulkPayload {
   action: 'set' | 'unset'
   groups: LookupItem[]
 }
+
+// ---------------------------------------------------------------------------
+// Device Data Optimization — Dashboard Types
+// ---------------------------------------------------------------------------
+
+/**
+ * A single location data point with full metadata.
+ * Used for displaying device positions on the interactive map,
+ * history markers, and live tracking updates.
+ */
+export interface LocationPoint {
+  /** Latitude in degrees (-90 to 90) */
+  latitude: number
+  /** Longitude in degrees (-180 to 180) */
+  longitude: number
+  /** GPS accuracy in meters */
+  accuracy: number
+  /** Device speed in m/s */
+  speed: number
+  /** Altitude in meters (optional, not always reported) */
+  altitude?: number
+  /** Battery level percentage (0–100) */
+  batteryLevel?: number
+  /** Network type at time of capture (e.g. "wifi", "cellular", "none") */
+  networkType?: string
+  /** Tracking mode active when this point was recorded */
+  trackingMode?: string
+  /** Unix timestamp in milliseconds */
+  timestamp: number
+}
+
+/**
+ * Hourly summary record for archived location data.
+ * Used when querying location history older than the retention period.
+ */
+export interface LocationArchive {
+  /** Start of the hour window (Unix timestamp in milliseconds) */
+  hourStart: number
+  /** Position at the beginning of the hour */
+  startPosition: { latitude: number; longitude: number }
+  /** Position at the end of the hour */
+  endPosition: { latitude: number; longitude: number }
+  /** Total distance traveled during the hour in meters */
+  distanceTraveled: number
+  /** Number of raw location points aggregated into this summary */
+  pointCount: number
+}
+
+/**
+ * An installed application entry for a device.
+ * Displayed in the Apps tab of the Device Details Dialog.
+ */
+export interface DeviceApp {
+  /** Android package name (e.g. "com.example.app") */
+  packageName: string
+  /** Human-readable application name */
+  appName: string
+  /** Application version string */
+  version: string
+  /** Current installation status */
+  status: 'installed' | 'disabled' | 'uninstalled'
+  /** Installation date as Unix timestamp in milliseconds */
+  installDate: number
+  /** Last update date as Unix timestamp in milliseconds (optional) */
+  updateDate?: number
+}
+
+/**
+ * A single log entry from one of the device log collections.
+ * Displayed in the Logs tab of the Device Details Dialog.
+ */
+export interface DeviceLogEntry {
+  /** Unique log entry identifier */
+  id: string
+  /** Log collection category */
+  category: 'system_logs' | 'command_logs' | 'error_logs' | 'tracking_logs'
+  /** Log severity level */
+  severity: 'DEBUG' | 'INFO' | 'WARNING' | 'ERROR' | 'CRITICAL'
+  /** Log message content (may be truncated to 500 characters for display) */
+  message: string
+  /** Unix timestamp in milliseconds */
+  timestamp: number
+  /** Optional structured metadata attached to the log entry */
+  metadata?: Record<string, unknown>
+}
+
+/**
+ * WebSocket connection state for live tracking and real-time updates.
+ * Used by the connection status indicator in the Location tab.
+ */
+export type WsConnectionState = 'connected' | 'reconnecting' | 'disconnected'

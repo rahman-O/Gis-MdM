@@ -77,18 +77,29 @@ class BatteryInfo {
 class NetworkInfo {
   final String type;
   final bool connected;
+  final String? wifiSsid;
+  final String? ipAddress;
 
-  NetworkInfo({required this.type, required this.connected});
+  NetworkInfo({
+    required this.type,
+    required this.connected,
+    this.wifiSsid,
+    this.ipAddress,
+  });
 
   Map<String, dynamic> toJson() => {
         'type': type,
         'connected': connected,
+        if (wifiSsid != null) 'wifiSsid': wifiSsid,
+        if (ipAddress != null) 'ipAddress': ipAddress,
       };
 
   factory NetworkInfo.fromJson(Map<String, dynamic> json) {
     return NetworkInfo(
       type: json['type'] as String? ?? 'unknown',
       connected: json['connected'] as bool? ?? false,
+      wifiSsid: json['wifiSsid'] as String?,
+      ipAddress: json['ipAddress'] as String?,
     );
   }
 }

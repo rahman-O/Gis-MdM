@@ -16,6 +16,18 @@ type DeviceInfo struct {
 	Custom2      *string         `json:"custom2"`
 	Custom3      *string         `json:"custom3"`
 	Location     *DeviceLocation `json:"location"`
+	// Extended telemetry fields (sent by Flutter MDM Agent)
+	Model          *string `json:"model"`
+	Manufacturer   *string `json:"manufacturer"`
+	AndroidVersion *string `json:"androidVersion"`
+	Serial         *string `json:"serial"`
+	Phone          *string `json:"phone"`
+	PublicIp       *string `json:"publicIp"`
+	MdmMode        *bool   `json:"mdmMode"`
+	KioskMode      *bool   `json:"kioskMode"`
+	LauncherVersion *string `json:"launcherVersion"`
+	DefaultLauncher *string `json:"defaultLauncher"`
+	EnrollTime     *int64  `json:"enrollTime"`
 }
 
 type DeviceLocation struct {

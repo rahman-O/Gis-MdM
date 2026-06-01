@@ -1,14 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_background_service/flutter_background_service.dart';
+
+import 'background_service.dart';
 import 'core/config/constants.dart';
-import 'core/network/api_client.dart';
 import 'core/storage/local_db.dart';
-import 'core/storage/secure_storage.dart';
 import 'core/utils/logger.dart';
-import 'modules/heartbeat/heartbeat_service.dart';
-import 'modules/telemetry/telemetry_service.dart';
-import 'modules/telemetry/telemetry_data.dart';
-import 'modules/telemetry/location_sender.dart';
 
 /// MDM Agent entry point.
 void main() async {
@@ -16,6 +13,9 @@ void main() async {
   await LocalDb.initialize();
 
   Logger.info('MDM Agent v${AgentConstants.appVersion} starting...', 'Main');
+
+  // Initialize and start the background service
+  await initializeBackgroundService();
 
   runApp(const MdmAgentApp());
 }
@@ -28,105 +28,63 @@ class MdmAgentApp extends StatefulWidget {
 }
 
 class _MdmAgentAppState extends State<MdmAgentApp> {
-  final ApiClient _api = ApiClient();
-  final TelemetryService _telemetry = TelemetryService();
-  final LocationSender _locationSender = LocationSender();
-  late HeartbeatService _heartbeat;
-
-  Timer? _telemetryTimer;
-  Timer? _heartbeatTimer;
-
-  TelemetryData? _lastTelemetry;
   int _heartbeatCount = 0;
   int _telemetryCount = 0;
-  String _status = 'Initializing...';
+  bool _serviceRunning = false;
+  String _status = 'Connecting to service...';
   final List<String> _logs = [];
+  Timer? _statusPollTimer;
 
   @override
   void initState() {
     super.initState();
-    _initAgent();
+    _connectToService();
   }
 
-  Future<void> _initAgent() async {
-    // Get real device ID (IMEI) — for now use the known IMEI
-    // In production this would come from device_info_plus or platform channel
-    const deviceId = '351906200367061';
-    _heartbeat = HeartbeatService(_api, deviceId);
-    _deviceId = deviceId;
-    _startServices();
-  }
+  void _connectToService() {
+    final service = FlutterBackgroundService();
 
-  String _deviceId = '351906200367061';
-
-  Future<void> _startServices() async {
-    // Configure API (use stored server URL or default to hardcoded)
-    final serverUrl = await SecureStorage.getServerUrl();
-    if (serverUrl != null && serverUrl.isNotEmpty) {
-      _api.configure(baseUrl: serverUrl);
-    } else {
-      _api.configure(baseUrl: 'https://mdm.studhub.app');
-    }
-
-    _addLog('Services starting...');
-    setState(() => _status = 'Running');
-
-    // Start telemetry collection (every 30 seconds for demo)
-    _telemetryTimer = Timer.periodic(
-      const Duration(seconds: 30),
-      (_) => _collectTelemetry(),
-    );
-
-    // Start heartbeat (every 15 seconds for demo — normally 60s)
-    _heartbeatTimer = Timer.periodic(
-      const Duration(seconds: 15),
-      (_) => _sendHeartbeat(),
-    );
-
-    // Collect immediately on start
-    await _collectTelemetry();
-    _addLog('All services running ✓');
-  }
-
-  Future<void> _collectTelemetry() async {
-    try {
-      final data = await _telemetry.collect(_deviceId);
-      _telemetryCount++;
-      setState(() {
-        _lastTelemetry = data;
-      });
-      _addLog('📊 Telemetry #$_telemetryCount collected');
-
-      // Send to server if configured
-      if (_api.isConfigured) {
-        await _telemetry.sendToServer(_api, _deviceId, data);
-        _addLog('📤 Telemetry sent to server');
-
-        // Also send location to dedicated location endpoint
-        if (data.location != null) {
-          try {
-            await _locationSender.send(_api, _deviceId, data.location!);
-            _addLog('📍 Location sent to server');
-          } catch (e) {
-            _addLog('⚠️ Location send failed: $e');
-          }
-        }
+    // Listen for status updates from the background service
+    service.on('statusUpdate').listen((event) {
+      if (event != null && mounted) {
+        setState(() {
+          _heartbeatCount = event['heartbeatCount'] as int? ?? _heartbeatCount;
+          _telemetryCount = event['telemetryCount'] as int? ?? _telemetryCount;
+          _serviceRunning = event['running'] as bool? ?? false;
+          _status = _serviceRunning ? 'Running (Background)' : 'Stopped';
+        });
+        _addLog(
+          '💓 HB: $_heartbeatCount | 📊 Tel: $_telemetryCount',
+        );
       }
-    } catch (e) {
-      _addLog('❌ Telemetry error: $e');
-    }
+    });
+
+    // Poll for status periodically
+    _statusPollTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      service.invoke('status');
+    });
+
+    // Request initial status
+    service.invoke('status');
+
+    // Check if service is running
+    _checkServiceRunning();
   }
 
-  Future<void> _sendHeartbeat() async {
-    _heartbeatCount++;
-    _addLog('💓 Heartbeat #$_heartbeatCount');
-
-    if (_api.isConfigured) {
-      try {
-        await _heartbeat.sendHeartbeat();
-        _addLog('📤 Heartbeat sent');
-      } catch (e) {
-        _addLog('❌ Heartbeat error: $e');
+  Future<void> _checkServiceRunning() async {
+    final service = FlutterBackgroundService();
+    final running = await service.isRunning();
+    if (mounted) {
+      setState(() {
+        _serviceRunning = running;
+        _status = running ? 'Running (Background)' : 'Stopped';
+      });
+      if (running) {
+        _addLog('✅ Background service is active');
+      } else {
+        _addLog('⚠️ Background service not running — starting...');
+        // Auto-start if not running
+        service.startService();
       }
     }
   }
@@ -137,13 +95,11 @@ class _MdmAgentAppState extends State<MdmAgentApp> {
       _logs.insert(0, '[$time] $message');
       if (_logs.length > 50) _logs.removeLast();
     });
-    Logger.info(message, 'Main');
   }
 
   @override
   void dispose() {
-    _telemetryTimer?.cancel();
-    _heartbeatTimer?.cancel();
+    _statusPollTimer?.cancel();
     super.dispose();
   }
 
@@ -158,15 +114,15 @@ class _MdmAgentAppState extends State<MdmAgentApp> {
           actions: [
             Chip(
               label: Text(_status, style: const TextStyle(fontSize: 10)),
-              backgroundColor: _status == 'Running' ? Colors.green : Colors.orange,
+              backgroundColor: _serviceRunning ? Colors.green : Colors.orange,
             ),
             const SizedBox(width: 8),
           ],
         ),
         body: Column(
           children: [
-            // Telemetry summary
-            if (_lastTelemetry != null) _buildTelemetryCard(),
+            // Service status card
+            _buildServiceStatusCard(),
             // Stats
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -196,8 +152,7 @@ class _MdmAgentAppState extends State<MdmAgentApp> {
     );
   }
 
-  Widget _buildTelemetryCard() {
-    final t = _lastTelemetry!;
+  Widget _buildServiceStatusCard() {
     return Card(
       margin: const EdgeInsets.all(8),
       child: Padding(
@@ -205,39 +160,68 @@ class _MdmAgentAppState extends State<MdmAgentApp> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('📱 Device Telemetry', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 12,
-              runSpacing: 4,
+            Row(
               children: [
-                _infoItem('🔋', '${t.battery.level}% (${t.battery.chargingState})'),
-                _infoItem('💾', '${(t.storage.freeBytes / 1024 / 1024 / 1024).toStringAsFixed(1)} GB free'),
-                _infoItem('🧠', '${((t.memory.totalBytes - t.memory.freeBytes) / 1024 / 1024 / 1024).toStringAsFixed(1)}/${(t.memory.totalBytes / 1024 / 1024 / 1024).toStringAsFixed(1)} GB'),
-                _infoItem('📶', t.network.type),
-                _infoItem('🔗', t.network.connected ? 'Connected' : 'Offline'),
-                _infoItem('🖥️', t.screen.isOn ? 'ON' : 'OFF'),
-                _infoItem('📱', t.system.model),
-                _infoItem('🤖', 'Android ${t.system.androidVersion}'),
-                _infoItem('⏱️', '${(t.system.uptimeMillis / 3600000).toStringAsFixed(1)}h up'),
+                Icon(
+                  _serviceRunning ? Icons.check_circle : Icons.error,
+                  color: _serviceRunning ? Colors.green : Colors.orange,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                const Text(
+                  'Background Service',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                ),
               ],
             ),
-            if (t.location != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  '📍 ${t.location!.latitude.toStringAsFixed(4)}, ${t.location!.longitude.toStringAsFixed(4)}',
-                  style: const TextStyle(fontSize: 11, color: Colors.grey),
+            const SizedBox(height: 8),
+            Text(
+              _serviceRunning
+                  ? 'Service is running in background. Heartbeats and telemetry '
+                    'will continue even when this UI is closed.'
+                  : 'Service is not running. Tap restart to start it.',
+              style: const TextStyle(fontSize: 11, color: Colors.grey),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                ElevatedButton.icon(
+                  onPressed: _serviceRunning ? null : _startService,
+                  icon: const Icon(Icons.play_arrow, size: 16),
+                  label: const Text('Start', style: TextStyle(fontSize: 11)),
                 ),
-              ),
+                const SizedBox(width: 8),
+                ElevatedButton.icon(
+                  onPressed: _serviceRunning ? _stopService : null,
+                  icon: const Icon(Icons.stop, size: 16),
+                  label: const Text('Stop', style: TextStyle(fontSize: 11)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red.shade700,
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _infoItem(String icon, String value) {
-    return Text('$icon $value', style: const TextStyle(fontSize: 11));
+  void _startService() {
+    final service = FlutterBackgroundService();
+    service.startService();
+    _addLog('▶️ Service start requested');
+    Future.delayed(const Duration(seconds: 2), _checkServiceRunning);
+  }
+
+  void _stopService() {
+    final service = FlutterBackgroundService();
+    service.invoke('stopService');
+    setState(() {
+      _serviceRunning = false;
+      _status = 'Stopped';
+    });
+    _addLog('⏹️ Service stop requested');
   }
 
   Widget _statChip(String label, String value) {

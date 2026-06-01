@@ -228,7 +228,7 @@ func nullInt64(n sql.NullInt64) any {
 
 func (r *DeviceSyncRepository) UpdateInfo(ctx context.Context, deviceID int64, infoJSON, publicIP string) error {
 	_, err := r.db.ExecContext(ctx, `
-		UPDATE devices SET info = $1, publicip = $2, lastupdate = $3 WHERE id = $4`,
+		UPDATE devices SET info = $1, infojson = $1::jsonb, publicip = $2, lastupdate = $3 WHERE id = $4`,
 		infoJSON, publicIP, time.Now().UnixMilli(), deviceID)
 	if err == nil {
 		_ = profileapp.RecomputeDeviceRollout(ctx, r.db, deviceID)
