@@ -77,6 +77,17 @@ type Config struct {
 	ModuleStatsEnabled       bool
 	ModuleVideosEnabled      bool
 	VideoDirectory           string
+
+	// Location module settings
+	ModuleLocationsEnabled         bool
+	LocationRetentionDays          int
+	LocationAggregationIntervalH   int
+	LocationRateLimitMaxWrites     int
+	LocationRateLimitWindowSec     int
+	LocationSignatureMaxAgeSec     int
+	LocationWSHeartbeatSec         int
+	LocationWSDeviceTimeoutSec     int
+	LocationBatchMaxSize           int
 }
 
 // Load reads configuration from environment variables.
@@ -150,6 +161,17 @@ func Load() Config {
 		ModuleStatsEnabled:      getenvBool("MODULE_STATS_ENABLED", false),
 		ModuleVideosEnabled:     getenvBool("MODULE_VIDEOS_ENABLED", false),
 		VideoDirectory:          getenv("VIDEO_DIRECTORY", "./data/videos"),
+
+		// Location module settings
+		ModuleLocationsEnabled:       getenvBool("MODULE_LOCATIONS_ENABLED", true),
+		LocationRetentionDays:        getenvInt("LOCATION_RETENTION_DAYS", 30),
+		LocationAggregationIntervalH: getenvInt("LOCATION_AGGREGATION_INTERVAL_HOURS", 24),
+		LocationRateLimitMaxWrites:   getenvInt("LOCATION_RATE_LIMIT_MAX_WRITES", 60),
+		LocationRateLimitWindowSec:   getenvInt("LOCATION_RATE_LIMIT_WINDOW_SEC", 60),
+		LocationSignatureMaxAgeSec:   getenvInt("LOCATION_SIGNATURE_MAX_AGE_SEC", 300),
+		LocationWSHeartbeatSec:       getenvInt("LOCATION_WS_HEARTBEAT_SEC", 30),
+		LocationWSDeviceTimeoutSec:   getenvInt("LOCATION_WS_DEVICE_TIMEOUT_SEC", 60),
+		LocationBatchMaxSize:         getenvInt("LOCATION_BATCH_MAX_SIZE", 500),
 	}
 }
 

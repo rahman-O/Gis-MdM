@@ -18,6 +18,7 @@ import (
 	"github.com/gis-mdm/server-backend-go/internal/modules/groups"
 	"github.com/gis-mdm/server-backend-go/internal/modules/hints"
 	"github.com/gis-mdm/server-backend-go/internal/modules/icons"
+	"github.com/gis-mdm/server-backend-go/internal/modules/locations"
 	"github.com/gis-mdm/server-backend-go/internal/modules/notifications"
 	"github.com/gis-mdm/server-backend-go/internal/modules/passwordreset"
 	pluginaudit "github.com/gis-mdm/server-backend-go/internal/modules/plugins/audit"
@@ -54,6 +55,7 @@ func allModules(jwtProvider *platformjwt.Provider) []module.Module {
 		summary.New(),
 		device_tree.New(),
 		devices.New(),
+		locations.New(),
 		groups.New(),
 		profiles.New(),
 		enrollment_routes.New(),
